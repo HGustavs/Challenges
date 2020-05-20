@@ -77,13 +77,13 @@ function interpColor(colno)
 }
 
 //----------------------------------------------------------------------------------
-// drawHead - Clear screen and keep drawing
+// superformula
 //----------------------------------------------------------------------------------
-
 // M is number of quadrants (orders of rotational symmetry)
 // a,b are even/odd spike pointyness
 // n1 is smoothness (pointier vs straighter)
-// n2 is spike shape
+// n2/n3 is spike shape
+
 function superformula(angle, a, b, m, n1, n2, n3)
 {
 		var val1=Math.pow(Math.abs(Math.cos((m*angle)/4)/a),n2);
