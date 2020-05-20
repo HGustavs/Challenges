@@ -1,0 +1,152 @@
+<html>
+	<head>
+	<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+
+var c;
+var arrpnt=[];
+var delay=30;		
+
+var xmax=1430;
+var ymax=780;
+
+var mx,my,mb;
+
+var grd1;
+		
+function drawCirc(x,y,r,fill)
+{
+	c.beginPath();
+	c.arc(x, y, r, 0, 2 * 3.1415, false);
+	if(fill==true){
+			c.fill();	
+	}else{
+			c.stroke();	
+	}
+
+}
+	
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+
+		setTimeout(drawHead,delay);
+}
+		
+//----------------------------------------------------------------------------------
+// toSpherical - Returns xyz for spherical coordinate for 2d point coordinate
+//----------------------------------------------------------------------------------
+		
+const radius=220;
+var offs=0;
+
+// For added speed remove sqrt
+function closestVertex(vertices,px,py)
+{
+		dst=5000;
+		for(var i=0;i<vertices.length;i++){
+				var dx=vertices[i].x-px;
+				var dy=vertices[i].y-py;
+				var cdst=Math.sqrt((dx*dx)+(dy*dy));
+				if(cdst<dst) dst=cdst;
+		}
+		return dst;
+}
+		
+// Maximize closest distance to point
+function testangles(vertices,posx,posy,len,baseangle,magnitude,attempts)
+{
+		var mdst=0;
+		var ang=baseangle;
+		for(var j=0;j<attempts;j++){
+				var tang=baseangle+((Math.random()*magnitude)-(magnitude*0.5));						
+				cdst=closestVertex(vertices,posx+(Math.sin(tang)*len),posy+(Math.cos(tang)*len));
+				// drawCirc(posx+(Math.sin(tang)*len),posy+(Math.cos(tang)*len),3,false);
+				if(cdst>mdst){
+						mdst=cdst;
+						ang=tang;
+				}
+		}
+		return ang;
+}
+
+function drawHead()
+{
+		c.globalAlpha=1.0;
+		c.clearRect(0,0,xmax,ymax);
+	
+		c.fillStyle = "RGB(0,59,85)";	
+		c.strokeStyle="#bbb";
+
+		var thearr=[];
+		var vertices=[];
+	
+		var sang=Math.PI;
+		thearr.push({xk:600,yk:600,len:100,ang:sang,width:10,gen:0,opx:Math.cos(sang+(Math.PI)),opy:Math.sin(sang+(Math.PI))});
+	
+		do{
+					var line=thearr.pop();
+			
+					var dx=(Math.sin(line.ang)*line.len);
+					var dy=(Math.cos(line.ang)*line.len);
+					var len=(line.len*0.7)+(Math.random()*line.len*0.2);
+					var posx=line.xk+dx;
+					var posy=line.yk+dy;
+					vertices.push({x:posx,y:posy});
+					var ang=testangles(vertices,posx,posy,len,line.ang,0.5,3);
+			
+					// if(Math.atan2(dy,dx)>sang){
+					//		ang-=0.3;
+					// }else{
+					//		ang+=0.3;
+					//}
+			
+					var width=line.width*0.8;
+					var gen=line.gen+1;
+					var blen=Math.sqrt((dx*dx)+(dy*dy));
+					
+					var bpos=Math.random();
+					var px=(-dy/blen);
+					var py=(dx/blen);
+					var bposx=(line.xk+(dx*bpos));
+					var bposy=(line.yk+(dy*bpos));
+					var bwidth=width*0.7;
+					var blen=len*0.9;
+					var bang=testangles(vertices,bposx,bposy,blen,line.ang,1.1,10);
+			
+					if(gen<15){
+							thearr.push({xk:posx,yk:posy,len:len,ang:ang,width:width,gen:gen,opx:px,opy:py});
+							thearr.push({xk:bposx,yk:bposy,len:len,ang:bang,width:bwidth,gen:(gen+1),opx:px,opy:py});
+					}
+			
+					c.beginPath();
+					c.moveTo(line.xk-(line.opx*line.width),line.yk-(line.opy*line.width));
+					c.lineTo(line.xk+(line.opx*line.width),line.yk+(line.opy*line.width));
+					c.lineTo(posx+(px*width),posy+(py*width));
+					c.lineTo(posx-(px*width),posy-(py*width));			
+					c.closePath();
+					c.fill();
+					
+		}while(thearr.length>0)	
+	
+		// setTimeout(function(){drawHead();}, 30);
+}
+		
+function mousemove(e)
+{
+		var rect = e.target.getBoundingClientRect();
+		mx = e.clientX - rect.left; //x position within the element.
+		my = e.clientY - rect.top;  //y position within the element.				
+}
+
+	</script>
+	</head>
+	<body onload="setupSlides();">
+	<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	</body>
+
+</html>
