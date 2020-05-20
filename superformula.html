@@ -6,18 +6,24 @@
 //                                 Canvas Slide Constants and Variables
 //------------------------------------=======############==========----------------------------------------
 		
-// Challenge: Make most natural fractal tree with smallest amount of code
+// Challenge: Make colored animated superformula
+		
+// https://www.youtube.com/watch?v=u6arTXBDYhQ
+// https://thecodingtrain.com/CodingChallenges/023-supershape2d.html
 
 var c;
-var arrpnt=[];
-var delay=30;		
 
 var xmax=1430;
 var ymax=780;
 
 var mx,my,mb;
-
-var grd1;
+		
+// Color index start
+var colstart=0;
+		
+const delay=30;
+		
+var colors=[[26,19,52],[38,41,74],[1,84,90],[1,115,81],[3,195,131],[170,217,98],[251,191,69],[239,106,50],[237,3,69],[161,42,94],[113,1,98],[2,44,125]];
 		
 function drawCirc(x,y,r,fill)
 {
@@ -35,47 +41,55 @@ function setupSlides()
 {
 		canvas = document.getElementById("mycanvas");
 		c = canvas.getContext("2d");
+	
+		var col=0;	
 
 		setTimeout(drawHead,delay);
 }
 				
 const radius=220;
 var offs=0;
-
+		
 //----------------------------------------------------------------------------------
-// closestVertex - Returns distance to Closest vertex to px,py 
+// interpColor - Interpolates color array using fractional
 //----------------------------------------------------------------------------------
 
-function closestVertex(vertices,px,py)
+function interpColor(colno)
 {
-		dst=5000;
-		for(var i=0;i<vertices.length;i++){
-				var dx=vertices[i].x-px;
-				var dy=vertices[i].y-py;
-				var cdst=Math.sqrt((dx*dx)+(dy*dy));
-				if(cdst<dst) dst=cdst;
-		}
-		return dst;
+		c1=Math.floor(colno)%colors.length;
+		c2=(c1+1)%colors.length;
+		offs=colno-Math.floor(colno);
+		
+		r=colors[c1][0];
+		g=colors[c1][1];
+		b=colors[c1][2];
+	
+		dr=colors[c2][0]-colors[c1][0];
+		dg=colors[c2][1]-colors[c1][1];
+		db=colors[c2][2]-colors[c1][2];
+	
+	
+		r=Math.floor(r+(dr*offs));
+		g=Math.floor(g+(dg*offs));
+		b=Math.floor(b+(db*offs));	
+	
+		return "RGB("+r+","+g+","+b+")";
 }
 
 //----------------------------------------------------------------------------------
-// Testangles - Make random angle X times and find highest closest vertex
+// drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
 
-function testangles(vertices,posx,posy,len,baseangle,magnitude,attempts)
+// M is number of quadrants (orders of rotational symmetry)
+// a,b are even/odd spike pointyness
+// n1 is smoothness (pointier vs straighter)
+// n2 is spike shape
+function superformula(angle, a, b, m, n1, n2, n3)
 {
-		var mdst=0;
-		var ang=baseangle;
-		for(var j=0;j<attempts;j++){
-				var tang=baseangle+((Math.random()*magnitude)-(magnitude*0.5));						
-				cdst=closestVertex(vertices,posx+(Math.sin(tang)*len),posy+(Math.cos(tang)*len));
-				// drawCirc(posx+(Math.sin(tang)*len),posy+(Math.cos(tang)*len),3,false);
-				if(cdst>mdst){
-						mdst=cdst;
-						ang=tang;
-				}
-		}
-		return ang;
+		var val1=Math.pow(Math.abs(Math.cos((m*angle)/4)/a),n2);
+		var val2=Math.pow(Math.abs(Math.sin((m*angle)/4)/b),n3);
+		
+		return Math.pow(val1+val2,-1.0/n1);
 }
 
 //----------------------------------------------------------------------------------
@@ -84,66 +98,42 @@ function testangles(vertices,posx,posy,len,baseangle,magnitude,attempts)
 		
 function drawHead()
 {
-		c.globalAlpha=1.0;
-		c.clearRect(0,0,xmax,ymax);
-	
-		c.fillStyle = "RGB(0,59,85)";	
-		c.strokeStyle="#bbb";
+		//c.globalAlpha=1.0;
+		// c.clearRect(0,0,xmax,ymax);
 
-		var thearr=[];
-		var vertices=[];
+		const points=64;
+
+		colstart+=0.03;
+		
+		var col=colstart;
 	
-		var sang=Math.PI;
-		thearr.push({xk:600,yk:600,len:140,ang:sang,width:10,gen:0,opx:Math.cos(sang+(Math.PI)),opy:Math.sin(sang+(Math.PI))});
+		c.globalAlpha=0.1;
 	
-		const maxgen=11;
+		for(var j=580;j>20;j-=10){
+				col+=0.15;
+				
+				c.fillStyle=interpColor(col);
+
+				c.beginPath();
+				var radius=j;
+				for(i=0;i<points;i++){
+						var angle=(2.0*Math.PI)*(i/points);
+						var pnt=radius*superformula(angle,2,2,14,1,1.5+(Math.sin(col)*0.8),2.1+(Math.cos(col)*0.8));
+						var px=(xmax*0.5)+(Math.cos(angle+col)*pnt);
+						var py=(ymax*0.5)+(Math.sin(angle+col)*pnt);
+						if(i==0){
+								c.moveTo(px,py);
+						}else if(i==(points-1)){
+								c.closePath();
+						}else{
+								c.lineTo(px,py);
+						}
+				}
+				c.fill();	
+		}
 	
-		do{
-					var line=thearr.pop();
-			
-					// Trunk Params
-					var dx=(Math.sin(line.ang)*line.len);
-					var dy=(Math.cos(line.ang)*line.len);
-					var len=(line.len*0.7)+(Math.random()*line.len*0.2);
-					var posx=line.xk+dx;
-					var posy=line.yk+dy;
-					vertices.push({x:posx,y:posy});
-					var ang=testangles(vertices,posx,posy,len,line.ang,0.4,5);
-			
-					// Shared params
-					var width=line.width*0.8;
-					var gen=line.gen+1;
-					var blen=Math.sqrt((dx*dx)+(dy*dy));
-					
-					// New Branch Params
-					var bpos=Math.random();
-					var px=(-dy/blen);
-					var py=(dx/blen);
-					var bposx=(line.xk+(dx*bpos));
-					var bposy=(line.yk+(dy*bpos));
-					var bwidth=width*0.7;
-					var blen=len*0.9;
-					var spread=0.9+(0.6*(gen/maxgen));
-					var bang=testangles(vertices,bposx,bposy,blen,line.ang,spread,12);
-			
-					// Continue trunk and make new branch
-					if(gen<maxgen){
-							thearr.push({xk:posx,yk:posy,len:len,ang:ang,width:width,gen:gen,opx:px,opy:py});
-							thearr.push({xk:bposx,yk:bposy,len:len,ang:bang,width:bwidth,gen:(gen+1),opx:px,opy:py});
-					}
-			
-					// Draw segment
-					c.beginPath();
-					c.moveTo(line.xk-(line.opx*line.width),line.yk-(line.opy*line.width));
-					c.lineTo(line.xk+(line.opx*line.width),line.yk+(line.opy*line.width));
-					c.lineTo(posx+(px*width),posy+(py*width));
-					c.lineTo(posx-(px*width),posy-(py*width));			
-					c.closePath();
-					c.fill();
-					
-		}while(thearr.length>0)	
-	
-		// setTimeout(function(){drawHead();}, 30);
+		window.requestAnimationFrame(drawHead);
+		// setTimeout(drawHead,delay);	
 }
 		
 function mousemove(e)
