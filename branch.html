@@ -36,15 +36,14 @@ function setupSlides()
 
 		setTimeout(drawHead,delay);
 }
-		
-//----------------------------------------------------------------------------------
-// toSpherical - Returns xyz for spherical coordinate for 2d point coordinate
-//----------------------------------------------------------------------------------
-		
+				
 const radius=220;
 var offs=0;
 
-// For added speed remove sqrt
+//----------------------------------------------------------------------------------
+// closestVertex - Returns distance to Closest vertex to px,py 
+//----------------------------------------------------------------------------------
+
 function closestVertex(vertices,px,py)
 {
 		dst=5000;
@@ -56,8 +55,11 @@ function closestVertex(vertices,px,py)
 		}
 		return dst;
 }
-		
-// Maximize closest distance to point
+
+//----------------------------------------------------------------------------------
+// Testangles - Make random angle X times and find highest closest vertex
+//----------------------------------------------------------------------------------
+
 function testangles(vertices,posx,posy,len,baseangle,magnitude,attempts)
 {
 		var mdst=0;
@@ -74,6 +76,10 @@ function testangles(vertices,posx,posy,len,baseangle,magnitude,attempts)
 		return ang;
 }
 
+//----------------------------------------------------------------------------------
+// drawHead - Clear screen and keep drawing
+//----------------------------------------------------------------------------------
+		
 function drawHead()
 {
 		c.globalAlpha=1.0;
@@ -86,31 +92,28 @@ function drawHead()
 		var vertices=[];
 	
 		var sang=Math.PI;
-		thearr.push({xk:600,yk:600,len:100,ang:sang,width:10,gen:0,opx:Math.cos(sang+(Math.PI)),opy:Math.sin(sang+(Math.PI))});
+		thearr.push({xk:600,yk:600,len:140,ang:sang,width:10,gen:0,opx:Math.cos(sang+(Math.PI)),opy:Math.sin(sang+(Math.PI))});
 	
-		const maxgen=12;
+		const maxgen=11;
 	
 		do{
 					var line=thearr.pop();
 			
+					// Trunk Params
 					var dx=(Math.sin(line.ang)*line.len);
 					var dy=(Math.cos(line.ang)*line.len);
 					var len=(line.len*0.7)+(Math.random()*line.len*0.2);
 					var posx=line.xk+dx;
 					var posy=line.yk+dy;
 					vertices.push({x:posx,y:posy});
-					var ang=testangles(vertices,posx,posy,len,line.ang,0.5,3);
+					var ang=testangles(vertices,posx,posy,len,line.ang,0.4,5);
 			
-					// if(Math.atan2(dy,dx)>sang){
-					//		ang-=0.3;
-					// }else{
-					//		ang+=0.3;
-					//}
-			
+					// Shared params
 					var width=line.width*0.8;
 					var gen=line.gen+1;
 					var blen=Math.sqrt((dx*dx)+(dy*dy));
 					
+					// New Branch Params
 					var bpos=Math.random();
 					var px=(-dy/blen);
 					var py=(dx/blen);
@@ -118,14 +121,16 @@ function drawHead()
 					var bposy=(line.yk+(dy*bpos));
 					var bwidth=width*0.7;
 					var blen=len*0.9;
-					var spread=0.8+(0.8*(gen/maxgen));
+					var spread=0.9+(0.6*(gen/maxgen));
 					var bang=testangles(vertices,bposx,bposy,blen,line.ang,spread,12);
 			
+					// Continue trunk and make new branch
 					if(gen<maxgen){
 							thearr.push({xk:posx,yk:posy,len:len,ang:ang,width:width,gen:gen,opx:px,opy:py});
 							thearr.push({xk:bposx,yk:bposy,len:len,ang:bang,width:bwidth,gen:(gen+1),opx:px,opy:py});
 					}
 			
+					// Draw segment
 					c.beginPath();
 					c.moveTo(line.xk-(line.opx*line.width),line.yk-(line.opy*line.width));
 					c.lineTo(line.xk+(line.opx*line.width),line.yk+(line.opy*line.width));
