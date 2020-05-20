@@ -88,6 +88,8 @@ function drawHead()
 		var sang=Math.PI;
 		thearr.push({xk:600,yk:600,len:100,ang:sang,width:10,gen:0,opx:Math.cos(sang+(Math.PI)),opy:Math.sin(sang+(Math.PI))});
 	
+		const maxgen=12;
+	
 		do{
 					var line=thearr.pop();
 			
@@ -116,9 +118,10 @@ function drawHead()
 					var bposy=(line.yk+(dy*bpos));
 					var bwidth=width*0.7;
 					var blen=len*0.9;
-					var bang=testangles(vertices,bposx,bposy,blen,line.ang,1.1,10);
+					var spread=0.8+(0.8*(gen/maxgen));
+					var bang=testangles(vertices,bposx,bposy,blen,line.ang,spread,12);
 			
-					if(gen<15){
+					if(gen<maxgen){
 							thearr.push({xk:posx,yk:posy,len:len,ang:ang,width:width,gen:gen,opx:px,opy:py});
 							thearr.push({xk:bposx,yk:bposy,len:len,ang:bang,width:bwidth,gen:(gen+1),opx:px,opy:py});
 					}
