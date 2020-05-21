@@ -29,6 +29,20 @@ var colstart=0;
 const delay=30;
 		
 var colors=[[26,19,52],[38,41,74],[1,84,90],[1,115,81],[3,195,131],[170,217,98],[251,191,69],[239,106,50],[237,3,69],[161,42,94],[113,1,98],[2,44,125]];
+
+//----------------------------------------------------------------------------------
+// Canvas Setup
+//----------------------------------------------------------------------------------
+		
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+	
+		var col=0;	
+
+		setTimeout(drawHead,delay);
+}
 		
 //----------------------------------------------------------------------------------
 // toIsometric -- Converts from x,y,z to x,y isometric
@@ -51,22 +65,8 @@ function drawCirc(x,y,r,fill)
 	}else{
 			c.stroke();	
 	}
-
-}
-	
-function setupSlides()
-{
-		canvas = document.getElementById("mycanvas");
-		c = canvas.getContext("2d");
-	
-		var col=0;	
-
-		setTimeout(drawHead,delay);
 }
 				
-const radius=220;
-var offs=0;
-
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
@@ -75,7 +75,8 @@ function drawHead()
 {
 		c.globalAlpha=1.0;
 		c.clearRect(0,0,xmax,ymax);
-	
+
+		conrecQuad(-100,0,-100,100,0,-100,100,0,100,-100,0,100);
 		p1=toIsometric(-100,0,-100);
 		p2=toIsometric(100,0,-100);
 		p3=toIsometric(100,0,100);
