@@ -1,0 +1,107 @@
+<html>
+	<head>
+	<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+		
+// Challenge: CONREC algorithm implementation
+		
+// https://www.youtube.com/watch?v=07hiEtggHXw&t=38s
+// http://paulbourke.net/papers/conrec/
+
+var c;
+
+// Coordinate system
+const xmax=1430;
+const ymax=780;
+const origoX=xmax*0.5;
+const origoY=ymax*0.5;
+var isofact=0.45;
+
+// Mouse controls
+var mx,my,mb;
+		
+// Color index start
+var colstart=0;
+		
+const delay=30;
+		
+var colors=[[26,19,52],[38,41,74],[1,84,90],[1,115,81],[3,195,131],[170,217,98],[251,191,69],[239,106,50],[237,3,69],[161,42,94],[113,1,98],[2,44,125]];
+		
+//----------------------------------------------------------------------------------
+// toIsometric -- Converts from x,y,z to x,y isometric
+//----------------------------------------------------------------------------------
+		
+function toIsometric(xk,yk,zk)
+{
+		return {
+			 x : origoX+xk-zk,
+			 y : origoY+(xk*isofact)+(zk*isofact)-yk
+		};
+}
+
+function drawCirc(x,y,r,fill)
+{
+	c.beginPath();
+	c.arc(x, y, r, 0, 2 * 3.1415, false);
+	if(fill==true){
+			c.fill();	
+	}else{
+			c.stroke();	
+	}
+
+}
+	
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+	
+		var col=0;	
+
+		setTimeout(drawHead,delay);
+}
+				
+const radius=220;
+var offs=0;
+
+//----------------------------------------------------------------------------------
+// drawHead - Clear screen and keep drawing
+//----------------------------------------------------------------------------------
+		
+function drawHead()
+{
+		c.globalAlpha=1.0;
+		c.clearRect(0,0,xmax,ymax);
+	
+		p1=toIsometric(-100,0,-100);
+		p2=toIsometric(100,0,-100);
+		p3=toIsometric(100,0,100);
+		p4=toIsometric(-100,0,100);	
+		p5=toIsometric(0,130,0);		
+	
+		drawCirc(p1.x,p1.y,3,true);
+		drawCirc(p2.x,p2.y,3,true);
+		drawCirc(p3.x,p3.y,3,true);
+		drawCirc(p4.x,p4.y,3,true);	
+		drawCirc(p5.x,p5.y,3,true);		
+		//window.requestAnimationFrame(drawHead);
+		// setTimeout(drawHead,delay);	
+}
+		
+function mousemove(e)
+{
+		var rect = e.target.getBoundingClientRect();
+		mx = e.clientX - rect.left; //x position within the element.
+		my = e.clientY - rect.top;  //y position within the element.				
+}
+
+	</script>
+	</head>
+	<body onload="setupSlides();">
+	<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	</body>
+
+</html>
