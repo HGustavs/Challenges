@@ -56,6 +56,10 @@ function toIsometric(xk,yk,zk)
 		};
 }
 
+//----------------------------------------------------------------------------------
+// drawCirc -- Draws Circle
+//----------------------------------------------------------------------------------
+
 function drawCirc(x,y,r,fill)
 {
 	c.beginPath();
@@ -66,7 +70,102 @@ function drawCirc(x,y,r,fill)
 			c.stroke();	
 	}
 }
-				
+
+//----------------------------------------------------------------------------------
+// drawLine3d -- Draws line in 3D
+//----------------------------------------------------------------------------------
+		
+function drawLine3d(x1,y1,z1,x2,y2,z2)
+{
+	c.beginPath();
+	var p1=toIsometric(x1,y1,z1);
+	var p2=toIsometric(x2,y2,z2);
+	c.moveTo(p1.x,p1.y);
+	c.lineTo(p2.x,p2.y);
+	c.stroke();	
+}
+		
+function kxm(x1,y1,x2,y2,point)
+{
+		dy=y2-y1;
+		dx=x2-x1;
+		k=dy/dx;
+		m=y1-(k*x1);
+		return (point*k)+m;
+}
+		
+//----------------------------------------------------------------------------------
+// conrecLine -- Line
+//----------------------------------------------------------------------------------
+
+function conrecLine(p1,p2,p3,plane,gfp)
+{
+		miny=Math.min(Math.min(p1.y,p2.y),p3.y);
+		maxy=Math.max(Math.max(p1.y,p2.y),p3.y);
+
+		// Stop processing if outside plane 
+		if(plane<=miny||plane>=maxy) return false;
+	
+		// Hacky fix for points falling on end-points of segments
+		if(plane==p1.y) p1.y+=0.1;
+		if(plane==p2.y) p2.y+=0.1;
+		if(plane==p3.y) p3.y+=0.1;;	
+	
+		if(plane>Math.min(p1.y,p2.y)&&plane<Math.max(p1.y,p2.y)){
+				xv=kxm(p1.y,p1.x,p2.y,p2.x,plane);
+				zv=kxm(p1.y,p1.z,p2.y,p2.z,plane);
+				gfp.push({x:xv,y:plane,z:zv});
+		}
+		if(plane>Math.min(p2.y,p3.y)&&plane<Math.max(p2.y,p3.y)){
+				xv=kxm(p2.y,p2.x,p3.y,p3.x,plane);
+				zv=kxm(p2.y,p2.z,p3.y,p3.z,plane);
+				gfp.push({x:xv,y:plane,z:zv});
+		}	
+		if(plane>=Math.min(p3.y,p1.y)&&plane<Math.max(p3.y,p1.y)){
+				xv=kxm(p3.y,p3.x,p1.y,p1.x,plane);
+				zv=kxm(p3.y,p3.z,p1.y,p1.z,plane);
+				gfp.push({x:xv,y:plane,z:zv});
+		}
+	
+}
+
+//----------------------------------------------------------------------------------
+// conrecQuad - 
+//----------------------------------------------------------------------------------
+
+function conrecQuad(p1,p2,p3,p4,plane)
+{
+		// Create fifth point
+		var p5x=(p1.x+p2.x+p3.x+p4.x)/4;
+		var p5y=(p1.y+p2.y+p3.y+p4.y)/4;
+		var p5z=(p1.z+p2.z+p3.z+p4.z)/4;
+
+		p5={x:p5x,y:p5y,z:p5z};
+	
+		fp=[];
+	
+		conrecLine(p1,p2,p5,plane,fp);
+		conrecLine(p2,p3,p5,plane,fp);
+		conrecLine(p3,p4,p5,plane,fp);
+		conrecLine(p4,p1,p5,plane,fp);
+	
+		// Isometric conversion
+		for(i=0;i<(fp.length);i++){
+				pp=toIsometric(fp[i].x,fp[i].y,fp[i].z);
+				fp[i].ix=pp.x;
+				fp[i].iy=pp.y;
+		}
+	
+		// Line drawing
+		for(i=0;i<(fp.length-1);i+=2){
+				c.beginPath();
+				c.moveTo(fp[i].ix,fp[i].iy);
+				c.lineTo(fp[i+1].ix,fp[i+1].iy);
+				c.stroke();
+		}		
+	
+}
+		
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
@@ -76,20 +175,10 @@ function drawHead()
 		c.globalAlpha=1.0;
 		c.clearRect(0,0,xmax,ymax);
 
-		conrecQuad(-100,0,-100,100,0,-100,100,0,100,-100,0,100);
-		p1=toIsometric(-100,0,-100);
-		p2=toIsometric(100,0,-100);
-		p3=toIsometric(100,0,100);
-		p4=toIsometric(-100,0,100);	
-		p5=toIsometric(0,130,0);		
-	
-		drawCirc(p1.x,p1.y,3,true);
-		drawCirc(p2.x,p2.y,3,true);
-		drawCirc(p3.x,p3.y,3,true);
-		drawCirc(p4.x,p4.y,3,true);	
-		drawCirc(p5.x,p5.y,3,true);		
-		//window.requestAnimationFrame(drawHead);
-		// setTimeout(drawHead,delay);	
+		for(var i=-20;i<125;i+=5){
+				conrecQuad({x:-100,y:120,z:-100},{x:100,y:65,z:-100},{x:100,y:40,z:100},{x:-100,y:0,z:100},i);
+		}
+
 }
 		
 function mousemove(e)
