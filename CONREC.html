@@ -1,5 +1,8 @@
 <html>
 	<head>
+		
+<script src="helperFunction/simplex.js"></script> 
+		
 	<script>
 
 //------------------------------------=======############==========----------------------------------------
@@ -39,8 +42,8 @@ function setupSlides()
 		canvas = document.getElementById("mycanvas");
 		c = canvas.getContext("2d");
 	
-		var col=0;	
-
+		SimplexNoise();			
+	
 		setTimeout(drawHead,delay);
 }
 		
@@ -150,6 +153,7 @@ function conrecQuad(p1,p2,p3,p4,plane)
 		conrecLine(p4,p1,p5,plane,fp);
 	
 		// Isometric conversion
+/*
 		for(i=0;i<(fp.length);i++){
 				pp=toIsometric(fp[i].x,fp[i].y,fp[i].z);
 				fp[i].ix=pp.x;
@@ -161,6 +165,15 @@ function conrecQuad(p1,p2,p3,p4,plane)
 				c.beginPath();
 				c.moveTo(fp[i].ix,fp[i].iy);
 				c.lineTo(fp[i+1].ix,fp[i+1].iy);
+				c.stroke();
+		}		
+*/
+		
+		// Line drawing
+		for(i=0;i<(fp.length-1);i+=2){
+				c.beginPath();
+				c.moveTo(origoX+fp[i].x,origoY+fp[i].z);
+				c.lineTo(origoX+fp[i+1].x,origoY+fp[i+1].z);
 				c.stroke();
 		}		
 	
@@ -175,10 +188,42 @@ function drawHead()
 		c.globalAlpha=1.0;
 		c.clearRect(0,0,xmax,ymax);
 
+		const offs=30;
+		const mapscale=200;
+		const mapheight=70;
+		for(var i=-200;i<200;i+=offs){
+				for(var j=-200;j<200;j+=offs){
+						p1={x:i,y:noise2D(i/mapscale,j/mapscale)*mapheight,z:j};
+						p2={x:i+offs,y:noise2D((i+offs)/mapscale,j/mapscale)*mapheight,z:j};	
+						p3={x:i+offs,y:noise2D((i+offs)/mapscale,(j+offs)/mapscale)*mapheight,z:j+offs};
+						p4={x:i,y:noise2D((i)/mapscale,(j+offs)/mapscale)*mapheight,z:j+offs};
+
+						for(var k=-50;k<120;k+=26){
+								conrecQuad(p1,p2,p3,p4,k);						
+						}
+					
+/*						
+						p1i=toIsometric(p1.x,p1.y,p1.z);
+						p2i=toIsometric(p2.x,p2.y,p2.z);
+						p3i=toIsometric(p3.x,p3.y,p3.z);					
+						p4i=toIsometric(p4.x,p4.y,p4.z);	
+						
+						c.beginPath();
+						c.moveTo(p1i.x,p1i.y);
+						c.lineTo(p2i.x,p2i.y);
+						c.lineTo(p3i.x,p3i.y);					
+						c.lineTo(p4i.x,p4i.y);
+						c.closePath();
+						c.stroke();
+*/
+			}
+		}
+/*	
 		for(var i=-20;i<125;i+=5){
 				conrecQuad({x:-100,y:120,z:-100},{x:100,y:65,z:-100},{x:100,y:40,z:100},{x:-100,y:0,z:100},i);
 		}
-
+*/
+	
 }
 		
 function mousemove(e)

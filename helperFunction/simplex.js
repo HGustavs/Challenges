@@ -1,5 +1,3 @@
-const delay=30;
-
 // Based on a speed-improved simplex noise algorithm for 2D, 3D and 4D in Java.
 // Which is based on example code by Stefan Gustavson (stegu@itn.liu.se).
 // With Optimisations by Peter Eastman (peastman@drizzle.stanford.edu).
