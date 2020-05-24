@@ -165,10 +165,13 @@ function drawHead()
 		c.clearRect(0,0,xmax,ymax);
 
 		const offs=20;
+		const mapheightstart=0;
 		const mapscale=10;
 		const mapheight=70;
 		const mapstart=200;
 		const mapcnt=Math.ceil((mapstart*2)/offs);
+		const mapheightcnt=4;
+		const mapoffs=(mapheight-mapheightstart)/mapheightcnt;
 	
 		var map=[];
 		
@@ -178,7 +181,7 @@ function drawHead()
 				for(var j=0;j<mapcnt;j++){
 						map[i][j]=Math.abs(noise2D(i/mapscale,j/mapscale)*mapheight);
 						if((j==0)||(i==0)||(j==(mapcnt-1))||(i==(mapcnt-1))){
-								map[i][j]=-mapheight;										
+								map[i][j]=-mapheightstart+1;										
 						}
 				}
 		}
@@ -186,7 +189,7 @@ function drawHead()
 		var segmentlist=[];
 		
 		// Prepare Segment Map
-		for(var k=0;k<mapheight;k+=20){
+		for(var k=0;k<mapheightcnt;k++){
 				segmentlist[k]=[];
 		}	
 	
@@ -199,8 +202,9 @@ function drawHead()
 						p4={x:(i*offs)-mapstart,y:map[i][j+1],z:(j*offs)-mapstart+offs};		
 					
 						// Add to segments
-						for(var k=0;k<mapheight;k+=20){
-								segs=conrecQuad(p1,p2,p3,p4,k);
+						for(var k=0;k<mapheightcnt;k++){
+							
+								segs=conrecQuad(p1,p2,p3,p4,mapheightstart+(k*mapoffs));
 							
 								// Iterate over segments
 								for(var l=0;l<segs.length;l+=2){
@@ -208,8 +212,7 @@ function drawHead()
 										var y1=Math.floor(segs[l].z);
 										var x2=Math.floor(segs[l+1].x);
 										var y2=Math.floor(segs[l+1].z);
-									
-										
+								
 										var found=false;
 										segments=segmentlist[k];
 										// 
@@ -218,9 +221,15 @@ function drawHead()
 												pe=segments[m][segments[m].length-1];
 												if(ps.x==x1&&ps.y==y1){
 														// If equal to start segment place p2 first
+														// segments[m].unshift({x:x2,y:y2});
+														// found=true;
+														// break;
 												}
 												if(pe.x==x1&&pe.y==y1){
 														// If equal to end segment place p2 last
+														//segments[m].push({x:x2,y:y2});
+														//found=true;
+														//break;												
 												}
 												// x1,y1 is first in segment
 												// x1,y1 is last in segment
@@ -245,8 +254,9 @@ function drawHead()
 				}
 		}
 	
-		for(var k=0;k<mapheight;k+=20){
+		for(var k=0;k<mapheightcnt;k++){
 				segments=segmentlist[k];
+				console.log(k,segments.length);
 				for(var l=0;l<segments.length;l++){
 						pnts=segments[l];
 						for(var m=0;m<pnts.length;m++){
