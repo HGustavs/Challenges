@@ -186,11 +186,13 @@ function drawHead()
 				}
 		}
 	
-		var segmentlist=[];
+		var slinelist=[];
+		var elinelist=[];
 		
 		// Prepare Segment Map
 		for(var k=0;k<mapheightcnt;k++){
-				segmentlist[k]=[];
+				slinelist[k]=[];
+				elinelist[k]=[];
 		}	
 	
 		// CONREC
@@ -212,102 +214,24 @@ function drawHead()
 										var y1=Math.round(segs[l].z);
 										var x2=Math.round(segs[l+1].x);
 										var y2=Math.round(segs[l+1].z);
-								
-										var found=false;
-										segments=segmentlist[k];
-										// 
-										for(m=0;m<segments.length;m++){
-												ps=segments[m][0];
-												pe=segments[m][segments[m].length-1];
-												if((ps.x==x1)&&(ps.y==y1)){
-														// If equal to start segment place p2 first
-														segments[m].unshift({x:x2,y:y2});
-														found=true;
-														break;
-												}
-												if((pe.x==x1)&&(pe.y==y1)){
-														// If equal to end segment place p2 last
-														segments[m].push({x:x2,y:y2});
-														found=true;
-														break;												
-												}
-												if((ps.x==x2)&&(ps.y==y2)){
-														// If equal to start segment place p2 first
-														segments[m].unshift({x:x1,y:y1});
-														found=true;
-														break;
-												}
-												if((pe.x==x2)&&(pe.y==y2)){
-														// If equal to end segment place p2 last
-														segments[m].push({x:x1,y:y1});
-														found=true;
-														break;												
-												}											
-										}
-										// No segment found - create new segment
-										if(found==false){
-												//console.log("Not found: "+k);
-												segment=[];
-												segment.push({x:x1,y:y1});
-												segment.push({x:x2,y:y2});
-												segments.push(segment);
-										}
+										var skey="K"+x1+y1;
+										var ekey="K"+x2+y2;									
+										lineobj={x1:x1,y1:y1,x2:x2,y2:y2,skey:skey,ekey:ekey};
+										slinelist[k].push(lineobj);
+										elinelist[k].push(lineobj);
 								}
 						}
 				}
 		}
 	
-		// join segments
+		// Draw points for testing purposes
 		for(var k=1;k<2;k++){
-				segments=segmentlist[k];
-				var segcnt=0;
-				for(var l=0;l<segments.length;l++){
-						var outerseg=segments[l];
-						ps=outerseg[0];
-						pe=outerseg[outerseg.length-1];
-						if(outerseg.finished!=true){
-								for(var m=0;m<segments.length;m++){
-										if(m!=l){
-												var innerseg=segments[m];
-												ips=innerseg[0];
-												ipe=innerseg[innerseg.length-1];
-												if((pe.x==ipe.x)&&(pe.y==ipe.y)){
-														console.log("SAME END!");
-														// Same end means we must reverse -- Outer: 2,4,5 Inner:7,6,5
-														for(var o=(innerseg.length-2);o>0;o--){
-																outerseg.push(innerseg[o]);
-														}
-														innerseg.finished=true;
-												}
-												if((ps.x==ips.x)&&(ps.y==ips.y)){
-														// Same start means we must copy from second element  -- Outer: 2,4,5 Inner:2,1,3											
-														console.log("SAME START!");
-														for(var o=1;o<innerseg.length;o++){
-																outerseg.unshift(innerseg[o]);
-														}
-														innerseg.finished=true;
-												}
-												if((pe.x==ips.x)&&(pe.y==ips.y)){
-														
-														// Same start as end  -- Outer: 2,4,5 Inner:5,7,8											
-														console.log("SAME START as END!");
-														for(var o=1;o<innerseg.length;o++){
-																outerseg.push(innerseg[o]);
-														}
-														
-														innerseg.finished=true;
-												}											
-										}
-								}
-						}else{
-								segcnt++;
-						}
+				for (var l in slinelist[k]){
+						pnt=slinelist[k][l];
+						drawCirc(origoX+pnt.x1,origoY+pnt.y1,3,true);
 				}
-				console.log("     ",k,segments.length,segcnt);
-			
 		}
-	
-	
+/*	
 		for(var k=1;k<2;k++){
 				segments=segmentlist[k];
 				for(var l=0;l<segments.length;l++){
@@ -331,7 +255,7 @@ function drawHead()
 						}
 				}
 		}
-	
+*/	
 }
 		
 function mousemove(e)
