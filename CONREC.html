@@ -208,10 +208,10 @@ function drawHead()
 							
 								// Iterate over segments
 								for(var l=0;l<segs.length;l+=2){
-										var x1=Math.floor(segs[l].x);
-										var y1=Math.floor(segs[l].z);
-										var x2=Math.floor(segs[l+1].x);
-										var y2=Math.floor(segs[l+1].z);
+										var x1=Math.round(segs[l].x);
+										var y1=Math.round(segs[l].z);
+										var x2=Math.round(segs[l+1].x);
+										var y2=Math.round(segs[l+1].z);
 								
 										var found=false;
 										segments=segmentlist[k];
@@ -219,22 +219,30 @@ function drawHead()
 										for(m=0;m<segments.length;m++){
 												ps=segments[m][0];
 												pe=segments[m][segments[m].length-1];
-												if(ps.x==x1&&ps.y==y1){
+												if((ps.x==x1)&&(ps.y==y1)){
 														// If equal to start segment place p2 first
-														// segments[m].unshift({x:x2,y:y2});
-														// found=true;
-														// break;
+														segments[m].unshift({x:x2,y:y2});
+														found=true;
+														break;
 												}
-												if(pe.x==x1&&pe.y==y1){
+												if((pe.x==x1)&&(pe.y==y1)){
 														// If equal to end segment place p2 last
-														//segments[m].push({x:x2,y:y2});
-														//found=true;
-														//break;												
+														segments[m].push({x:x2,y:y2});
+														found=true;
+														break;												
 												}
-												// x1,y1 is first in segment
-												// x1,y1 is last in segment
-												// x2,y2 is first in segment
-												// x2,y2 is last in segment
+												if((ps.x==x2)&&(ps.y==y2)){
+														// If equal to start segment place p2 first
+														segments[m].unshift({x:x1,y:y1});
+														found=true;
+														break;
+												}
+												if((pe.x==x2)&&(pe.y==y2)){
+														// If equal to end segment place p2 last
+														segments[m].push({x:x1,y:y1});
+														found=true;
+														break;												
+												}											
 										}
 										// No segment found - create new segment
 										if(found==false){
@@ -244,24 +252,82 @@ function drawHead()
 												segment.push({x:x2,y:y2});
 												segments.push(segment);
 										}
-
-//										c.beginPath();
-//										c.moveTo(origoX+x1,origoY+y1);
-//										c.lineTo(origoX+x2,origoY+y2);
-//										c.stroke();
 								}
 						}
 				}
 		}
 	
-		for(var k=0;k<mapheightcnt;k++){
+		// join segments
+		for(var k=1;k<2;k++){
 				segments=segmentlist[k];
-				console.log(k,segments.length);
+				var segcnt=0;
+				for(var l=0;l<segments.length;l++){
+						var outerseg=segments[l];
+						ps=outerseg[0];
+						pe=outerseg[outerseg.length-1];
+						if(outerseg.finished!=true){
+								for(var m=0;m<segments.length;m++){
+										if(m!=l){
+												var innerseg=segments[m];
+												ips=innerseg[0];
+												ipe=innerseg[innerseg.length-1];
+												if((pe.x==ipe.x)&&(pe.y==ipe.y)){
+														console.log("SAME END!");
+														// Same end means we must reverse -- Outer: 2,4,5 Inner:7,6,5
+														for(var o=(innerseg.length-2);o>0;o--){
+																outerseg.push(innerseg[o]);
+														}
+														innerseg.finished=true;
+												}
+												if((ps.x==ips.x)&&(ps.y==ips.y)){
+														// Same start means we must copy from second element  -- Outer: 2,4,5 Inner:2,1,3											
+														console.log("SAME START!");
+														for(var o=1;o<innerseg.length;o++){
+																outerseg.unshift(innerseg[o]);
+														}
+														innerseg.finished=true;
+												}
+												if((pe.x==ips.x)&&(pe.y==ips.y)){
+														
+														// Same start as end  -- Outer: 2,4,5 Inner:5,7,8											
+														console.log("SAME START as END!");
+														for(var o=1;o<innerseg.length;o++){
+																outerseg.push(innerseg[o]);
+														}
+														
+														innerseg.finished=true;
+												}											
+										}
+								}
+						}else{
+								segcnt++;
+						}
+				}
+				console.log("     ",k,segments.length,segcnt);
+			
+		}
+	
+	
+		for(var k=1;k<2;k++){
+				segments=segmentlist[k];
 				for(var l=0;l<segments.length;l++){
 						pnts=segments[l];
-						for(var m=0;m<pnts.length;m++){
-								var pnt=pnts[m];
-								drawCirc(origoX+pnt.x,origoY+pnt.y,2,false);
+						// console.log(pnts.length,pnts);
+						if(pnts.finished==true){
+								c.fillStyle="#000";
+						}else{
+								c.fillSTyle="#080";
+						}
+						if(pnts.length>9){
+								for(var m=0;m<pnts.length-1;m++){
+										var pnt1=pnts[m];
+										var pnt2=pnts[m+1];
+										c.beginPath();
+										c.moveTo(origoX+pnt1.x,origoY+pnt1.y);
+										c.lineTo(origoX+pnt2.x,origoY+pnt2.y);
+										c.stroke();
+										//drawCirc(origoX+pnt.x,origoY+pnt.y,2,false);
+								}
 						}
 				}
 		}
