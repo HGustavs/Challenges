@@ -154,7 +154,22 @@ function conrecQuad(p1,p2,p3,p4,plane)
 
 		return fp;
 }
+
+//----------------------------------------------------------------------------------
+// popDualArray - Remove an element from both dual arrays or null
+//----------------------------------------------------------------------------------
 		
+function popDualArray(arr1,arr2)
+{
+		for (var l in arr1){
+				console.log("START!",l);
+				retobj=arr1[l];
+				//delete arr1[l];
+				//delete arr2[retobj.ekey];
+				return retobj;
+		}		
+}
+
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
@@ -188,11 +203,13 @@ function drawHead()
 	
 		var slinelist=[];
 		var elinelist=[];
+		var segmentlist=[]
 		
 		// Prepare Segment Map
 		for(var k=0;k<mapheightcnt;k++){
 				slinelist[k]=[];
 				elinelist[k]=[];
+				segmentlist[k]=[];
 		}	
 	
 		// CONREC
@@ -210,26 +227,57 @@ function drawHead()
 							
 								// Iterate over segments
 								for(var l=0;l<segs.length;l+=2){
-										var x1=Math.round(segs[l].x);
-										var y1=Math.round(segs[l].z);
-										var x2=Math.round(segs[l+1].x);
-										var y2=Math.round(segs[l+1].z);
-										var skey="K"+x1+y1;
-										var ekey="K"+x2+y2;									
-										lineobj={x1:x1,y1:y1,x2:x2,y2:y2,skey:skey,ekey:ekey};
-										slinelist[k].push(lineobj);
-										elinelist[k].push(lineobj);
+										var vx1=Math.round(segs[l].x);
+										var vy1=Math.round(segs[l].z);
+										var vx2=Math.round(segs[l+1].x);
+										var vy2=Math.round(segs[l+1].z);
+										var vskey="K"+vx1+vy1;
+										var vekey="K"+vx2+vy2;									
+										lineobj={x1:vx1,y1:vy1,x2:vx2,y2:vy2,skey:vskey,ekey:vekey};
+										slinelist[k][vskey]=lineobj;
+										elinelist[k][vekey]=lineobj;
 								}
 						}
 				}
 		}
+
+		// repeat until nothing is found OR we return to first point
+		points=[];
+		slist=slinelist[1];
+		elist=elinelist[1];
+		retobj=popDualArray(slist,elist);
+		startx=retobj.x1;
+		starty=retobj.y1;
+		ekey=retobj.ekey;
+		points.push({x:retobj.x1,y:retobj.y1});
+		points.push({x:retobj.x2,y:retobj.y2});
+	
+		console.log(slist);
+	
+		for(var i=0;i<10;i++){
+				console.log(ekey,slist[ekey],elist[ekey]);
+				if(typeof slist[ekey]!="undefined"){
+						retobj=slist[ekey];
+						delete slist[ekey];
+						ekey=retobj.ekey;
+						points.push({x:retobj.x2,y:retobj.y2});
+						console.log("found start")
+				}else if(typeof elist[ekey]!="undefined"){
+						retobj=elist[ekey];
+						delete elist[ekey];
+						ekey=retobj.skey;
+						points.push({x:retobj.x1,y:retobj.y1});
+						console.log("found end");
+				}else{
+						break;				 
+				}
+		}
+
 	
 		// Draw points for testing purposes
-		for(var k=1;k<2;k++){
-				for (var l in slinelist[k]){
-						pnt=slinelist[k][l];
-						drawCirc(origoX+pnt.x1,origoY+pnt.y1,3,true);
-				}
+		for(var k=0;k<points.length;k++){
+				var pnt=points[k];
+				drawCirc(origoX+pnt.x,origoY+pnt.y,3,true);
 		}
 /*	
 		for(var k=1;k<2;k++){
