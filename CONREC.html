@@ -1,3 +1,4 @@
+
 <html>
 	<head>
 		
@@ -156,18 +157,21 @@ function conrecQuad(p1,p2,p3,p4,plane)
 }
 
 //----------------------------------------------------------------------------------
-// popDualArray - Remove an element from both dual arrays or null
+// makepoint - Fast point creation function for integer coordinates
 //----------------------------------------------------------------------------------
 		
-function popDualArray(arr1,arr2)
+var points=[];
+var pointcheck=[];
+function makePoint(xk,yk,layer)
 {
-		for (var l in arr1){
-				console.log("START!",l);
-				retobj=arr1[l];
-				//delete arr1[l];
-				//delete arr2[retobj.ekey];
-				return retobj;
-		}		
+		pstr="K"+xk+yk+layer;
+		if(typeof pointcheck[pstr]=="undefined"){
+				pointcheck[pstr]=points.length;
+				points.push({x:xk,y:yk,l:layer});
+				return points.length-1;
+		}else{
+				return pointcheck[pstr];
+		}
 }
 
 //----------------------------------------------------------------------------------
@@ -201,24 +205,22 @@ function drawHead()
 				}
 		}
 	
-		var slinelist=[];
-		var elinelist=[];
+		var linelist=[];
 		var segmentlist=[]
 		
 		// Prepare Segment Map
 		for(var k=0;k<mapheightcnt;k++){
-				slinelist[k]=[];
-				elinelist[k]=[];
+				linelist[k]=[];
 				segmentlist[k]=[];
 		}	
 	
 		// CONREC
 		for(var i=0;i<(mapcnt-1);i++){	
 				for(var j=0;j<(mapcnt-1);j++){
-						p1={x:(i*offs)-mapstart,y:map[i][j],z:(j*offs)-mapstart};
-						p2={x:(i*offs)-mapstart+offs,y:map[i+1][j],z:(j*offs)-mapstart};
-						p3={x:(i*offs)-mapstart+offs,y:map[i+1][j+1],z:(j*offs)-mapstart+offs};
-						p4={x:(i*offs)-mapstart,y:map[i][j+1],z:(j*offs)-mapstart+offs};		
+						p1={x:((i*offs)-mapstart)*4,y:map[i][j],z:((j*offs)-mapstart)*4};
+						p2={x:((i*offs)-mapstart+offs)*4,y:map[i+1][j],z:((j*offs)-mapstart)*4};
+						p3={x:((i*offs)-mapstart+offs)*4,y:map[i+1][j+1],z:((j*offs)-mapstart+offs)*4};
+						p4={x:((i*offs)-mapstart)*4,y:map[i][j+1],z:((j*offs)-mapstart+offs)*4};		
 					
 						// Add to segments
 						for(var k=0;k<mapheightcnt;k++){
@@ -231,54 +233,115 @@ function drawHead()
 										var vy1=Math.round(segs[l].z);
 										var vx2=Math.round(segs[l+1].x);
 										var vy2=Math.round(segs[l+1].z);
-										var vskey="K"+vx1+vy1;
-										var vekey="K"+vx2+vy2;									
-										lineobj={x1:vx1,y1:vy1,x2:vx2,y2:vy2,skey:vskey,ekey:vekey};
-										slinelist[k][vskey]=lineobj;
-										elinelist[k][vekey]=lineobj;
+
+										// Make points for both ends and push both to list
+										i1=makePoint(vx1,vy1,k);
+										i2=makePoint(vx2,vy2,k);
+									
+										if(i1!=i2){
+												if(typeof linelist[k][i1] == "undefined") linelist[k][i1]=[];
+												if(typeof linelist[k][i2] == "undefined") linelist[k][i2]=[];									
+												if(linelist[k][i1].length>=2&&k==1){
+														console.log("ABOVE FR "+i1+" "+i2);
+														drawCirc(origoX+(points[i1].x/4),origoY+(points[i1].y/4),5,false);
+														drawCirc(origoX+(points[i2].x/4),origoY+(points[i2].y/4),5,false);													
+												}else{
+														linelist[k][i1].push(i2);
+												}
+												if(linelist[k][i2].length>=2&&k==1){
+														drawCirc(origoX+points[i1].x/4,origoY+points[i1].y/4,5,false);													
+														drawCirc(origoX+points[i2].x/4,origoY+points[i2].y/4,5,false);
+														console.log("ABOVE TO "+i2+" "+i1);
+												}else{
+														linelist[k][i2].push(i1);
+												} 									
+										}
+									
 								}
 						}
 				}
 		}
 
 		// repeat until nothing is found OR we return to first point
-		points=[];
-		slist=slinelist[1];
-		elist=elinelist[1];
-		retobj=popDualArray(slist,elist);
-		startx=retobj.x1;
-		starty=retobj.y1;
-		ekey=retobj.ekey;
-		points.push({x:retobj.x1,y:retobj.y1});
-		points.push({x:retobj.x2,y:retobj.y2});
+		// console.log(linelist[1]);
+
+		items=linelist[1];
+		currentitem=items[0];
+		
+		var segment=[];
+		segment.push(0);	
 	
-		console.log(slist);
+		var lastitem=currentitem[0];
+		var enditem=currentitem[1];
+		var lastlastitem=currentitem[0];
 	
-		for(var i=0;i<10;i++){
-				console.log(ekey,slist[ekey],elist[ekey]);
-				if(typeof slist[ekey]!="undefined"){
-						retobj=slist[ekey];
-						delete slist[ekey];
-						ekey=retobj.ekey;
-						points.push({x:retobj.x2,y:retobj.y2});
-						console.log("found start")
-				}else if(typeof elist[ekey]!="undefined"){
-						retobj=elist[ekey];
-						delete elist[ekey];
-						ekey=retobj.skey;
-						points.push({x:retobj.x1,y:retobj.y1});
-						console.log("found end");
-				}else{
-						break;				 
+		// console.log(items);
+	
+		// Test with 10 steps first
+		var i=0;
+		while(lastitem!=enditem){
+				if(i++>800) break;
+				currentitem=items[lastitem];
+				var found=false;
+				for(var t=0;t<currentitem.length;t++){
+						if(segment.indexOf(currentitem[t])==-1){
+								segment.push(lastitem);
+								lastitem=currentitem[t];
+								found=true;
+						}
 				}
+				if(found==false){
+						break
+				}
+			
 		}
 
+		segment.push(lastitem);
 	
+		c.font="10px Arial Narrow";
+
+		c.fillStyle="#8a0";
+		c.globalAlpha=0.23;
+		c.beginPath();	
+		for(var i=0;i<segment.length;i++){
+				var p1=points[segment[i]];
+				if(i==0){
+					c.moveTo(origoX+(p1.x/4),origoY+(p1.y/4));
+				}else{
+					c.lineTo(origoX+(p1.x/4),origoY+(p1.y/4));
+				}
+		}	
+		c.fill();	
+		c.globalAlpha=1.0;
+		c.stroke();	
+	
+		c.fillStyle="#000";
+		
 		// Draw points for testing purposes
 		for(var k=0;k<points.length;k++){
 				var pnt=points[k];
-				drawCirc(origoX+pnt.x,origoY+pnt.y,3,true);
+				if(pnt.l==1) drawCirc(origoX+(pnt.x/4),origoY+(pnt.y/4),2,true);
+		}	
+	
+/*	
+		for(var i=0;i<segment.length;i++){
+				
+				var p1=points[segment[i]];
+				if(i<segment.length-1){
+						var p2=points[segment[i+1]];
+				}else{
+						var p2=points[segment[0]];
+				}
+			
+				c.beginPath();
+				c.moveTo(origoX+p1.x,origoY+p1.y);
+				c.lineTo(origoX+p2.x,origoY+p2.y);
+				c.stroke();
+			
 		}
+*/
+	
+
 /*	
 		for(var k=1;k<2;k++){
 				segments=segmentlist[k];
