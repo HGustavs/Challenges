@@ -54,14 +54,13 @@ function drawSymbol(xk,yk,w,h,val)
 		c.quadraticCurveTo(xk,yk+h,xk,yk+h-r);
 		c.lineTo(xk,yk+r);
 		c.quadraticCurveTo(xk,yk,xk+r,yk);
-
-		c.textAlign = "center"; 
-		c.textBaseline = "middle"; 
-		c.font="30px Comic Sans MS";	
 	
 		if(val==0){
 				c.stroke();		
 		}else{
+				c.textAlign = "center"; 
+				c.textBaseline = "middle"; 
+				c.font="30px Comic Sans MS";	
 				if(val==1){
 						c.fillStyle="#f28";
 				}else{
@@ -80,7 +79,7 @@ function shift(topos,frompos,fromx,fromy,tox,toy)
 {
 		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0)){
 				// Empty -> Something
-				anim.push({fromx,fromy,tox,toy,gamegrid[frompos],gamegrid[frompos]})
+				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]})
 				gamegrid[topos]=gamegrid[frompos];
 				gamegrid[frompos]=0;
 		}else if(((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1))){
@@ -96,8 +95,22 @@ function shift(topos,frompos,fromx,fromy,tox,toy)
 		}
 }
 
-// 		
-		
+// Animate tile positions
+
+function animate(perc)
+{
+		c.textAlign = "center"; 
+		c.textBaseline = "middle"; 
+		c.font="30px Comic Sans MS";	
+	
+		for(var i=0;i<anim.length;i++){
+				item=anim[i];
+				xk=item.fx+((item.tx-item.fx)*perc);
+				yk=item.fy+((item.ty-item.fy)*perc);
+				
+		}
+}
+
 const radius=220;
 var offs=0;
 		
@@ -110,15 +123,16 @@ for(var i=0;i<(gridX*gridY);i++){
 		gamegrid[i]=0;
 }
 
-gamegrid[7]=96;		
-gamegrid[8]=1;
-gamegrid[9]=2;
-gamegrid[10]=3;
-gamegrid[11]=6;		
+gamegrid[8]=96;		
+gamegrid[9]=1;
+gamegrid[10]=2;
+gamegrid[11]=3;
+gamegrid[12]=6;		
 gamegrid[17]=12;
 gamegrid[31]=24;
 gamegrid[30]=48;
 		
+// Update grid (tetris physics)
 function progressGrid(mox,moy)
 {
 		anim=[];
@@ -150,12 +164,14 @@ function progressGrid(mox,moy)
 								shift((j*gridX)+i,(j*gridX)+i+gridY,i,j,i,j-1);
 						}
 				}
-		}}
+		}
+}
 				
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
 
+progressGrid(1,0);
 var perc=0;
 function drawHead()
 {
@@ -168,34 +184,11 @@ function drawHead()
 		var mox=1;
 		var moy=0;
 
-		// Update grid (tetris physics)
-
-		progressGrid(1,0);
-/*	
-		progressGrid(1,0);
-		progressGrid(1,0);
-		progressGrid(1,0);
-		progressGrid(1,0);
-		progressGrid(0,1);	
-		progressGrid(0,1);	
-		progressGrid(0,1);	
-		progressGrid(0,1);	
-		progressGrid(0,1);	
-		progressGrid(-1,0);	
-		progressGrid(-1,0);
-		progressGrid(-1,0);
-		progressGrid(-1,0);
-		progressGrid(0,-1);	
-		progressGrid(0,-1);	
-		progressGrid(0,-1);	
-		progressGrid(0,-1);	
-*/	
 		// Draw game grid
-		for(var i=0;i<gridX;i++){
-				for(var j=0;j<gridY;j++){
-						drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i]);
-				}
-		}	
+		animate(perc);
+	
+		perc+=0.01;
+		if(perc>1.0) perc=0.0;
 	
 }
 		
