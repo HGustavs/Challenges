@@ -109,7 +109,9 @@ gamegrid[8]=1;
 gamegrid[9]=2;
 gamegrid[10]=3;
 gamegrid[11]=6;		
-		
+gamegrid[17]=12;
+gamegrid[31]=24;
+gamegrid[30]=48;		
 function progressGrid(mox,moy)
 {
 		if(mox==1){
@@ -119,7 +121,14 @@ function progressGrid(mox,moy)
 								shift((j*gridX)+i,(j*gridX)+i-1);
 						}
 				}
-		}		
+		}else if(moy==1){
+				// Move down
+				for(var j=(gridY-2);j>=1;j--){
+						for(var i=(gridX-2);i>=1;i--){
+								shift((j*gridX)+i,(j*gridX)+i-gridY);
+						}
+				}
+		}
 }
 				
 //----------------------------------------------------------------------------------
@@ -142,7 +151,12 @@ function drawHead()
 		progressGrid(1,0);
 		progressGrid(1,0);
 		progressGrid(1,0);
-		progressGrid(1,0);	
+		progressGrid(1,0);
+		progressGrid(0,1);	
+		progressGrid(0,1);	
+		progressGrid(0,1);	
+		progressGrid(0,1);	
+		progressGrid(0,1);		
 
 		// Draw game grid
 		for(var i=0;i<gridX;i++){
