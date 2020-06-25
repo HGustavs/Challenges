@@ -85,6 +85,9 @@ function shift(topos,frompos)
 		}else if(((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1))){
 				gamegrid[topos]=3;
 				gamegrid[frompos]=0;
+		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]!=2)&&(gamegrid[topos]!=1)){
+				gamegrid[topos]=gamegrid[topos]*2;
+				gamegrid[frompos]=0;		
 		}
 }
 
@@ -104,6 +107,8 @@ for(var i=0;i<(gridX*gridY);i++){
 
 gamegrid[8]=1;
 gamegrid[9]=2;
+gamegrid[10]=3;
+gamegrid[11]=6;		
 		
 function progressGrid(mox,moy)
 {
