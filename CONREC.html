@@ -271,11 +271,9 @@ function drawHead()
 		var segment=[];
 		segment.push(0);	
 	
+		var minitem=0;
 		var lastitem=currentitem[0];
 		var enditem=currentitem[1];
-		var lastlastitem=currentitem[0];
-	
-		// console.log(items);
 	
 		// Test with 10 steps first
 		var i=0;
@@ -288,6 +286,7 @@ function drawHead()
 								segment.push(lastitem);
 								lastitem=currentitem[t];
 								found=true;
+								break;
 						}
 				}
 				if(found==false){
@@ -295,8 +294,6 @@ function drawHead()
 				}
 			
 		}
-
-		segment.push(lastitem);
 	
 		c.font="10px Arial Narrow";
 
@@ -316,6 +313,11 @@ function drawHead()
 		c.stroke();	
 	
 		c.fillStyle="#000";
+	
+		// Find next un-processed item.
+		// for(var item=minitem<items.length) <- finns ens denna? 
+		
+		console.log(items.lengh);
 		
 		// Draw points for testing purposes
 		for(var k=0;k<points.length;k++){

@@ -1,0 +1,164 @@
+<html>
+	<head>
+	<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+		
+// Challenge: Make animated threes-game with smallest amount of code
+
+var c;
+var arrpnt=[];
+var delay=30;		
+
+var xmax=1430;
+var ymax=780;
+
+var mx,my,mb;
+
+var grd1;
+		
+function drawCirc(x,y,r,fill)
+{
+	c.beginPath();
+	c.arc(x, y, r, 0, 2 * 3.1415, false);
+	if(fill==true){
+			c.fill();	
+	}else{
+			c.stroke();	
+	}
+
+}
+	
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+
+		setTimeout(drawHead,delay);
+}
+
+// Draw a symbol with rounded corners
+		
+function drawSymbol(xk,yk,w,h,val)
+{
+		var r=8;
+		c.beginPath();
+		c.moveTo(xk+r,yk);
+		c.lineTo(xk+w-r,yk);
+		c.quadraticCurveTo(xk+w,yk,xk+w,yk+r);
+		c.lineTo(xk+w,yk+h-r);
+		c.quadraticCurveTo(xk+w,yk+h,xk+w-r,yk+h);
+		c.lineTo(xk+r,yk+h);
+		c.quadraticCurveTo(xk,yk+h,xk,yk+h-r);
+		c.lineTo(xk,yk+r);
+		c.quadraticCurveTo(xk,yk,xk+r,yk);
+
+		c.textAlign = "center"; 
+		c.textBaseline = "middle"; 
+		c.font="30px Comic Sans MS";	
+	
+		if(val==0){
+				c.stroke();		
+		}else{
+				if(val==1){
+						c.fillStyle="#f28";
+				}else{
+						c.fillStyle="#28f";
+				}
+				c.fill();
+			
+				c.fillStyle="#000";
+
+				c.fillText(val,xk+(w*0.5),yk+(h*0.5));		
+		}
+}
+		
+// Shift function does not know which tiles we are shifting
+function shift(topos,frompos)
+{
+		// Empty -> Something || (1 -> 2) or (2 -> 1) 
+		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0)){
+				gamegrid[topos]=gamegrid[frompos];
+				gamegrid[frompos]=0;
+		}else if(((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1))){
+				gamegrid[topos]=3;
+				gamegrid[frompos]=0;
+		}
+}
+
+// 		
+		
+const radius=220;
+var offs=0;
+		
+var gamegrid=[];
+var gridX=7;
+var gridY=7;
+var blocks=[];
+
+for(var i=0;i<(gridX*gridY);i++){
+		gamegrid[i]=0;
+}
+
+gamegrid[8]=1;
+gamegrid[9]=2;
+		
+function progressGrid(mox,moy)
+{
+		if(mox==1){
+				// Move right! - progress from top to bottom, and from right to left
+				for(var j=1;j<(gridY-1);j++){
+						for(var i=(gridX-2);i>=1;i--){
+								shift((j*gridX)+i,(j*gridX)+i-1);
+						}
+				}
+		}		
+}
+				
+//----------------------------------------------------------------------------------
+// drawHead - Clear screen and keep drawing
+//----------------------------------------------------------------------------------
+		
+function drawHead()
+{
+		c.globalAlpha=1.0;
+		c.clearRect(0,0,xmax,ymax);
+	
+		c.fillStyle = "RGB(0,59,85)";	
+		c.strokeStyle="#bbb";
+
+		var mox=1;
+		var moy=0;
+
+		// Update grid (tetris physics)
+		progressGrid(1,0);
+		progressGrid(1,0);
+		progressGrid(1,0);
+		progressGrid(1,0);
+		progressGrid(1,0);	
+
+		// Draw game grid
+		for(var i=0;i<gridX;i++){
+				for(var j=0;j<gridY;j++){
+						drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i]);
+				}
+		}	
+	
+}
+		
+function mousemove(e)
+{
+		var rect = e.target.getBoundingClientRect();
+		mx = e.clientX - rect.left; //x position within the element.
+		my = e.clientY - rect.top;  //y position within the element.				
+}
+
+	</script>
+	</head>
+	<body onload="setupSlides();">
+	<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	</body>
+
+</html>
