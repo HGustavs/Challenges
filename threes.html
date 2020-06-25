@@ -76,18 +76,23 @@ function drawSymbol(xk,yk,w,h,val)
 }
 		
 // Shift function does not know which tiles we are shifting
-function shift(topos,frompos)
+function shift(topos,frompos,fromx,fromy,tox,toy)
 {
-		// Empty -> Something || (1 -> 2) or (2 -> 1) 
 		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0)){
+				// Empty -> Something
+				anim.push({fromx,fromy,tox,toy,gamegrid[frompos],gamegrid[frompos]})
 				gamegrid[topos]=gamegrid[frompos];
 				gamegrid[frompos]=0;
 		}else if(((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1))){
+				// 1 -> 2 || 2 -> 1 (push one static and one moving animation to three)
 				gamegrid[topos]=3;
 				gamegrid[frompos]=0;
 		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]!=2)&&(gamegrid[topos]!=1)){
+				// something -> same something (double)
 				gamegrid[topos]=gamegrid[topos]*2;
 				gamegrid[frompos]=0;		
+		}else if(gamegrid[frompos]!=0){
+				// From position not moving but not empty (animate only)
 		}
 }
 
@@ -99,42 +104,59 @@ var offs=0;
 var gamegrid=[];
 var gridX=7;
 var gridY=7;
-var blocks=[];
+var anim=[];
 
 for(var i=0;i<(gridX*gridY);i++){
 		gamegrid[i]=0;
 }
 
+gamegrid[7]=96;		
 gamegrid[8]=1;
 gamegrid[9]=2;
 gamegrid[10]=3;
 gamegrid[11]=6;		
 gamegrid[17]=12;
 gamegrid[31]=24;
-gamegrid[30]=48;		
+gamegrid[30]=48;
+		
 function progressGrid(mox,moy)
 {
+		anim=[];
 		if(mox==1){
 				// Move right! - progress from top to bottom, and from right to left
 				for(var j=1;j<(gridY-1);j++){
 						for(var i=(gridX-2);i>=1;i--){
-								shift((j*gridX)+i,(j*gridX)+i-1);
+								shift((j*gridX)+i,(j*gridX)+i-1,i,j,i+1,j);
 						}
 				}
+		}else if(mox==-1){
+				// Move left! - progress from top to bottom, and from left to right
+				for(var j=1;j<(gridY-1);j++){
+						for(var i=1;i<=(gridX-1);i++){
+								shift((j*gridX)+i,(j*gridX)+i+1,i,j,i-1,j);
+						}
+				}			
 		}else if(moy==1){
 				// Move down
 				for(var j=(gridY-2);j>=1;j--){
 						for(var i=(gridX-2);i>=1;i--){
-								shift((j*gridX)+i,(j*gridX)+i-gridY);
+								shift((j*gridX)+i,(j*gridX)+i-gridY,i,j,i,j+1);
 						}
 				}
-		}
-}
+		}else if(moy==-1){
+				// Move up
+				for(var j=1;j<(gridY-1);j++){
+						for(var i=1;i<=(gridX-1);i++){
+								shift((j*gridX)+i,(j*gridX)+i+gridY,i,j,i,j-1);
+						}
+				}
+		}}
 				
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
-		
+
+var perc=0;
 function drawHead()
 {
 		c.globalAlpha=1.0;
@@ -147,17 +169,27 @@ function drawHead()
 		var moy=0;
 
 		// Update grid (tetris physics)
-		progressGrid(1,0);
-		progressGrid(1,0);
-		progressGrid(1,0);
-		progressGrid(1,0);
-		progressGrid(1,0);
-		progressGrid(0,1);	
-		progressGrid(0,1);	
-		progressGrid(0,1);	
-		progressGrid(0,1);	
-		progressGrid(0,1);		
 
+		progressGrid(1,0);
+/*	
+		progressGrid(1,0);
+		progressGrid(1,0);
+		progressGrid(1,0);
+		progressGrid(1,0);
+		progressGrid(0,1);	
+		progressGrid(0,1);	
+		progressGrid(0,1);	
+		progressGrid(0,1);	
+		progressGrid(0,1);	
+		progressGrid(-1,0);	
+		progressGrid(-1,0);
+		progressGrid(-1,0);
+		progressGrid(-1,0);
+		progressGrid(0,-1);	
+		progressGrid(0,-1);	
+		progressGrid(0,-1);	
+		progressGrid(0,-1);	
+*/	
 		// Draw game grid
 		for(var i=0;i<gridX;i++){
 				for(var j=0;j<gridY;j++){
