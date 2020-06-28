@@ -14,22 +14,7 @@ var delay=30;
 
 var xmax=1430;
 var ymax=780;
-
 var mx,my,mb;
-
-var grd1;
-		
-function drawCirc(x,y,r,fill)
-{
-	c.beginPath();
-	c.arc(x, y, r, 0, 2 * 3.1415, false);
-	if(fill==true){
-			c.fill();	
-	}else{
-			c.stroke();	
-	}
-
-}
 	
 function setupSlides()
 {
@@ -41,7 +26,7 @@ function setupSlides()
 
 // Draw a symbol with rounded corners
 		
-function drawSymbol(xk,yk,w,h,val)
+function drawSymbol(xk,yk,w,h,val,nval,perc)
 {
 		var r=8;
 		c.beginPath();
@@ -63,35 +48,53 @@ function drawSymbol(xk,yk,w,h,val)
 				c.font="30px Comic Sans MS";	
 				if(val==1){
 						c.fillStyle="#f28";
-				}else{
+				}else if(val==2){
 						c.fillStyle="#28f";
+				}else{
+						c.fillStyle="#ac2";				
 				}
 				c.fill();
 			
+				c.globalAlpha=perc;
+				if(nval==3){
+						c.fillStyle="#ac2";
+						c.fill();
+				}
 				c.fillStyle="#000";
+				c.fillText(nval,xk+(w*0.5),yk+(h*0.5));	
+				
+				c.globalAlpha=1.0-perc;
+				c.fillText(val,xk+(w*0.5),yk+(h*0.5));
 
-				c.fillText(val,xk+(w*0.5),yk+(h*0.5));		
+				c.globalAlpha=1.0;
 		}
 }
 		
 // Shift function does not know which tiles we are shifting
 function shift(topos,frompos,fromx,fromy,tox,toy)
 {
+
 		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0)){
 				// Empty -> Something
-				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]})
+				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]});
 				gamegrid[topos]=gamegrid[frompos];
 				gamegrid[frompos]=0;
 		}else if(((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1))){
 				// 1 -> 2 || 2 -> 1 (push one static and one moving animation to three)
+				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});			
+				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:3});
 				gamegrid[topos]=3;
 				gamegrid[frompos]=0;
-		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]!=2)&&(gamegrid[topos]!=1)){
+		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]!=2)&&(gamegrid[topos]!=1)&&(gamegrid[topos]!=0)){
 				// something -> same something (double)
+				console.log(gamegrid[frompos],gamegrid[topos]);
+				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]*2});			
 				gamegrid[topos]=gamegrid[topos]*2;
 				gamegrid[frompos]=0;		
-		}else if(gamegrid[frompos]!=0){
+		}else if(gamegrid[topos]!=0){
+				//console.log(gamegrid[frompos],gamegrid[topos]);
 				// From position not moving but not empty (animate only)
+				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});
 		}
 }
 
@@ -99,18 +102,35 @@ function shift(topos,frompos,fromx,fromy,tox,toy)
 
 function animate(perc)
 {
-		c.textAlign = "center"; 
-		c.textBaseline = "middle"; 
-		c.font="30px Comic Sans MS";	
+		for(var i=0;i<gridX;i++){
+				for(var j=0;j<gridY;j++){
+						drawSymbol(70+(i*68),70+(j*68),64,64,0);
+				}
+		}		
 	
 		for(var i=0;i<anim.length;i++){
 				item=anim[i];
 				xk=item.fx+((item.tx-item.fx)*perc);
 				yk=item.fy+((item.ty-item.fy)*perc);
-				
+			
+				drawSymbol(70+(xk*68),70+(yk*68),64,64,item.ns,item.ne,perc);
 		}
 }
 
+document.onkeydown = checkKey;
+
+function checkKey(e) {
+    if (e.keyCode == '38') {
+				progressGrid(0,-1);
+		}else if (e.keyCode == '40') {
+				progressGrid(0,1);
+    }else if (e.keyCode == '37') {
+				progressGrid(-1,0);
+    }else if (e.keyCode == '39') {
+				progressGrid(1,0);
+    }
+}		
+		
 const radius=220;
 var offs=0;
 		
@@ -123,45 +143,46 @@ for(var i=0;i<(gridX*gridY);i++){
 		gamegrid[i]=0;
 }
 
-gamegrid[8]=96;		
-gamegrid[9]=1;
-gamegrid[10]=2;
-gamegrid[11]=3;
-gamegrid[12]=6;		
-gamegrid[17]=12;
-gamegrid[31]=24;
-gamegrid[30]=48;
+gamegrid[15]=96;		
+gamegrid[16]=1;
+gamegrid[17]=2;
+gamegrid[18]=3;
+gamegrid[10]=6;		
+gamegrid[25]=12;
+gamegrid[32]=24;
+gamegrid[31]=48;
 		
 // Update grid (tetris physics)
 function progressGrid(mox,moy)
 {
+		perc=0.0;
 		anim=[];
 		if(mox==1){
 				// Move right! - progress from top to bottom, and from right to left
 				for(var j=1;j<(gridY-1);j++){
 						for(var i=(gridX-2);i>=1;i--){
-								shift((j*gridX)+i,(j*gridX)+i-1,i,j,i+1,j);
+								shift((j*gridX)+i,(j*gridX)+i-1,i-1,j,i,j);
 						}
 				}
 		}else if(mox==-1){
 				// Move left! - progress from top to bottom, and from left to right
 				for(var j=1;j<(gridY-1);j++){
 						for(var i=1;i<=(gridX-1);i++){
-								shift((j*gridX)+i,(j*gridX)+i+1,i,j,i-1,j);
+								shift((j*gridX)+i,(j*gridX)+i+1,i+1,j,i,j);
 						}
 				}			
 		}else if(moy==1){
 				// Move down
 				for(var j=(gridY-2);j>=1;j--){
 						for(var i=(gridX-2);i>=1;i--){
-								shift((j*gridX)+i,(j*gridX)+i-gridY,i,j,i,j+1);
+								shift((j*gridX)+i,(j*gridX)+i-gridY,i,j+1,i,j);
 						}
 				}
 		}else if(moy==-1){
 				// Move up
 				for(var j=1;j<(gridY-1);j++){
 						for(var i=1;i<=(gridX-1);i++){
-								shift((j*gridX)+i,(j*gridX)+i+gridY,i,j,i,j-1);
+								shift((j*gridX)+i,(j*gridX)+i+gridY,i,j-1,i,j);
 						}
 				}
 		}
@@ -171,12 +192,11 @@ function progressGrid(mox,moy)
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
 
-progressGrid(1,0);
 var perc=0;
 function drawHead()
 {
 		c.globalAlpha=1.0;
-		c.clearRect(0,0,xmax,ymax);
+		if(perc<1.0) c.clearRect(0,0,xmax,ymax);
 	
 		c.fillStyle = "RGB(0,59,85)";	
 		c.strokeStyle="#bbb";
@@ -185,10 +205,20 @@ function drawHead()
 		var moy=0;
 
 		// Draw game grid
-		animate(perc);
+		if( perc<1.0) animate(perc);
 	
 		perc+=0.01;
-		if(perc>1.0) perc=0.0;
+		if(perc>1.0) perc=1.0;
+	
+		if(perc<1.0){
+				for(var i=0;i<gridX;i++){
+						for(var j=0;j<gridY;j++){
+								drawSymbol(575+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
+						}
+				}		
+		}
+	
+		window.requestAnimationFrame(drawHead);
 	
 }
 		
