@@ -70,53 +70,6 @@ function drawSymbol(xk,yk,w,h,val,nval,perc)
 		}
 }
 		
-// Shift function does not know which tiles we are shifting
-function shift(topos,frompos,fromx,fromy,tox,toy)
-{
-
-		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0)){
-				// Empty -> Something
-				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]});
-				gamegrid[topos]=gamegrid[frompos];
-				gamegrid[frompos]=0;
-		}else if(((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1))){
-				// 1 -> 2 || 2 -> 1 (push one static and one moving animation to three)
-				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});			
-				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:3});
-				gamegrid[topos]=3;
-				gamegrid[frompos]=0;
-		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]!=2)&&(gamegrid[topos]!=1)&&(gamegrid[topos]!=0)){
-				// something -> same something (double)
-				console.log(gamegrid[frompos],gamegrid[topos]);
-				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]*2});			
-				gamegrid[topos]=gamegrid[topos]*2;
-				gamegrid[frompos]=0;		
-		}else if(gamegrid[topos]!=0){
-				//console.log(gamegrid[frompos],gamegrid[topos]);
-				// From position not moving but not empty (animate only)
-				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});
-		}
-}
-
-// Animate tile positions
-
-function animate(perc)
-{
-		for(var i=0;i<gridX;i++){
-				for(var j=0;j<gridY;j++){
-						drawSymbol(70+(i*68),70+(j*68),64,64,0);
-				}
-		}		
-	
-		for(var i=0;i<anim.length;i++){
-				item=anim[i];
-				xk=item.fx+((item.tx-item.fx)*perc);
-				yk=item.fy+((item.ty-item.fy)*perc);
-			
-				drawSymbol(70+(xk*68),70+(yk*68),64,64,item.ns,item.ne,perc);
-		}
-}
-
 document.onkeydown = checkKey;
 
 function checkKey(e) {
@@ -131,9 +84,8 @@ function checkKey(e) {
     }
 }		
 		
-const radius=220;
-var offs=0;
-		
+var perc=1.0;
+var upd=true;
 var gamegrid=[];
 var gridX=7;
 var gridY=7;
@@ -151,8 +103,65 @@ gamegrid[10]=6;
 gamegrid[25]=12;
 gamegrid[32]=24;
 gamegrid[31]=48;
+
+//----------------------------------------------------------------------------------
+// shift - Shift function does not know which tiles we are shifting
+//----------------------------------------------------------------------------------	
+
+		function shift(topos,frompos,fromx,fromy,tox,toy)
+{
+
+		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0)){
+				// Empty -> Something
+				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]});
+				gamegrid[topos]=gamegrid[frompos];
+				gamegrid[frompos]=0;
+		}else if(((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1))){
+				// 1 -> 2 || 2 -> 1 (push one static and one moving animation to three)
+				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});			
+				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:3});
+				gamegrid[topos]=3;
+				gamegrid[frompos]=0;
+		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]!=2)&&(gamegrid[topos]!=1)&&(gamegrid[topos]!=0)){
+				// something -> same something (double)
+				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});						
+				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]*2});	
+				gamegrid[topos]=gamegrid[topos]*2;
+				gamegrid[frompos]=0;		
+		}else if(gamegrid[topos]!=0){
+				//console.log(gamegrid[frompos],gamegrid[topos]);
+				// From position not moving but not empty (animate only)
+				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});
+		}
+}
 		
-// Update grid (tetris physics)
+//----------------------------------------------------------------------------------
+// animate - Animate tile positions
+//----------------------------------------------------------------------------------	
+
+function animate(perc)
+{
+		// Draw Grid
+		for(var i=0;i<gridX;i++){
+				for(var j=0;j<gridY;j++){
+						drawSymbol(70+(i*68),70+(j*68),64,64,0);
+				}
+		}		
+	
+		// Draw animating tiles
+		for(var i=0;i<anim.length;i++){
+				item=anim[i];
+				xk=item.fx+((item.tx-item.fx)*perc);
+				yk=item.fy+((item.ty-item.fy)*perc);
+			
+				drawSymbol(70+(xk*68),70+(yk*68),64,64,item.ns,item.ne,perc);
+		}
+}
+		
+//----------------------------------------------------------------------------------
+// processGrid - Update grid (tetris physics)
+//----------------------------------------------------------------------------------	
+		
 function progressGrid(mox,moy)
 {
 		perc=0.0;
@@ -172,17 +181,18 @@ function progressGrid(mox,moy)
 						}
 				}			
 		}else if(moy==1){
+				alert("down!");
 				// Move down
 				for(var j=(gridY-2);j>=1;j--){
 						for(var i=(gridX-2);i>=1;i--){
-								shift((j*gridX)+i,(j*gridX)+i-gridY,i,j+1,i,j);
+								shift((j*gridX)+i,(j*gridX)+i-gridY,i,j-1,i,j);
 						}
 				}
 		}else if(moy==-1){
 				// Move up
 				for(var j=1;j<(gridY-1);j++){
 						for(var i=1;i<=(gridX-1);i++){
-								shift((j*gridX)+i,(j*gridX)+i+gridY,i,j-1,i,j);
+								shift((j*gridX)+i,(j*gridX)+i+gridY,i,j+1,i,j);
 						}
 				}
 		}
@@ -191,33 +201,29 @@ function progressGrid(mox,moy)
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
-
-var perc=0;
+		
 function drawHead()
 {
-		c.globalAlpha=1.0;
-		if(perc<1.0) c.clearRect(0,0,xmax,ymax);
+		if(perc<1.0||upd==true) c.clearRect(0,0,xmax,ymax);
 	
-		c.fillStyle = "RGB(0,59,85)";	
-		c.strokeStyle="#bbb";
-
-		var mox=1;
-		var moy=0;
-
 		// Draw game grid
-		if( perc<1.0) animate(perc);
+		if(perc==1.0&&upd==true){
+				upd=false;
+				for(var i=0;i<gridX;i++){
+						for(var j=0;j<gridY;j++){
+								drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
+						}
+				}		
+	
+		}else if(perc<1.0){
+				animate(perc);
+		}else{
+		
+		}
 	
 		perc+=0.01;
 		if(perc>1.0) perc=1.0;
-	
-		if(perc<1.0){
-				for(var i=0;i<gridX;i++){
-						for(var j=0;j<gridY;j++){
-								drawSymbol(575+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
-						}
-				}		
-		}
-	
+		
 		window.requestAnimationFrame(drawHead);
 	
 }
