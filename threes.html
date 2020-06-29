@@ -7,6 +7,15 @@
 //------------------------------------=======############==========----------------------------------------
 		
 // Challenge: Make animated threes-game with smallest amount of code
+		
+// Algorithm
+// The mechanic for drawing basic cards is best described with a face-down stack of cards as one would use in card games like Mau Mau or Gin rummy. 
+// In the case of Threes! this stack is comprised of the following cards: 4x blue 1s 4x red 2s 4x white 3s
+// When a game starts, a fresh stack is created and shuffled. Then, 9 cards are drawn and placed randomly on the board. 
+// With every move the top card of the stack is drawn which reveals the next card. When the last card of a stack is drawn after a move, a new stack is instantly created and shuffled. 
+// The top card of the fresh stack is then displayed as the next card.
+// The lowest value bonus card is 6. The highest value bonus card is the face value of the high card divided by 8.
+// Once the pool of bonus cards is no longer empty (high card 48), there is a 1 in 21 chance that the next card will not come from the stack of basic cards but rather from the pool of bonus cards. If the pool contains a 6, a 12 and a 24, each of them has an equal chance of 1/3 of being drawn.		
 
 var c;
 var arrpnt=[];
@@ -94,7 +103,7 @@ var anim=[];
 for(var i=0;i<(gridX*gridY);i++){
 		gamegrid[i]=0;
 }
-
+		
 gamegrid[15]=96;		
 gamegrid[16]=1;
 gamegrid[17]=2;
@@ -153,9 +162,35 @@ function animate(perc)
 				item=anim[i];
 				xk=item.fx+((item.tx-item.fx)*perc);
 				yk=item.fy+((item.ty-item.fy)*perc);
-			
 				drawSymbol(70+(xk*68),70+(yk*68),64,64,item.ns,item.ne,perc);
 		}
+}
+		
+function newpiece(direction,coord,start)
+{
+		var arr=[];
+		// horizontal direction / vertical direction
+		if(direction==1){
+				for(var i=1;i<gridY-1;i++){
+						if(gamegrid[((i*gridX)+coord)]==0){
+								arr.push({pos:(i*gridX)+coord,fx:start,fy:i,tx:coord,ty:i});
+						}
+				}
+		}else{
+				for(var i=1;i<gridX-1;i++){
+						if(gamegrid[((coord*gridX)+i)]==0){
+								arr.push({pos:(coord*gridX)+i,fx:i,fy:start,tx:i,ty:coord});
+						}
+				}
+		}
+		if(arr.length>0){
+				item=arr[Math.floor(Math.random()*arr.length)];
+				gamegrid[item.pos]=1;
+			  anim.push({fx:item.fx,fy:item.fy,tx:item.tx,ty:item.ty,ns:1,ne:1});
+		}else{
+				// Game over!
+		}
+		
 }
 		
 //----------------------------------------------------------------------------------
@@ -173,21 +208,23 @@ function progressGrid(mox,moy)
 								shift((j*gridX)+i,(j*gridX)+i-1,i-1,j,i,j);
 						}
 				}
+				newpiece(1,1,0);
 		}else if(mox==-1){
 				// Move left! - progress from top to bottom, and from left to right
 				for(var j=1;j<(gridY-1);j++){
 						for(var i=1;i<=(gridX-1);i++){
 								shift((j*gridX)+i,(j*gridX)+i+1,i+1,j,i,j);
 						}
-				}			
+				}
+				newpiece(1,gridX-2,gridX-1);			
 		}else if(moy==1){
-				alert("down!");
 				// Move down
 				for(var j=(gridY-2);j>=1;j--){
 						for(var i=(gridX-2);i>=1;i--){
 								shift((j*gridX)+i,(j*gridX)+i-gridY,i,j-1,i,j);
 						}
 				}
+				newpiece(2,1,0);			
 		}else if(moy==-1){
 				// Move up
 				for(var j=1;j<(gridY-1);j++){
@@ -195,6 +232,7 @@ function progressGrid(mox,moy)
 								shift((j*gridX)+i,(j*gridX)+i+gridY,i,j+1,i,j);
 						}
 				}
+				newpiece(2,gridY-2,gridY-1);			
 		}
 }
 				
@@ -214,7 +252,6 @@ function drawHead()
 								drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
 						}
 				}		
-	
 		}else if(perc<1.0){
 				animate(perc);
 		}else{
