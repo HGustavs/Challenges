@@ -17,8 +17,10 @@
 // The lowest value bonus card is 6. The highest value bonus card is the face value of the high card divided by 8.
 // Once the pool of bonus cards is no longer empty (high card 48), there is a 1 in 21 chance that the next card will not come from the stack of basic cards but rather from the pool of bonus cards. If the pool contains a 6, a 12 and a 24, each of them has an equal chance of 1/3 of being drawn.		
 
+// Vi måste stega utanför eftersom vi behöver animera sista kolumnen som stillastående (vid behov)		
+		
 var c;
-var xmax=700;
+var xmax=750;
 var ymax=700;
 var mx,my,mb;
 	
@@ -33,11 +35,19 @@ function setupSlides()
 				stack.push(i);
 				gamegrid[i]=0;
 		}
+
 		for(var i=0;i<9;i++){
 				var item=stack.splice(Math.floor(Math.random()*stack.length),1);
 				gamegrid[item]=getCard();
 		}
 	
+/*	
+		gamegrid[20]=1;
+		gamegrid[21]=3;
+		gamegrid[22]=3;		
+		gamegrid[23]=2;
+		gamegrid[24]=1;		
+*/	
 		drawHead();
 }
 
@@ -90,15 +100,17 @@ function drawSymbol(xk,yk,w,h,val,nval,perc)
 document.onkeydown = checkKey;
 
 function checkKey(e) {
-    if (e.keyCode == '38') {
-				progressGrid(0,-1);
-		}else if (e.keyCode == '40') {
-				progressGrid(0,1);
-    }else if (e.keyCode == '37') {
-				progressGrid(-1,0);
-    }else if (e.keyCode == '39') {
-				progressGrid(1,0);
-    }
+		if(perc==1.0){
+				if (e.keyCode == '38') {
+						progressGrid(0,-1);
+				}else if (e.keyCode == '40') {
+						progressGrid(0,1);
+				}else if (e.keyCode == '37') {
+						progressGrid(-1,0);
+				}else if (e.keyCode == '39') {
+						progressGrid(1,0);
+				}
+		}
 }		
 
 var gridX=5;
@@ -120,9 +132,8 @@ function getCard()
 				var stack=[1,1,1,2,2,2,3,3,3];
 				for(i=0;i<9;i++){
 						var pos=Math.floor(Math.random()*stack.length);
-						cards.push(stack.splice(pos,1));
+						cards.push(stack.splice(pos,1)[0]);
 				}
-				console.log(cards);
 		}
 	
 		// We assume at least two cards when next card is empty
@@ -140,26 +151,25 @@ getCard();
 
 function shift(topos,frompos,fromx,fromy,tox,toy)
 {
-
-		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0)){
+		// console.log(gamegrid[frompos],gamegrid[topos],fromx,fromy,tox,toy);
+		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0&&tox>0)){
 				// Empty -> Something
 				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]});
 				gamegrid[topos]=gamegrid[frompos];
 				gamegrid[frompos]=0;
-		}else if(((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1))){
+		}else if((((gamegrid[topos]==1)&&(gamegrid[frompos]==2))||((gamegrid[topos]==2)&&(gamegrid[frompos]==1)))&&(tox>0)){
 				// 1 -> 2 || 2 -> 1 (push one static and one moving animation to three)
 				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});			
 				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:3});
 				gamegrid[topos]=3;
 				gamegrid[frompos]=0;
-		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]!=2)&&(gamegrid[topos]!=1)&&(gamegrid[topos]!=0)){
+		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[frompos]>2)&&(tox>0)){
 				// something -> same something (double)
 				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});						
 				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]*2});	
-				gamegrid[topos]=gamegrid[topos]*2;
+				gamegrid[topos]=Math.floor(gamegrid[topos]*2);
 				gamegrid[frompos]=0;		
 		}else if(gamegrid[topos]!=0){
-				//console.log(gamegrid[frompos],gamegrid[topos]);
 				// From position not moving but not empty (animate only)
 				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});
 		}
@@ -224,16 +234,17 @@ function newpiece(direction,coord,start)
 		
 function progressGrid(mox,moy)
 {
+		console.log("--------");
 		perc=0.0;
 		anim=[];
 		if(mox==1){
 				// Move right! - progress from top to bottom, and from right to left
 				for(var j=0;j<(gridY);j++){
-						for(var i=(gridX-1);i>=1;i--){
+						for(var i=(gridX-1);i>=0;i--){
 								shift((j*gridX)+i,(j*gridX)+i-1,i-1,j,i,j);
 						}
 				}
-				newpiece(1,0,0);
+				newpiece(1,0,-1);
 		}else if(mox==-1){
 				// Move left! - progress from top to bottom, and from left to right
 				for(var j=0;j<(gridY);j++){
@@ -270,9 +281,9 @@ function drawHead()
 		if(perc<1.0||upd==true) c.clearRect(0,0,xmax,ymax);
 	
 		for(var i=0;i<gridX;i++){
-				for(var j=0;j<gridY;j++){
-						drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
-				}
+			for(var j=0;j<gridY;j++){
+					drawSymbol(420+(i*68),70+(j*68),64,64,gamegrid[(j*gridX)+i],gamegrid[(j*gridX)+i],1.0);
+			}
 		}
 	
 		// Draw game grid
@@ -280,16 +291,16 @@ function drawHead()
 				upd=false;
 				for(var i=0;i<gridX;i++){
 						for(var j=0;j<gridY;j++){
-								drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
+								drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridX)+i],gamegrid[(j*gridX)+i],1.0);
 						}
 				}		
 		}else if(perc<1.0){
-			//	animate(perc);
+				animate(perc);
 		}else{
 		
 		}
 	
-		perc+=0.01;
+		perc+=0.1;
 		if(perc>1.0) perc=1.0;
 		
 		window.requestAnimationFrame(drawHead);
@@ -306,7 +317,7 @@ function mousemove(e)
 	</script>
 	</head>
 	<body onload="setupSlides();">
-	<canvas id='mycanvas' width=700 height=700 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	<canvas id='mycanvas' width=750 height=700 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
 	</body>
 
 </html>
