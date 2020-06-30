@@ -18,19 +18,27 @@
 // Once the pool of bonus cards is no longer empty (high card 48), there is a 1 in 21 chance that the next card will not come from the stack of basic cards but rather from the pool of bonus cards. If the pool contains a 6, a 12 and a 24, each of them has an equal chance of 1/3 of being drawn.		
 
 var c;
-var arrpnt=[];
-var delay=30;		
-
-var xmax=1430;
-var ymax=780;
+var xmax=700;
+var ymax=700;
 var mx,my,mb;
 	
 function setupSlides()
 {
 		canvas = document.getElementById("mycanvas");
 		c = canvas.getContext("2d");
-
-		setTimeout(drawHead,delay);
+	
+		// Randomize start positions using Fisher-Yates (aka Knuth) Shuffle
+		var stack=[];
+		for(var i=0;i<(gridX*gridY);i++){
+				stack.push(i);
+				gamegrid[i]=0;
+		}
+		for(var i=0;i<9;i++){
+				var item=stack.splice(Math.floor(Math.random()*stack.length),1);
+				gamegrid[item]=getCard();
+		}
+	
+		drawHead();
 }
 
 // Draw a symbol with rounded corners
@@ -92,32 +100,44 @@ function checkKey(e) {
 				progressGrid(1,0);
     }
 }		
-		
+
+var gridX=7;
+var gridY=7;
 var perc=1.0;
 var upd=true;
 var gamegrid=[];
-var gridX=7;
-var gridY=7;
 var anim=[];
+var cards=[];
+var nextcard=-1;
 
-for(var i=0;i<(gridX*gridY);i++){
-		gamegrid[i]=0;
+//----------------------------------------------------------------------------------
+// getCard - Get card from stack or make new stack / get bonus card / Variation of Unbiased Fisher-Yates (aka Knuth) Shuffle
+//----------------------------------------------------------------------------------	
+
+function getCard()
+{
+		if(cards.length==0){
+				var stack=[1,1,1,2,2,2,3,3,3];
+				for(i=0;i<9;i++){
+						var pos=Math.floor(Math.random()*stack.length);
+						cards.push(stack.splice(pos,1));
+				}
+		}
+	
+		// We assume at least two cards when next card is empty
+		if(nextcard==-1) nextcard=cards.pop();
+		retval=nextcard;
+		nextcard=cards.pop();
+		return retval;
 }
-		
-gamegrid[15]=96;		
-gamegrid[16]=1;
-gamegrid[17]=2;
-gamegrid[18]=3;
-gamegrid[10]=6;		
-gamegrid[25]=12;
-gamegrid[32]=24;
-gamegrid[31]=48;
 
+getCard();
+		
 //----------------------------------------------------------------------------------
 // shift - Shift function does not know which tiles we are shifting
 //----------------------------------------------------------------------------------	
 
-		function shift(topos,frompos,fromx,fromy,tox,toy)
+function shift(topos,frompos,fromx,fromy,tox,toy)
 {
 
 		if((gamegrid[topos]==0)&&(gamegrid[frompos]!=0)){
@@ -275,7 +295,7 @@ function mousemove(e)
 	</script>
 	</head>
 	<body onload="setupSlides();">
-	<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	<canvas id='mycanvas' width=700 height=700 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
 	</body>
 
 </html>
