@@ -101,8 +101,8 @@ function checkKey(e) {
     }
 }		
 
-var gridX=7;
-var gridY=7;
+var gridX=5;
+var gridY=5;
 var perc=1.0;
 var upd=true;
 var gamegrid=[];
@@ -122,6 +122,7 @@ function getCard()
 						var pos=Math.floor(Math.random()*stack.length);
 						cards.push(stack.splice(pos,1));
 				}
+				console.log(cards);
 		}
 	
 		// We assume at least two cards when next card is empty
@@ -185,19 +186,23 @@ function animate(perc)
 				drawSymbol(70+(xk*68),70+(yk*68),64,64,item.ns,item.ne,perc);
 		}
 }
-		
+
+//----------------------------------------------------------------------------------
+// newpiece - Construct new piece
+//----------------------------------------------------------------------------------	
+
 function newpiece(direction,coord,start)
 {
 		var arr=[];
 		// horizontal direction / vertical direction
 		if(direction==1){
-				for(var i=1;i<gridY-1;i++){
+				for(var i=0;i<gridY;i++){
 						if(gamegrid[((i*gridX)+coord)]==0){
 								arr.push({pos:(i*gridX)+coord,fx:start,fy:i,tx:coord,ty:i});
 						}
 				}
 		}else{
-				for(var i=1;i<gridX-1;i++){
+				for(var i=0;i<gridX;i++){
 						if(gamegrid[((coord*gridX)+i)]==0){
 								arr.push({pos:(coord*gridX)+i,fx:i,fy:start,tx:i,ty:coord});
 						}
@@ -223,36 +228,36 @@ function progressGrid(mox,moy)
 		anim=[];
 		if(mox==1){
 				// Move right! - progress from top to bottom, and from right to left
-				for(var j=1;j<(gridY-1);j++){
-						for(var i=(gridX-2);i>=1;i--){
+				for(var j=0;j<(gridY);j++){
+						for(var i=(gridX-1);i>=1;i--){
 								shift((j*gridX)+i,(j*gridX)+i-1,i-1,j,i,j);
 						}
 				}
-				newpiece(1,1,0);
+				newpiece(1,0,0);
 		}else if(mox==-1){
 				// Move left! - progress from top to bottom, and from left to right
-				for(var j=1;j<(gridY-1);j++){
-						for(var i=1;i<=(gridX-1);i++){
+				for(var j=0;j<(gridY);j++){
+						for(var i=0;i<=(gridX-2);i++){
 								shift((j*gridX)+i,(j*gridX)+i+1,i+1,j,i,j);
 						}
 				}
-				newpiece(1,gridX-2,gridX-1);			
+				newpiece(1,gridX-1,gridX);			
 		}else if(moy==1){
 				// Move down
-				for(var j=(gridY-2);j>=1;j--){
-						for(var i=(gridX-2);i>=1;i--){
+				for(var j=(gridY-1);j>=1;j--){
+						for(var i=(gridX-1);i>=0;i--){
 								shift((j*gridX)+i,(j*gridX)+i-gridY,i,j-1,i,j);
 						}
 				}
-				newpiece(2,1,0);			
+				newpiece(2,0,0);			
 		}else if(moy==-1){
 				// Move up
-				for(var j=1;j<(gridY-1);j++){
-						for(var i=1;i<=(gridX-1);i++){
+				for(var j=0;j<(gridY-1);j++){
+						for(var i=(gridX-1);i>=0;i--){
 								shift((j*gridX)+i,(j*gridX)+i+gridY,i,j+1,i,j);
 						}
 				}
-				newpiece(2,gridY-2,gridY-1);			
+				newpiece(2,gridY-1,gridY-1);			
 		}
 }
 				
@@ -264,6 +269,12 @@ function drawHead()
 {
 		if(perc<1.0||upd==true) c.clearRect(0,0,xmax,ymax);
 	
+		for(var i=0;i<gridX;i++){
+				for(var j=0;j<gridY;j++){
+						drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
+				}
+		}
+	
 		// Draw game grid
 		if(perc==1.0&&upd==true){
 				upd=false;
@@ -273,7 +284,7 @@ function drawHead()
 						}
 				}		
 		}else if(perc<1.0){
-				animate(perc);
+			//	animate(perc);
 		}else{
 		
 		}
