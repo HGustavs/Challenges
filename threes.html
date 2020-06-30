@@ -30,7 +30,9 @@ function setupSlides()
 		// Randomize start positions using Fisher-Yates (aka Knuth) Shuffle
 		var stack=[];
 		for(var i=0;i<(gridX*gridY);i++){
-				stack.push(i);
+				if((i>(gridX))&&(i%gridX!=0)&&(i%gridX!=(gridX-1))&&(i<(gridX*(gridY-1)))){
+						stack.push(i);
+				}
 				gamegrid[i]=0;
 		}
 		for(var i=0;i<9;i++){
@@ -120,7 +122,7 @@ function getCard()
 				var stack=[1,1,1,2,2,2,3,3,3];
 				for(i=0;i<9;i++){
 						var pos=Math.floor(Math.random()*stack.length);
-						cards.push(stack.splice(pos,1));
+						cards.push(stack.splice(pos,1)[0]);
 				}
 		}
 	
@@ -131,8 +133,6 @@ function getCard()
 		return retval;
 }
 
-getCard();
-		
 //----------------------------------------------------------------------------------
 // shift - Shift function does not know which tiles we are shifting
 //----------------------------------------------------------------------------------	
@@ -205,7 +205,7 @@ function newpiece(direction,coord,start)
 		}
 		if(arr.length>0){
 				item=arr[Math.floor(Math.random()*arr.length)];
-				gamegrid[item.pos]=1;
+				gamegrid[item.pos]=getCard();
 			  anim.push({fx:item.fx,fy:item.fy,tx:item.tx,ty:item.ty,ns:1,ne:1});
 		}else{
 				// Game over!
