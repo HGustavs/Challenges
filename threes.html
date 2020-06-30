@@ -113,6 +113,13 @@ var gamegrid=[];
 var anim=[];
 var cards=[];
 var nextcard=-1;
+var highest=1;
+var tilestartX=20;
+var tilestartY=20;
+var tilegridX=70;
+var tilegridY=70;
+var tileW=66;
+var tileH=66;
 
 //----------------------------------------------------------------------------------
 // getCard - Get card from stack or make new stack / get bonus card / Variation of Unbiased Fisher-Yates (aka Knuth) Shuffle
@@ -153,7 +160,7 @@ function shift(topos,frompos,fromx,fromy,tox,toy)
 				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:3});
 				gamegrid[topos]=3;
 				gamegrid[frompos]=0;
-		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]!=2)&&(gamegrid[topos]!=1)&&(gamegrid[topos]!=0)){
+		}else if((gamegrid[topos]==gamegrid[frompos])&&(gamegrid[topos]>2)){
 				// something -> same something (double)
 				anim.push({fx:tox,fy:toy,tx:tox,ty:toy,ns:gamegrid[topos],ne:gamegrid[topos]});						
 				anim.push({fx:fromx,fy:fromy,tx:tox,ty:toy,ns:gamegrid[frompos],ne:gamegrid[frompos]*2});	
@@ -175,7 +182,7 @@ function animate(perc)
 		// Draw Grid
 		for(var i=0;i<gridX;i++){
 				for(var j=0;j<gridY;j++){
-						drawSymbol(70+(i*68),70+(j*68),64,64,0);
+						drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,0);
 				}
 		}		
 	
@@ -184,7 +191,7 @@ function animate(perc)
 				item=anim[i];
 				xk=item.fx+((item.tx-item.fx)*perc);
 				yk=item.fy+((item.ty-item.fy)*perc);
-				drawSymbol(70+(xk*68),70+(yk*68),64,64,item.ns,item.ne,perc);
+				drawSymbol(tilestartX+(xk*tilegridX),tilestartY+(yk*tilegridY),tileW,tileH,item.ns,item.ne,perc);
 		}
 }
 		
@@ -208,7 +215,7 @@ function newpiece(direction,coord,start)
 		if(arr.length>0){
 				item=arr[Math.floor(Math.random()*arr.length)];
 				gamegrid[item.pos]=getCard();
-			  anim.push({fx:item.fx,fy:item.fy,tx:item.tx,ty:item.ty,ns:1,ne:1});
+			  anim.push({fx:item.fx,fy:item.fy,tx:item.tx,ty:item.ty,ns:gamegrid[item.pos],ne:gamegrid[item.pos]});
 		}else{
 				// Game over!
 		}
@@ -265,13 +272,13 @@ function progressGrid(mox,moy)
 function drawHead()
 {
 		if(perc<1.0||upd==true) c.clearRect(0,0,xmax,ymax);
-	
+
 		// Draw game grid
 		if(perc==1.0&&upd==true){
 				upd=false;
 				for(var i=0;i<gridX;i++){
 						for(var j=0;j<gridY;j++){
-								drawSymbol(70+(i*68),70+(j*68),64,64,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
+								drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,gamegrid[(j*gridY)+i],gamegrid[(j*gridY)+i],1.0);
 						}
 				}		
 		}else if(perc<1.0){
@@ -286,18 +293,11 @@ function drawHead()
 		window.requestAnimationFrame(drawHead);
 	
 }
-		
-function mousemove(e)
-{
-		var rect = e.target.getBoundingClientRect();
-		mx = e.clientX - rect.left; //x position within the element.
-		my = e.clientY - rect.top;  //y position within the element.				
-}
 
 	</script>
 	</head>
 	<body onload="setupSlides();">
-	<canvas id='mycanvas' width=700 height=700 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	<canvas id='mycanvas' width=700 height=700 style='border:1px solid red;' ></canvas>	
 	</body>
 
 </html>
