@@ -92,15 +92,17 @@ function drawSymbol(xk,yk,w,h,val,nval,perc)
 document.onkeydown = checkKey;
 
 function checkKey(e) {
-    if (e.keyCode == '38') {
-				progressGrid(0,-1);
-		}else if (e.keyCode == '40') {
-				progressGrid(0,1);
-    }else if (e.keyCode == '37') {
-				progressGrid(-1,0);
-    }else if (e.keyCode == '39') {
-				progressGrid(1,0);
-    }
+		if(perc==1.0){
+				if (e.keyCode == '38') {
+						progressGrid(0,-1);
+				}else if (e.keyCode == '40') {
+						progressGrid(0,1);
+				}else if (e.keyCode == '37') {
+						progressGrid(-1,0);
+				}else if (e.keyCode == '39') {
+						progressGrid(1,0);
+				}
+		}
 }		
 
 var gridX=7;
@@ -278,7 +280,7 @@ function drawHead()
 		
 		}
 	
-		perc+=0.01;
+		perc+=0.1;
 		if(perc>1.0) perc=1.0;
 		
 		window.requestAnimationFrame(drawHead);
