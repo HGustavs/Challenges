@@ -56,8 +56,27 @@ function setupSlides()
 	
 		drawHead();
 }
+		
+function drawText(tex,xk,yk,fillcol,outlinecol,fontsize,fontfamily)
+{
+		c.textAlign = "center"; 
+		c.textBaseline = "middle"; 
+		c.font=fontsize+" "+fontfamily;	
+		
+		if(outlinecol!=""){
+				c.lineWidth = 6;
+				c.strokeStyle=outlinecol;
+				c.strokeText(tex,xk,yk);
+				c.lineWidth = 1;
+		}
+		c.fillStyle=fillcol;
+		c.fillText(tex,xk,yk);
+}
 
-// Draw a symbol with rounded corners
+//----------------------------------------------------------------------------------
+// drawSymbol - Draw a symbol with rounded corners
+//----------------------------------------------------------------------------------
+		
 function drawSymbol(xk,yk,w,h,val,nval,perc)
 {
 		var r=8;
@@ -75,36 +94,19 @@ function drawSymbol(xk,yk,w,h,val,nval,perc)
 		if(val==0){
 				c.stroke();		
 		}else{
-				c.textAlign = "center"; 
-				c.textBaseline = "middle"; 
-				c.font="30px Comic Sans MS";	
 				if(val==1) c.fillStyle="#f28";
 				if(val==2) c.fillStyle="#28f";
 				if(val>2||nval>2) c.fillStyle="#ac2";				
 				if(gover) c.fillStyle="#555";
 				c.fill();
 			
-				c.globalAlpha=perc;
-				c.fillStyle="#000";
-				if(nval==highest) c.fillStyle="#913";
-				c.fillText(nval,xk+(w*0.5),yk+(h*0.5));
+				if(nval==highest) drawText(nval,xk+(w*0.5),yk+(h*0.5),"#A25","","30px","Comic Sans MS");
+				else drawText(nval,xk+(w*0.5),yk+(h*0.5),"#000","","30px","Comic Sans MS");
 							
-				if(nval!=val){
-						c.globalAlpha=1.0-perc;
-						c.fillText(val,xk+(w*0.5),yk+(h*0.5));
-				}
-
-				c.globalAlpha=1.0;
 				if(gover&&nval>=3){
-						c.font="22px Comic Sans MS";
-						c.fillStyle="#fff";
-						c.strokeStyle="#000";
-    				c.lineWidth = 6;
 						leFunc=scores[notoIndex(nval)];
+						drawText("+"+leFunc,xk+(w*0.5),yk+(h*0.1),"#FFF","#000","20px","Comic Sans MS");
 						score+=leFunc;
-						c.strokeText("+"+leFunc,xk+(w*0.5),yk+(h*0.1));
-						c.fillText("+"+leFunc,xk+(w*0.5),yk+(h*0.1));
-	   				c.lineWidth = 1;				
 				}
 		}
 }
@@ -298,14 +300,7 @@ function drawHead()
 						}
 				}
 				if(gover){
-						c.font="36px Comic Sans MS";
-						c.fillStyle="#fff";
-						c.strokeStyle="#000";
-    				c.lineWidth = 8;
-						c.strokeText("Score:"+score,230,30);
-						c.fillText("Score:"+score,230,30);
-						alert(score);
-	   				c.lineWidth = 1;								
+						drawText("Score:"+score,230,30,"#fff","#000","36px","Comic Sans MS");
 				}
 		}else if(perc<1.0){
 				animate(perc);
