@@ -1,0 +1,225 @@
+<html>
+	<head>
+	<script>
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+		
+// Challenge: Make animated scrabble area game with smallest amount of code
+		
+// Algorithm
+// The mechanic for drawing basic cards is best described with a face-down stack of cards as one would use in card games like Mau Mau or Gin rummy. 
+// In the case of Threes! this stack is comprised of the following cards: 4x blue 1s 4x red 2s 4x white 3s
+// When a game starts, a fresh stack is created and shuffled. Then, 9 cards are drawn and placed randomly on the board. 
+// With every move the top card of the stack is drawn which reveals the next card. When the last card of a stack is drawn after a move, a new stack is instantly created and shuffled. 
+// The top card of the fresh stack is then displayed as the next card.
+// The lowest value bonus card is 6. The highest value bonus card is the face value of the high card divided by 8.
+// Once the pool of bonus cards is no longer empty (high card 48), there is a 1 in 21 chance that the next card will not come from the stack of basic cards but rather from the pool of bonus cards. If the pool contains a 6, a 12 and a 24, each of them has an equal chance of 1/3 of being drawn.		
+
+var c;
+var gover=false;
+var gridX=7;
+var gridY=6;
+var perc=1.0;
+var upd=true;
+var gamegrid=[];
+var anim=[];
+var cards=[];
+var nextcard=-1;
+var highest=6;
+var tilestartX=20;
+var tilestartY=20;
+var tilegridX=70;
+var tilegridY=70;
+var tileW=66;
+var tileH=66;
+var scores=[0,3,9,27,81,243,729,2187,6561,19683,59049,177147];
+var score=0;
+	
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+	
+		// Clear Grid
+		for(var i=0;i<(gridX*gridY);i++){
+				gamegrid[i]={kind:0,visited:false};
+		}	
+	
+		gamegrid[8]={kind:1,visited:false};	
+		gamegrid[9]={kind:1,visited:false};
+		gamegrid[10]={kind:1,visited:false};
+		gamegrid[11]={kind:1,visited:false};
+		gamegrid[16]={kind:1,visited:false};	
+		gamegrid[17]={kind:1,visited:false};		
+		gamegrid[23]={kind:1,visited:false};	
+		gamegrid[24]={kind:1,visited:false};	
+		gamegrid[30]={kind:1,visited:false};	
+		gamegrid[37]={kind:1,visited:false};		
+	
+		drawHead();
+}
+		
+function drawText(tex,xk,yk,fillcol,outlinecol,fontsize,fontfamily)
+{
+		c.textAlign = "center"; 
+		c.textBaseline = "middle"; 
+		c.font=fontsize+" "+fontfamily;	
+		
+		if(outlinecol!=""){
+				c.lineWidth = 6;
+				c.strokeStyle=outlinecol;
+				c.strokeText(tex,xk,yk);
+				c.lineWidth = 1;
+		}
+		c.fillStyle=fillcol;
+		c.fillText(tex,xk,yk);
+}
+
+//----------------------------------------------------------------------------------
+// drawSymbol - Draw a symbol with rounded corners
+//----------------------------------------------------------------------------------
+		
+function drawSymbol(xk,yk,w,h,val,nval,perc)
+{
+		var r=8;
+		c.beginPath();
+		c.moveTo(xk+r,yk);
+		c.lineTo(xk+w-r,yk);
+		c.quadraticCurveTo(xk+w,yk,xk+w,yk+r);
+		c.lineTo(xk+w,yk+h-r);
+		c.quadraticCurveTo(xk+w,yk+h,xk+w-r,yk+h);
+		c.lineTo(xk+r,yk+h);
+		c.quadraticCurveTo(xk,yk+h,xk,yk+h-r);
+		c.lineTo(xk,yk+r);
+		c.quadraticCurveTo(xk,yk,xk+r,yk);
+	
+		if(val==0){
+				c.stroke();		
+		}else{
+				if(val==1) c.fillStyle="#f28";
+				if(val==2) c.fillStyle="#28f";
+				if(val>2||nval>2) c.fillStyle="#ac2";				
+				if(gover) c.fillStyle="#555";
+				c.fill();
+			
+				if(nval==highest) drawText(nval,xk+(w*0.5),yk+(h*0.5),"#A25","","30px","Comic Sans MS");
+				else drawText(nval,xk+(w*0.5),yk+(h*0.5),"#000","","30px","Comic Sans MS");
+							
+				if(gover&&nval>=3){
+						leFunc=scores[notoIndex(nval)];
+						drawText("+"+leFunc,xk+(w*0.5),yk+(h*0.1),"#FFF","#000","20px","Comic Sans MS");
+						score+=leFunc;
+				}
+		}
+}
+		
+document.onkeydown = checkKey;
+
+function checkKey(e) {
+		if(perc==1.0&&gover==false){
+				if (e.keyCode == '38') progressGrid(0,-1);
+				if (e.keyCode == '40') progressGrid(0,1);
+				if (e.keyCode == '37') progressGrid(-1,0);
+				if (e.keyCode == '39') progressGrid(1,0);
+		}
+}		
+
+//----------------------------------------------------------------------------------
+// animate - Animate tile positions
+//----------------------------------------------------------------------------------	
+
+function animate(perc)
+{
+		// Draw Grid
+		for(var i=0;i<gridX;i++){
+				for(var j=0;j<gridY;j++){
+						drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,0);
+				}
+		}		
+	
+		// Draw animating tiles
+		for(var i=0;i<anim.length;i++){
+				item=anim[i];
+				xk=item.fx+((item.tx-item.fx)*perc);
+				yk=item.fy+((item.ty-item.fy)*perc);
+				drawSymbol(tilestartX+(xk*tilegridX),tilestartY+(yk*tilegridY),tileW,tileH,item.ns,item.ne,perc);
+		}
+}
+		
+//----------------------------------------------------------------------------------
+// processGrid - Update grid (tetris physics)
+//----------------------------------------------------------------------------------	
+		
+function progressGrid(currx,curry)
+{
+		if(gamegrid[(gridX*curry)+currx].kind!=1) return null;
+	
+	
+		var yk=curry;
+		var minx=100;
+		var maxarea=0;
+		var maxw=0;
+		var maxh=0;
+
+		var ind=(gridX*yk)+currx;
+
+		while((gamegrid[ind].kind==1)&&(gamegrid[ind].visited==false)&&(yk<gridY)){
+				var xk=currx;
+				var innerind=(gridX*yk)+xk;
+				while((gamegrid[innerind].kind==1)&&(gamegrid[innerind].visited==false)&&(xk<gridX)){
+						xk++;		
+				}
+				if(xk<minx) minx=xk;
+
+				yk++;
+				var area=(minx-currx)*(yk-curry);
+				if(area>maxarea){
+							maxw=(minx-currx);
+							maxh=(yk-curry);
+							maxarea=area;
+				}
+		}
+		return {area:maxarea,xk:currx,yk:curry,w:maxw,h:maxh};
+}
+				
+//----------------------------------------------------------------------------------
+// drawHead - Clear screen and keep drawing
+//----------------------------------------------------------------------------------
+		
+function drawHead()
+{
+		if(perc<1.0||upd==true) c.clearRect(0,0,700,700);
+
+
+		// Draw game grid
+		for(var j=0;j<gridY;j++){
+				for(var i=0;i<gridX;i++){
+						var area=progressGrid(i,j);
+						if(area!=null){
+								console.log(area);
+						}
+				}
+		}	
+
+		console.log(area);
+	
+		// Draw game grid
+		for(var j=0;j<gridY;j++){
+				for(var i=0;i<gridX;i++){
+						drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,gamegrid[(j*gridX)+i].kind,gamegrid[(j*gridX)+i].kind,1.0);
+				}
+		}
+	
+
+		
+		// window.requestAnimationFrame(drawHead);
+}
+
+	</script>
+	</head>
+	<body onload="setupSlides();">
+	<canvas id='mycanvas' width=700 height=700 style='border:1px solid red;' ></canvas>	
+	</body>
+
+</html>
