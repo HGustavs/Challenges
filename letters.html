@@ -59,8 +59,9 @@ function setupSlides()
 	
 		drawHead();
 	
-		gamegrid[12]={kind:1,visited:false};
 		gamegrid[18]={kind:1,visited:false};
+		gamegrid[25]={kind:1,visited:false};
+	
 		drawHead();	
 }
 		
@@ -181,18 +182,18 @@ function findArea(currx,curry)
 				}
 				if(yk>=gridY) break;
 		}
-		return {area:maxarea,xk:currx,yk:curry,w:maxw,h:maxh};
+		return {area:maxarea,x1:currx,y1:curry,w:maxw,h:maxh,x2:currx+maxw,y2:curry+maxh};
 }
 
 //----------------------------------------------------------------------------------
 // setArea - Set specific value on game area
 //----------------------------------------------------------------------------------	
 		
-function setArea(xk,yk,w,h)
+function setArea(xk,yk,w,h,val)
 {
 		for(var i=yk;i<(yk+h);i++){
 				for(var j=xk;j<(xk+w);j++){
-						gamegrid[(gridX*i)+j].visited=true;
+						gamegrid[(gridX*i)+j].visited=val;
 				}
 		}
 }
@@ -204,6 +205,8 @@ function setArea(xk,yk,w,h)
 function drawHead()
 {
 		if(perc<1.0||upd==true) c.clearRect(0,0,700,700);
+	
+		setArea(0,0,gridX,gridY,false);
 
 		var gg=0;
 		do{
@@ -219,8 +222,7 @@ function drawHead()
 						}
 				}
 				if(maxitem.area>0){
-						setArea(maxitem.xk,maxitem.yk,maxitem.w,maxitem.h);
-						console.log(maxitem);
+						setArea(maxitem.xk,maxitem.yk,maxitem.w,maxitem.h,true);
 				}
 		}while(maxitem.area>0);
 	
@@ -230,8 +232,6 @@ function drawHead()
 						drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,gamegrid[(j*gridX)+i].kind,gamegrid[(j*gridX)+i].kind,1.0);
 				}
 		}
-	
-
 		
 		// window.requestAnimationFrame(drawHead);
 }
