@@ -8,14 +8,10 @@
 // Challenge: Make animated scrabble area game with smallest amount of code
 		
 // Algorithm
-// The mechanic for drawing basic cards is best described with a face-down stack of cards as one would use in card games like Mau Mau or Gin rummy. 
-// In the case of Threes! this stack is comprised of the following cards: 4x blue 1s 4x red 2s 4x white 3s
-// When a game starts, a fresh stack is created and shuffled. Then, 9 cards are drawn and placed randomly on the board. 
-// With every move the top card of the stack is drawn which reveals the next card. When the last card of a stack is drawn after a move, a new stack is instantly created and shuffled. 
-// The top card of the fresh stack is then displayed as the next card.
-// The lowest value bonus card is 6. The highest value bonus card is the face value of the high card divided by 8.
-// Once the pool of bonus cards is no longer empty (high card 48), there is a 1 in 21 chance that the next card will not come from the stack of basic cards but rather from the pool of bonus cards. If the pool contains a 6, a 12 and a 24, each of them has an equal chance of 1/3 of being drawn.		
+// After the game is over (time is up in a timed game, or there are no more words are available to be played), you get points for the bears on the board. Each bear is worth the number of spaces it occupies, to the 1.85th power. See the screenshot below.
+// For every letter tile you use when spelling a word, the number of points you get is the multiplier times that tile's counter. For example, the tile shown above currently has a counter of 2. If you use it to spell a word on this turn, you'll get 5 x 2 = 10 points. These points are shown to you in the Submit bar as you build the word, and are credited immediately at the time you submit the word.
 
+		
 var c;
 var gover=false;
 var gridX=7;
@@ -35,6 +31,8 @@ var tileW=66;
 var tileH=66;
 var scores=[0,3,9,27,81,243,729,2187,6561,19683,59049,177147];
 var score=0;
+var newitems=null;
+var olditems=null;
 	
 function setupSlides()
 {
@@ -182,7 +180,7 @@ function findArea(currx,curry)
 				}
 				if(yk>=gridY) break;
 		}
-		return {area:maxarea,x1:currx,y1:curry,w:maxw,h:maxh,x2:currx+maxw,y2:curry+maxh};
+		return {area:maxarea,x1:currx,y1:curry,w:maxw,h:maxh,x2:currx+maxw,y2:curry+maxh,visited:false};
 }
 
 //----------------------------------------------------------------------------------
@@ -197,6 +195,16 @@ function setArea(xk,yk,w,h,val)
 				}
 		}
 }
+		
+//----------------------------------------------------------------------------------
+// overlap - Standard 2d colision detection
+//----------------------------------------------------------------------------------	
+		
+function overlap(x1,y1,x2,y2,x3,y3,x4,y4)
+{
+		if(x2<x3||x1>x4||y2<y3||y1>y4) return false;
+		return true;
+}
 
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
@@ -207,8 +215,10 @@ function drawHead()
 		if(perc<1.0||upd==true) c.clearRect(0,0,700,700);
 	
 		setArea(0,0,gridX,gridY,false);
+	
+		olditems=newitems;
+		newitems=[];
 
-		var gg=0;
 		do{
 				var maxitem={area:0};
 				for(var j=0;j<gridY;j++){
@@ -222,7 +232,8 @@ function drawHead()
 						}
 				}
 				if(maxitem.area>0){
-						setArea(maxitem.xk,maxitem.yk,maxitem.w,maxitem.h,true);
+						newitems.push(maxitem);
+						setArea(maxitem.x1,maxitem.y1,maxitem.w,maxitem.h,true);
 				}
 		}while(maxitem.area>0);
 	
@@ -230,6 +241,28 @@ function drawHead()
 		for(var j=0;j<gridY;j++){
 				for(var i=0;i<gridX;i++){
 						drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,gamegrid[(j*gridX)+i].kind,gamegrid[(j*gridX)+i].kind,1.0);
+				}
+		}
+	
+		// For every old item check for overlapping new items and animate accordingly
+		if(olditems!=null){
+				for(var i=0;i<olditems.length;i++){
+						var olditem=olditems[i];
+						var found=0;
+						for(j=0;j<newitems.length;j++){
+								var newitem=newitems[j];
+								if(overlap(olditem.x1,olditem.y1,olditem.x2,olditem.y2,newitem.x1,newitem.y1,newitem.x2,newitem.y2)&&newitem.visited==false){
+										newitem.visited=true;
+										console.log("Ov UV",olditem,newitem);
+										found=1;
+										break;
+								}else if(overlap(olditem.x1,olditem.y1,olditem.x2,olditem.y2,newitem.x1,newitem.y1,newitem.x2,newitem.y2)&&newitem.visited==true){
+										console.log("Ov VI",olditem,newitem);
+										found=2;							
+								}
+						}
+						console.log(found);
+						// If no overlap -- hide items
 				}
 		}
 		
