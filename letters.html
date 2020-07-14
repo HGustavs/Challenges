@@ -13,7 +13,6 @@
 
 		
 var c;
-var gover=false;
 var gridX=7;
 var gridY=6;
 var perc=1.0;
@@ -21,8 +20,6 @@ var upd=true;
 var gamegrid=[];
 var anim=[];
 var cards=[];
-var nextcard=-1;
-var highest=6;
 var tilestartX=20;
 var tilestartY=20;
 var tilegridX=70;
@@ -83,70 +80,46 @@ function drawText(tex,xk,yk,fillcol,outlinecol,fontsize,fontfamily)
 // drawSymbol - Draw a symbol with rounded corners
 //----------------------------------------------------------------------------------
 		
-function drawSymbol(xk,yk,w,h,val,nval,perc)
+function drawSymbol(x1,y1,x2,y2,x3,y3,x4,y4,perc)
 {
 		var r=8;
+		
+		c.strokeStyle="#6f4";
+		c.lineWidth=3;
+		
 		c.beginPath();
-		c.moveTo(xk+r,yk);
-		c.lineTo(xk+w-r,yk);
-		c.quadraticCurveTo(xk+w,yk,xk+w,yk+r);
-		c.lineTo(xk+w,yk+h-r);
-		c.quadraticCurveTo(xk+w,yk+h,xk+w-r,yk+h);
-		c.lineTo(xk+r,yk+h);
-		c.quadraticCurveTo(xk,yk+h,xk,yk+h-r);
-		c.lineTo(xk,yk+r);
-		c.quadraticCurveTo(xk,yk,xk+r,yk);
+		c.moveTo(x1,y1);
+		c.lineTo(x2,y1);
+		c.lineTo(x2,y2);
+		c.lineTo(x1,y2);
+		c.lineTo(x1,y1);
+		c.stroke();
+
+		c.strokeStyle="#f64";
+		c.lineWidth=3;
+		
+		c.setLineDash([3, 3]);	
+		c.beginPath();
+		c.moveTo(x3,y3);
+		c.lineTo(x4,y3);
+		c.lineTo(x4,y4);
+		c.lineTo(x3,y4);
+		c.lineTo(x3,y3);
+		c.stroke();	
+		c.setLineDash([]);
 	
-		if(val==0){
-				c.stroke();		
-		}else{
-				if(val==1) c.fillStyle="#f28";
-				if(val==2) c.fillStyle="#28f";
-				if(val>2||nval>2) c.fillStyle="#ac2";				
-				if(gover) c.fillStyle="#555";
-				c.fill();
-			
-				if(nval==highest) drawText(nval,xk+(w*0.5),yk+(h*0.5),"#A25","","30px","Comic Sans MS");
-				else drawText(nval,xk+(w*0.5),yk+(h*0.5),"#000","","30px","Comic Sans MS");
-							
-				if(gover&&nval>=3){
-						leFunc=scores[notoIndex(nval)];
-						drawText("+"+leFunc,xk+(w*0.5),yk+(h*0.1),"#FFF","#000","20px","Comic Sans MS");
-						score+=leFunc;
-				}
-		}
 }
 		
-document.onkeydown = checkKey;
-
-function checkKey(e) {
-		if(perc==1.0&&gover==false){
-				if (e.keyCode == '38') progressGrid(0,-1);
-				if (e.keyCode == '40') progressGrid(0,1);
-				if (e.keyCode == '37') progressGrid(-1,0);
-				if (e.keyCode == '39') progressGrid(1,0);
-		}
-}		
-
 //----------------------------------------------------------------------------------
 // animate - Animate tile positions
 //----------------------------------------------------------------------------------	
 
 function animate(perc)
 {
-		// Draw Grid
-		for(var i=0;i<gridX;i++){
-				for(var j=0;j<gridY;j++){
-						drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,0);
-				}
-		}		
-	
-		// Draw animating tiles
+		// Draw all animation elements
 		for(var i=0;i<anim.length;i++){
-				item=anim[i];
-				xk=item.fx+((item.tx-item.fx)*perc);
-				yk=item.fy+((item.ty-item.fy)*perc);
-				drawSymbol(tilestartX+(xk*tilegridX),tilestartY+(yk*tilegridY),tileW,tileH,item.ns,item.ne,perc);
+				var item=anim[i];
+				drawSymbol(tilestartX+(item.x1*tilegridX),tilestartY+(item.y1*tilegridY),tilestartX+(item.x2*tilegridX),tilestartY+(item.y2*tilegridY),tilestartX+(item.x3*tilegridX),tilestartY+(item.y3*tilegridY),tilestartX+(item.x4*tilegridX),tilestartY+(item.y4*tilegridY),1.0);
 		}
 }
 		
@@ -207,18 +180,17 @@ function overlap(x1,y1,x2,y2,x3,y3,x4,y4)
 }
 
 //----------------------------------------------------------------------------------
-// drawHead - Clear screen and keep drawing
-//----------------------------------------------------------------------------------
+// processGrid - Update grid (alpha-animal style)
+//----------------------------------------------------------------------------------	
 		
-function drawHead()
+function progressGrid()
 {
-		if(perc<1.0||upd==true) c.clearRect(0,0,700,700);
-	
 		setArea(0,0,gridX,gridY,false);
 	
 		olditems=newitems;
 		newitems=[];
 
+		// Update items
 		do{
 				var maxitem={area:0};
 				for(var j=0;j<gridY;j++){
@@ -236,35 +208,60 @@ function drawHead()
 						setArea(maxitem.x1,maxitem.y1,maxitem.w,maxitem.h,true);
 				}
 		}while(maxitem.area>0);
+
+		// For every old item check for overlapping new items and animate accordingly
+		anim=[];
+		if(olditems!=null){
+				for(var i=0;i<olditems.length;i++){
+						var olditem=olditems[i];
+						var found=null;
+						for(j=0;j<newitems.length;j++){
+								var newitem=newitems[j];
+								// Identical or shrinking items
+								if(overlap(olditem.x1,olditem.y1,olditem.x2,olditem.y2,newitem.x1,newitem.y1,newitem.x2,newitem.y2)&&newitem.visited==false){
+										newitem.visited=true;
+										anim.push({x1:olditem.x1,y1:olditem.y1,x2:olditem.x2,y2:olditem.y2,x3:newitem.x1,y3:newitem.y1,x4:newitem.x2,y4:newitem.y2,s:"grow"});
+										found=null;
+										break;
+								}else if(overlap(olditem.x1,olditem.y1,olditem.x2,olditem.y2,newitem.x1,newitem.y1,newitem.x2,newitem.y2)&&newitem.visited==true){
+										found=olditem;							
+								}
+						}
+						if(found!=null){
+										cx=found.x1+((found.x2-found.x1)*0.5);
+										cy=found.y1+((found.y2-found.y1)*0.5);
+										found.visited=true;
+										anim.push({x1:found.x1,y1:found.y1,x2:found.x2,y2:found.y2,x3:cx,y3:cy,x4:cx,y4:cy,s:"shrink"});
+						}
+				}
+				// Completely new items are all new un-visited items
+				for(j=0;j<newitems.length;j++){
+						var newitem=newitems[j];
+						if(newitem.visited==false){
+								cx=newitem.x1+((newitem.x2-newitem.x1)*0.5);
+								cy=newitem.y1+((newitem.y2-newitem.y1)*0.5);							
+								anim.push({x1:newitem.x1,y1:newitem.y1,x2:newitem.x2,y2:newitem.y2,x3:newitem.x1,y3:newitem.y1,x4:newitem.x2,y4:newitem.y2,s:"grow"});		
+						}
+				}
+		}
+}
+
+//----------------------------------------------------------------------------------
+// drawHead - Clear screen and keep drawing
+//----------------------------------------------------------------------------------
+		
+function drawHead()
+{
+		if(perc<1.0||upd==true) c.clearRect(0,0,700,700);
 	
 		// Draw game grid
 		for(var j=0;j<gridY;j++){
 				for(var i=0;i<gridX;i++){
-						drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,gamegrid[(j*gridX)+i].kind,gamegrid[(j*gridX)+i].kind,1.0);
+						// drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,gamegrid[(j*gridX)+i].kind,gamegrid[(j*gridX)+i].kind,1.0);
 				}
 		}
 	
-		// For every old item check for overlapping new items and animate accordingly
-		if(olditems!=null){
-				for(var i=0;i<olditems.length;i++){
-						var olditem=olditems[i];
-						var found=0;
-						for(j=0;j<newitems.length;j++){
-								var newitem=newitems[j];
-								if(overlap(olditem.x1,olditem.y1,olditem.x2,olditem.y2,newitem.x1,newitem.y1,newitem.x2,newitem.y2)&&newitem.visited==false){
-										newitem.visited=true;
-										console.log("Ov UV",olditem,newitem);
-										found=1;
-										break;
-								}else if(overlap(olditem.x1,olditem.y1,olditem.x2,olditem.y2,newitem.x1,newitem.y1,newitem.x2,newitem.y2)&&newitem.visited==true){
-										console.log("Ov VI",olditem,newitem);
-										found=2;							
-								}
-						}
-						console.log(found);
-						// If no overlap -- hide items
-				}
-		}
+		animate(1.0);
 		
 		// window.requestAnimationFrame(drawHead);
 }
