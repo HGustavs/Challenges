@@ -52,12 +52,14 @@ function setupSlides()
 		gamegrid[30]={kind:1,visited:false};	
 		gamegrid[37]={kind:1,visited:false};		
 	
-		drawHead();
+		progressGrid();
 	
 		gamegrid[18]={kind:1,visited:false};
 		gamegrid[25]={kind:1,visited:false};
 	
-		drawHead();	
+		progressGrid();	
+	
+		drawHead();
 }
 		
 function drawText(tex,xk,yk,fillcol,outlinecol,fontsize,fontfamily)
@@ -261,8 +263,13 @@ function drawHead()
 				}
 		}
 	
-		animate(1.0);
+		animate(perc);
 		
+		perc+=0.1;
+		if(perc>1.0) perc=0.0;
+		
+		window.requestAnimationFrame(drawHead);
+	
 		// window.requestAnimationFrame(drawHead);
 }
 
