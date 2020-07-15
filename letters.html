@@ -56,6 +56,7 @@ function setupSlides()
 	
 		gamegrid[18]={kind:1,visited:false};
 		gamegrid[25]={kind:1,visited:false};
+		gamegrid[32]={kind:1,visited:false};	
 	
 		progressGrid();	
 	
@@ -82,7 +83,7 @@ function drawText(tex,xk,yk,fillcol,outlinecol,fontsize,fontfamily)
 // drawSymbol - Draw a symbol with rounded corners
 //----------------------------------------------------------------------------------
 		
-function drawSymbol(x1,y1,x2,y2,x3,y3,x4,y4,perc)
+function drawSymbol(x1,y1,x2,y2)
 {
 		var r=8;
 		
@@ -96,19 +97,6 @@ function drawSymbol(x1,y1,x2,y2,x3,y3,x4,y4,perc)
 		c.lineTo(x1,y2);
 		c.lineTo(x1,y1);
 		c.stroke();
-
-		c.strokeStyle="#f64";
-		c.lineWidth=3;
-		
-		c.setLineDash([3, 3]);	
-		c.beginPath();
-		c.moveTo(x3,y3);
-		c.lineTo(x4,y3);
-		c.lineTo(x4,y4);
-		c.lineTo(x3,y4);
-		c.lineTo(x3,y3);
-		c.stroke();	
-		c.setLineDash([]);
 	
 }
 		
@@ -121,7 +109,14 @@ function animate(perc)
 		// Draw all animation elements
 		for(var i=0;i<anim.length;i++){
 				var item=anim[i];
-				drawSymbol(tilestartX+(item.x1*tilegridX),tilestartY+(item.y1*tilegridY),tilestartX+(item.x2*tilegridX),tilestartY+(item.y2*tilegridY),tilestartX+(item.x3*tilegridX),tilestartY+(item.y3*tilegridY),tilestartX+(item.x4*tilegridX),tilestartY+(item.y4*tilegridY),1.0);
+			
+				// Interpolate
+				var x1=item.x1+((item.x3-item.x1)*perc);
+				var y1=item.y1+((item.y3-item.y1)*perc);
+				var x2=item.x2+((item.x4-item.x2)*perc);
+				var y2=item.y2+((item.y4-item.y2)*perc);
+			
+				drawSymbol(tilestartX+(x1*tilegridX),tilestartY+(y1*tilegridY),tilestartX+(x2*tilegridX),tilestartY+(y2*tilegridY));
 		}
 }
 		
@@ -242,7 +237,7 @@ function progressGrid()
 						if(newitem.visited==false){
 								cx=newitem.x1+((newitem.x2-newitem.x1)*0.5);
 								cy=newitem.y1+((newitem.y2-newitem.y1)*0.5);							
-								anim.push({x1:newitem.x1,y1:newitem.y1,x2:newitem.x2,y2:newitem.y2,x3:newitem.x1,y3:newitem.y1,x4:newitem.x2,y4:newitem.y2,s:"grow"});		
+								anim.push({x1:cx,y1:cy,x2:cx,y2:cy,x3:newitem.x1,y3:newitem.y1,x4:newitem.x2,y4:newitem.y2,s:"grow"});		
 						}
 				}
 		}
@@ -270,13 +265,24 @@ function drawHead()
 		
 		window.requestAnimationFrame(drawHead);
 	
-		// window.requestAnimationFrame(drawHead);
+}
+		
+function mousedown(e)
+{
+		console.log(mx,my);
+}
+
+function mousemove(e)
+{
+		var rect = e.target.getBoundingClientRect();
+		mx = Math.floor(((e.clientX - rect.left)-tilestartX)/tilegridX); //x position in tile space
+		my = Math.floor(((e.clientY - rect.top)-tilestartY)/tilegridY);  //y position in tile space
 }
 
 	</script>
 	</head>
-	<body onload="setupSlides();">
-	<canvas id='mycanvas' width=700 height=700 style='border:1px solid red;' ></canvas>	
+	<body onload="setupSlides();" >
+	<canvas id='mycanvas' width=700 height=700 style='border:1px solid red;' onmousemove='mousemove(event);' onmousedown='mousedown(event)' ></canvas>	
 	</body>
 
 </html>
