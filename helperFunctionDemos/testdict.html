@@ -1,0 +1,51 @@
+<html>
+	<head>
+	
+	<script src='../helperFunction/dict.js'></script>
+	
+	<script>
+
+	function setupSlides()
+	{
+			var histogram=[];
+			var total=0;
+			for(var i=0;i<words.length;i++){
+					var wordlist=words[i];
+					for(var j=0;j<wordlist.length;j++){
+							var word=wordlist[j];
+							for(var k=0;k<word.length;k++){
+									var char=word.charAt(k);
+									char=char.toUpperCase();
+									if(char>"Z"||char<"A") console.log(word);
+									total++;
+									if(histogram[char]==null){
+											histogram[char]=1;
+									}else{
+											histogram[char]++;
+									}
+							}
+					}
+			}
+			
+			var str="Hearken";
+		
+			len=str.length-1;
+			
+			if(len>1){
+					str=str.toUpperCase();
+					wordlist=words[len];
+					for(var i=0;i<wordlist.length;i++){
+							if(i<10) console.log(str, wordlist[i]);
+							if(wordlist[i].toUpperCase()==str) break;
+					}
+					if(i<wordlist.length) console.log("found: "+wordlist[i])
+					else console.log("not found;",str)
+			}
+	}
+
+	</script>
+	</head>
+	<body onload="setupSlides();">
+	</body>
+
+</html>
