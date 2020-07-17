@@ -286,7 +286,12 @@ function drawHead()
 		
 function mousedown(e)
 {
-		console.log(mx,my);
+		if(mx>0 && mx<gridX && my>0 && mx<gridY){
+				if(gamegrid[(my*gridX)+mx].kind!=1){
+						gamegrid[(my*gridX)+mx].kind=1;
+						progressGrid();
+				}
+		}
 }
 
 function mousemove(e)
