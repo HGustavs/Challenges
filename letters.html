@@ -11,7 +11,6 @@
 // After the game is over (time is up in a timed game, or there are no more words are available to be played), you get points for the bears on the board. Each bear is worth the number of spaces it occupies, to the 1.85th power. See the screenshot below.
 // For every letter tile you use when spelling a word, the number of points you get is the multiplier times that tile's counter. For example, the tile shown above currently has a counter of 2. If you use it to spell a word on this turn, you'll get 5 x 2 = 10 points. These points are shown to you in the Submit bar as you build the word, and are credited immediately at the time you submit the word.
 
-		
 var c;
 var gridX=7;
 var gridY=6;
@@ -79,6 +78,24 @@ function drawText(tex,xk,yk,fillcol,outlinecol,fontsize,fontfamily)
 		c.fillText(tex,xk,yk);
 }
 
+//----------------------------------------------------------------------------------
+// findWord - Find word in Wordlist
+//----------------------------------------------------------------------------------
+		
+function findWord(str)
+{
+		len=str.length-1;
+		if(len>=0){
+				str=str.toUpperCase();
+				wordlist=words[len];
+				for(var i=0;i<wordlist.length;i++){
+						if(wordlist[i].toUpperCase()==str) break;
+				}
+				if(i<wordlist.length) return true;
+		}
+		return false;
+}
+		
 //----------------------------------------------------------------------------------
 // drawSymbol - Draw a symbol with rounded corners
 //----------------------------------------------------------------------------------

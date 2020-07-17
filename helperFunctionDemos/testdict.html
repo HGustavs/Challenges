@@ -8,16 +8,15 @@
 	function findWord(str)
 	{
 			len=str.length-1;
-
-			if(len>1){
+			if(len>=0){
 					str=str.toUpperCase();
 					wordlist=words[len];
 					for(var i=0;i<wordlist.length;i++){
 							if(wordlist[i].toUpperCase()==str) break;
 					}
 					if(i<wordlist.length) return true;
-					return false;
 			}
+			return false;
 	}
 		
 	function setupSlides()
