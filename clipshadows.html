@@ -57,6 +57,7 @@
 				}
 			
 				// Even Odd Rule Polyon Point Colision
+				// Could be even better if we had bounding box also
 				function pointInPolygon(point,segments)
 				{
 						// Never inside 	
@@ -117,6 +118,27 @@
 						return d1 > d2;					
 				}
 			
+				function computeBoundingBox(polygon)
+				{
+						// Compute center / bounding box
+						polygon.center={x:0,y:0};
+						polygon.p1={x:10000,y:10000};
+						polygon.p2={x:-10000,y:-10000};
+
+						// Compute Center and Bounding Box for Polygon
+						for(var i=0;i<pnts.length;i++){
+								if(polygon[i].x<polygon.p1.x) polygon.p1.x=pnts[i].x;
+								if(polygon[i].x>polygon.p2.y) polygon.p2.x=pnts[i].x;
+								if(polygon[i].y<polygon.p1.y) polygon.p1.y=pnts[i].y;
+								if(polygon[i].y>polygon.p2.y) polygon.p2.y=pnts[i].y;
+
+								polygon.center.x+=pnts[i].x;
+								polygon.center.y+=pnts[i].y;
+						}
+						polygon.center.x/=polygon.length;
+						polygon.center.y/=polygon.length;
+				}
+			
 				function clip(p1,p2,p3,p4,p5,p6)
 				{
 						// Queue Possible Intersection Points
@@ -138,17 +160,11 @@
 						bumppoint(pnts,pointInTriangle(p6,p1,p2,p3));		
 					
 						if(pnts.length>=3){
-								// Compute center
-								var center={x:0,y:0};
-								for(var i=0;i<pnts.length;i++){
-										center.x+=pnts[i].x;
-										center.y+=pnts[i].y;
-								}
-								center.x/=pnts.length;
-								center.y/=pnts.length;
 
-								pnts.sort(function(a,b){return clockwise(a,b,center)});
+								computeBoundingBox(pnts);
+								pnts.sort(function(a,b){return clockwise(a,b,pnts.center)});
 							
+								// Make coordinate string
 								var str="";
 								for(var i=0;i<pnts.length;i++){
 										if(i>0) str+=",";
