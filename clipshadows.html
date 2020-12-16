@@ -62,10 +62,11 @@
 				{
 						// Never inside 	
 						if(segments.length<3) return false;
+					
+						// Inside bounding box?
+						if(!(point.x>=segments.p1.x&&point.x<=segments.p2.x&&point.y>=segments.p1.y&&point.y<=segments.p2.y)) return false;
 						
-						for(var i=0;i<segments.length;i++){
-								
-						}
+						return true;
 				}
 			
 				function bumppoint(points,pnt)
@@ -126,14 +127,14 @@
 						polygon.p2={x:-10000,y:-10000};
 
 						// Compute Center and Bounding Box for Polygon
-						for(var i=0;i<pnts.length;i++){
-								if(polygon[i].x<polygon.p1.x) polygon.p1.x=pnts[i].x;
-								if(polygon[i].x>polygon.p2.y) polygon.p2.x=pnts[i].x;
-								if(polygon[i].y<polygon.p1.y) polygon.p1.y=pnts[i].y;
-								if(polygon[i].y>polygon.p2.y) polygon.p2.y=pnts[i].y;
+						for(var i=0;i<polygon.length;i++){
+								if(polygon[i].x<polygon.p1.x) polygon.p1.x=polygon[i].x;
+								if(polygon[i].x>polygon.p2.y) polygon.p2.x=polygon[i].x;
+								if(polygon[i].y<polygon.p1.y) polygon.p1.y=polygon[i].y;
+								if(polygon[i].y>polygon.p2.y) polygon.p2.y=polygon[i].y;
 
-								polygon.center.x+=pnts[i].x;
-								polygon.center.y+=pnts[i].y;
+								polygon.center.x+=polygon[i].x;
+								polygon.center.y+=polygon[i].y;
 						}
 						polygon.center.x/=polygon.length;
 						polygon.center.y/=polygon.length;
@@ -283,7 +284,8 @@
 						c.stroke(); 				
 
 						// Display Wall Segments
-						drawpoly(segments,true,false);
+						computeBoundingBox(segments);
+						drawpoly(segments,false,false);
 						
 						// Precompute projections
 						for(var i=0;i<segments.length;i++){
@@ -323,6 +325,8 @@
 										}
 								}
 						}
+					
+						if(pointInPolygon({x:xk,y:yk},segments)) drawpoly(segments,false,true);
 					
 						// Draw clipped shadow objects
 						c.fillText(shadows.length,0,-20);
