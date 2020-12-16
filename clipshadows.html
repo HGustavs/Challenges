@@ -1,0 +1,328 @@
+<html>
+<head>
+		<style>
+				body {margin: 0; height: 100%; overflow: hidden}
+		</style>
+		<script>
+				var c;
+				var v=0;
+				var xd=0;
+				var yd=0;
+				var xk=0;
+				var yk=0;			
+			
+				// Segments, Floor Clip Polygons, Shadow Areas 
+				var segments=[];
+				var floor=[];
+				var areas=[];
+			
+				// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+				// Determine the intersection point of two line segments
+				function intersect(p1,p2,p3,p4) {
+
+						// Check if none of the lines are of length 0
+						if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+
+						denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y))
+
+						// Lines are parallel
+						if (denominator === 0) return false;
+
+						let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+						let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+						// is the intersection along the segments
+						if (ua < 0 || ua > 1 || ub < 0 || ub > 1) return false;
+
+						// Return a object with the x and y coordinates of the intersection
+						let x = p1.x + ua * (p2.x - p1.x)
+						let y = p1.y + ua * (p2.y - p1.y)
+
+						return {x:x, y:y}
+				}
+
+				// Point s inside triangle p1,p2,p3
+				function pointInTriangle(s, a, b, c)
+				{
+						as_x = s.x-a.x;
+						as_y = s.y-a.y;
+
+						s_ab = (b.x-a.x)*as_y-(b.y-a.y)*as_x > 0;
+
+						if((c.x-a.x)*as_y-(c.y-a.y)*as_x > 0 == s_ab) return false;
+
+						if((c.x-b.x)*(s.y-b.y)-(c.y-b.y)*(s.x-b.x) > 0 != s_ab) return false;
+
+						return {x:s.x,y:s.y};
+				}
+			
+				// Even Odd Rule Polyon Point Colision
+				function pointInPolygon(point,segments)
+				{
+						// Never inside 	
+						if(segments.length<3) return false;
+						
+						for(var i=0;i<segments.length;i++){
+								
+						}
+				}
+			
+				function bumppoint(points,pnt)
+				{
+						for(var i=0;i<points.length;i++){
+								if((pnt.x==points[i].x)&&(pnt.y==points[i].y)) return false;
+						}
+						if(pnt!=false){
+								pnt.x=Math.round(pnt.x);
+								pnt.y=Math.round(pnt.y);
+								points.push(pnt);
+						}
+				}	
+			
+				function duplicateshadow(str,shadows)
+				{
+						for(var i=0;i<shadows.length;i++){
+								if(str==shadows[i].str)
+								return false;
+						}
+						return true;					
+				}
+			
+				// Sort clockwise
+				// https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
+				// ((a.x - center.x) * (b.y - center.y) - (b.x - center.x) * (a.y - center.y))			
+				function clockwise(a,b,center)
+				{
+						if (a.x - center.x >= 0 && b.x - center.x < 0)
+								return true;
+						if (a.x - center.x < 0 && b.x - center.x >= 0)
+								return false;
+						if (a.x - center.x == 0 && b.x - center.x == 0) {
+								if (a.y - center.y >= 0 || b.y - center.y >= 0)
+										return a.y > b.y;
+								return b.y > a.y;
+						}
+
+						// compute the cross product of vectors (center -> a) x (center -> b)
+						det = (a.x - center.x) * (b.y - center.y) - (b.x - center.x) * (a.y - center.y);
+						if (det < 0)
+								return true;
+						if (det > 0)
+								return false;
+
+						// points a and b are on the same line from the center
+						// check which point is closer to the center
+						d1 = (a.x - center.x) * (a.x - center.x) + (a.y - center.y) * (a.y - center.y);
+						d2 = (b.x - center.x) * (b.x - center.x) + (b.y - center.y) * (b.y - center.y);
+						return d1 > d2;					
+				}
+			
+				function clip(p1,p2,p3,p4,p5,p6)
+				{
+						// Queue Possible Intersection Points
+						pnts=[];
+						bumppoint(pnts,intersect(p1,p2,p4,p5));
+						bumppoint(pnts,intersect(p1,p2,p5,p6));
+						bumppoint(pnts,intersect(p1,p2,p6,p4));
+						bumppoint(pnts,intersect(p2,p3,p4,p5));
+						bumppoint(pnts,intersect(p2,p3,p5,p6));
+						bumppoint(pnts,intersect(p2,p3,p6,p4));
+						bumppoint(pnts,intersect(p3,p1,p4,p5));
+						bumppoint(pnts,intersect(p3,p1,p5,p6));
+						bumppoint(pnts,intersect(p3,p1,p6,p4));
+						bumppoint(pnts,pointInTriangle(p1,p4,p5,p6));
+						bumppoint(pnts,pointInTriangle(p2,p4,p5,p6));
+						bumppoint(pnts,pointInTriangle(p3,p4,p5,p6));
+						bumppoint(pnts,pointInTriangle(p4,p1,p2,p3));
+						bumppoint(pnts,pointInTriangle(p5,p1,p2,p3));
+						bumppoint(pnts,pointInTriangle(p6,p1,p2,p3));		
+					
+						if(pnts.length>=3){
+								// Compute center
+								var center={x:0,y:0};
+								for(var i=0;i<pnts.length;i++){
+										center.x+=pnts[i].x;
+										center.y+=pnts[i].y;
+								}
+								center.x/=pnts.length;
+								center.y/=pnts.length;
+
+								pnts.sort(function(a,b){return clockwise(a,b,center)});
+							
+								var str="";
+								for(var i=0;i<pnts.length;i++){
+										if(i>0) str+=",";
+										str+=pnts[i].x+","+pnts[i].y;
+								}
+								pnts.str=str;
+							
+								return pnts;					
+						}else{
+								return false;
+						}
+				}			
+			
+				function keydown(e)
+				{
+						if(e.keyCode==37){
+								xd=-1;
+						}else if(e.keyCode==39){
+								xd=1;
+						}else if(e.keyCode==38){
+								yd=-1;
+						}else if(e.keyCode==40){
+								yd=1;
+						}
+				}
+			
+				function keyup(e)
+				{
+						if(e.keyCode==37||e.keyCode==39){
+								xd=0;
+						}else if(e.keyCode==38||e.keyCode==40){
+								yd=0;
+						}
+				}		
+			
+				function drawpoly(poly,svgstatus,fillstatus)
+				{
+						var str="";
+						c.beginPath();
+						str+=poly[0].x+","+poly[0].y;
+						c.moveTo(poly[0].x,poly[0].y);
+						for(var i=1;i<poly.length;i++){
+								c.lineTo(poly[i].x,poly[i].y);
+								str+=","+poly[i].x+","+poly[i].y;
+						}
+						c.closePath();
+						
+						if(fillstatus){
+								c.fill();
+						}else{
+								c.stroke();
+						} 
+						if(svgstatus) document.getElementById("mainsvg").innerHTML+="<polygon points='"+str+"' fill='navy' />";
+				}
+			
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    c = cc.getContext("2d");
+						//segments.push({x:150,y:200});
+						segments.push({x:-100,y:-50});
+						segments.push({x:300,y:-50});
+						segments.push({x:300,y:200});
+						segments.push({x:400,y:250});
+						segments.push({x:400,y:350});
+						segments.push({x:300,y:400});
+						segments.push({x:275,y:400});
+						segments.push({x:275,y:300});
+						segments.push({x:175,y:300});					
+						segments.push({x:175,y:400});					
+						segments.push({x:150,y:400});	
+						segments.push({x:50,y:350});	
+						segments.push({x:50,y:250});						
+						segments.push({x:150,y:200});
+						segments.push({x:150,y:50});
+						segments.push({x:-100,y:50});
+					
+						floor.push({p1:{x:-100,y:-50},p2:{x:-100,y:50},p3:{x:300,y:50}});
+						floor.push({p1:{x:300,y:50},p2:{x:300,y:-50},p3:{x:-100,y:-50}});	
+						floor.push({p1:{x:150,y:50},p2:{x:150,y:200},p3:{x:300,y:200}});
+						floor.push({p1:{x:300,y:200},p2:{x:300,y:50},p3:{x:150,y:50}});
+						floor.push({p1:{x:150,y:200},p2:{x:50,y:250},p3:{x:175,y:300}});
+						floor.push({p1:{x:150,y:200},p2:{x:175,y:300},p3:{x:300,y:200}});					
+						floor.push({p1:{x:175,y:300},p2:{x:275,y:300},p3:{x:300,y:200}});
+						floor.push({p1:{x:275,y:300},p2:{x:300,y:200},p3:{x:400,y:250}});
+						floor.push({p1:{x:275,y:300},p2:{x:400,y:250},p3:{x:400,y:350}});
+						floor.push({p1:{x:275,y:300},p2:{x:275,y:400},p3:{x:300,y:400}});
+						floor.push({p1:{x:300,y:400},p2:{x:400,y:350},p3:{x:275,y:300}});					
+						floor.push({p1:{x:175,y:300},p2:{x:175,y:400},p3:{x:150,y:400}});	
+						floor.push({p1:{x:175,y:300},p2:{x:150,y:400},p3:{x:50,y:350}});
+						floor.push({p1:{x:50,y:250},p2:{x:50,y:350},p3:{x:175,y:300}});					
+
+						setInterval(updatestate,20);
+					
+						drawit();
+				}
+											
+				function updatestate()
+				{
+						xk+=xd;
+						yk+=yd;
+				}
+			
+				function drawit()
+				{	
+						c.clearRect(0,0,900,900);
+						document.getElementById("mainsvg").innerHTML="";
+					
+						c.save();
+					
+						c.translate(200.5,200.5);
+					
+						// Display player
+						c.beginPath();
+						c.arc(xk, yk, 5, 0, 2 * Math.PI);
+						c.stroke(); 				
+
+						// Display Wall Segments
+						drawpoly(segments,true,false);
+						
+						// Precompute projections
+						for(var i=0;i<segments.length;i++){
+								var item=segments[i];
+								var dx1=(item.x-xk);
+								var dy1=(item.y-yk);
+								var dlen=Math.sqrt((dx1*dx1)+(dy1*dy1));
+								item.px=item.x+((dx1/dlen)*500);
+								item.py=item.y+((dy1/dlen)*500);
+						}
+					
+						// Save projected areas
+						areas=[];
+						for(var i=0;i<segments.length-1;i++){
+								var sitem=segments[i];
+								var ditem;
+								if(i<(segments.length-1)){
+										ditem=segments[i+1];
+								}else{
+										ditem=segments[0];
+								}
+						
+								areas.push({p1:{x:sitem.x,y:sitem.y},p2:{x:ditem.x,y:ditem.y},p3:{x:sitem.px,y:sitem.py}});
+								areas.push({p1:{x:sitem.px,y:sitem.py},p2:{x:ditem.px,y:ditem.py},p3:{x:ditem.x,y:ditem.y}});
+						}
+					
+						// Clip Shadow Areas against Floor Polygons 
+						var shadows=[]
+						for(var i=0;i<areas.length;i++){
+								var area=areas[i];
+								for(var j=0;j<floor.length;j++){
+										var tile=floor[j];
+										var shadow=clip(area.p1,area.p2,area.p3,tile.p1,tile.p2,tile.p3);
+										if(shadow!=false){
+											//if(duplicateshadow(shadow.str,shadows)) shadows.push(shadow);
+											shadows.push(shadow);
+										}
+								}
+						}
+					
+						// Draw clipped shadow objects
+						c.fillText(shadows.length,0,-20);
+						for(var i=0;i<shadows.length;i++){
+								c.fillText(shadows[i].str,0,i*12);
+								drawpoly(shadows[i],false,true);
+						}
+					
+						c.restore();
+					
+						window.requestAnimationFrame(drawit);
+				}
+			
+		</script>
+</head>
+<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" >
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas>
+	<svg style='border:1px dotted red;' height="900" width="900" id="mainsvg"></svg>
+</body>

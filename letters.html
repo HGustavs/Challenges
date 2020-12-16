@@ -1,5 +1,6 @@
 <html>
 	<head>
+		<script src='./helperFunction/CoMonoFontRegular.js'></script>
 	<script>
 //------------------------------------=======############==========----------------------------------------
 //                                 Canvas Slide Constants and Variables
@@ -49,7 +50,10 @@ function setupSlides()
 		gamegrid[23]={kind:1,visited:false};	
 		gamegrid[24]={kind:1,visited:false};	
 		gamegrid[30]={kind:1,visited:false};	
-		gamegrid[37]={kind:1,visited:false};		
+		gamegrid[37]={kind:1,visited:false};
+	
+		gamegrid[11]={kind:2,visited:false};
+	
 	
 		progressGrid();
 	
@@ -100,11 +104,15 @@ function findWord(str)
 // drawSymbol - Draw a symbol with rounded corners
 //----------------------------------------------------------------------------------
 		
-function drawSymbol(x1,y1,x2,y2)
+function drawSymbol(x1,y1,x2,y2,kind)
 {
 		var r=8;
 		
-		c.strokeStyle="#6f4";
+		if(kind==1){
+				c.strokeStyle="#6f4";
+		}else if(kind==2){
+				c.strokeStyle="#64f";		
+		}
 		c.lineWidth=3;
 		
 		c.beginPath();
@@ -114,6 +122,8 @@ function drawSymbol(x1,y1,x2,y2)
 		c.lineTo(x1,y2);
 		c.lineTo(x1,y1);
 		c.stroke();
+	
+		drawString(x1,y1,1.0,"ABCDEFGHIJ");
 	
 }
 		
@@ -133,7 +143,7 @@ function animate(perc)
 				var x2=item.x2+((item.x4-item.x2)*perc);
 				var y2=item.y2+((item.y4-item.y2)*perc);
 			
-				drawSymbol(tilestartX+(x1*tilegridX),tilestartY+(y1*tilegridY),tilestartX+(x2*tilegridX),tilestartY+(y2*tilegridY));
+				drawSymbol(tilestartX+(x1*tilegridX),tilestartY+(y1*tilegridY),tilestartX+(x2*tilegridX),tilestartY+(y2*tilegridY),1);
 		}
 }
 		
@@ -271,14 +281,16 @@ function drawHead()
 		// Draw game grid
 		for(var j=0;j<gridY;j++){
 				for(var i=0;i<gridX;i++){
-						// drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tileW,tileH,gamegrid[(j*gridX)+i].kind,gamegrid[(j*gridX)+i].kind,1.0);
+						if(gamegrid[j*gridX+i].kind==2){
+								drawSymbol(tilestartX+(i*tilegridX),tilestartY+(j*tilegridY),tilestartX+(i*tilegridX)+tileW,tilestartY+(j*tilegridY)+tileH,2)
+						}
 				}
 		}
 	
 		animate(perc);
 		
 		perc+=0.1;
-		if(perc>1.0) perc=0.0;
+		if(perc>1.0) perc=1.0;
 		
 		window.requestAnimationFrame(drawHead);
 	
