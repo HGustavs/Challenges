@@ -19,12 +19,12 @@
 				// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
 				// Determine the intersection point of two line segments
 				function intersect(p1,p2,p3,p4) {
-
+					
 						// Check if none of the lines are of length 0
 						if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
 
-						denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y))
-
+						denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+					
 						// Lines are parallel
 						if (denominator === 0) return false;
 
@@ -37,7 +37,7 @@
 						// Return a object with the x and y coordinates of the intersection
 						let x = p1.x + ua * (p2.x - p1.x)
 						let y = p1.y + ua * (p2.y - p1.y)
-
+						
 						return {x:x, y:y}
 				}
 
@@ -168,6 +168,7 @@
 				{
 						// Queue Possible Intersection Points
 						pnts=[];
+
 						bumppoint(pnts,intersect(p1,p2,p4,p5));
 						bumppoint(pnts,intersect(p1,p2,p5,p6));
 						bumppoint(pnts,intersect(p1,p2,p6,p4));
@@ -189,6 +190,7 @@
 								computeBoundingBox(pnts);
 								pnts.sort(function(a,b){return clockwise(a,b,pnts.center)});
 							
+/*
 								// Make coordinate string
 								var str="";
 								for(var i=0;i<pnts.length;i++){
@@ -196,7 +198,7 @@
 										str+=pnts[i].x+","+pnts[i].y;
 								}
 								pnts.str=str;
-							
+*/							
 								return pnts;					
 						}else{
 								return false;
@@ -309,7 +311,7 @@
 
 						// Display Wall Segments
 						computeBoundingBox(segments);
-						drawpoly(segments,false,false);
+						drawpoly(segments,true,false);
 						
 						// Precompute projections
 						for(var i=0;i<segments.length;i++){
@@ -351,13 +353,14 @@
 						}
 					
 						// if (pointInPolygon({x:xk,y:yk},segments)) drawpoly(segments,false,true);
-					
+						c.globalAlpha=0.2;
 						// Draw clipped shadow objects
 						c.fillText(shadows.length,0,-20);
 						for(var i=0;i<shadows.length;i++){
-								c.fillText(shadows[i].str,0,i*12);
-								drawpoly(shadows[i],false,true);
+								//c.fillText(shadows[i].str,0,i*12);
+								drawpoly(shadows[i],true,true);
 						}
+						c.globalAlpha=1.0;
 					
 						c.restore();
 					

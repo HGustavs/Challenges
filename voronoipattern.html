@@ -1,0 +1,132 @@
+<html>
+<head>
+		<script>
+				var c;
+			  var mx,my,mb=0;
+			
+			  // https://heredragonsabound.blogspot.com/2016/10/making-islands.html
+			  // http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/
+
+				var cells=[
+							[[0.41,0.66],[0.62,0.73],[0.11,0.21],[0.64,0.94],[0.38,0.29],[0.22,0.72],[0.53,0.65],[0.38,0.24],[0.66,0.37],[0.71,0.34],],
+							[[0.93,0.49],[0.21,0.61],[0.56,0.29],[0.17,0.56],[0.62,0.37],[0.6,0.68],[0.47,0.78],[0.53,0.1],[0.08,0.73],[0.38,0.11],],
+							[[0.47,0.86],[0.94,0.26],[0.97,0.95],[0.17,0.56],[0.97,0.59],[0.41,0.39],[0.56,0.36],[0.65,0.46],[0.38,0.35],[0.1,0.33],],
+							[[0.38,0.33],[0.25,0.04],[0.51,0.35],[0.26,0.32],[0.79,0.35],[0.76,0.48],[0.76,0.96],[0.92,0.52],[0.34,0.99],[0.24,0.11],],
+							[[0.55,0.85],[0.67,0.74],[0.48,0.78],[0.22,0.08],[0.62,0.43],[0.23,0.14],[0.91,0.36],[0.97,0.9],[0.94,0.43],[0.79,0.84],],
+							[[0.18,0.05],[0.53,0.23],[0.1,0.47],[0.47,0.79],[0.23,0.89],[0.71,0.92],[0.52,0.04],[0.62,0.69],[0.15,0.69],[0.34,0.94],],
+							[[0.31,0.45],[0.67,0.93],[0.63,0.2],[0.2,0.56],[0.8,0.59],[0.18,0.34],[0.5,0.82],[0.94,0.33],[0.17,0.8],[0.67,0.92],],
+							[[0.27,0.1],[0.13,0.11],[0.2,0.8],[0.74,0.54],[0.42,0.06],[0.81,0.63],[0.57,0.96],[0.5,0.76],[0.31,0.39],[0.63,0.02],],
+							[[0.74,0.01],[0.74,0.38],[0.06,0.22],[0.65,0.09],[0.2,0.07],[0.5,0.6],[0.49,0.57],[0.09,0.1],[0.11,0.03],[0.55,0.73],],
+							[[0.18,0.42],[0.43,0.68],[0.99,0.66],[0.54,0.04],[0.56,0.15],[0.84,0.7],[0.73,0.75],[0.65,0.03],[0.89,0.37],[0.44,0.1],],
+				];
+			
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    c = cc.getContext("2d");
+					
+						setInterval(updatestate,20);
+					
+						drawit();
+				}
+								
+				function updatestate()
+				{
+
+				}
+			
+				function mouseUp(e)
+				{
+						mb=0;
+				}
+			
+				function mouseDown(e)
+				{
+						mb=e.which;
+				}
+			
+				function mouseMove(e,t)
+				{
+						var rect = e.target.getBoundingClientRect();
+            mx = e.clientX - rect.left; //x position within the element.
+            my = e.clientY - rect.top;  //y position within the element
+				}
+			
+				function drawit()
+				{	
+						c.clearRect(0,0,900,900);
+					
+						c.font="20px Arial Narrow";
+						c.fillText("Mb:"+mb+" "+mx+" "+my,100,50);
+					
+						for(var i=0;i<cells.length-1;i++){
+								for(var j=0;j<cells[i].length-1;j++){
+										c.strokeStyle="#000";
+										c.beginPath();
+										c.rect(50+(i*50),50+(j*50),50,50);
+										c.stroke();
+									
+										c.strokeStyle="#46A";
+
+//										c.arc(50+(i*50)+(cells[i][j][0]*50), 50+(j*50)+(cells[i][j][1]*50), 5, 0, 2 * Math.PI);
+									
+										p1={x:50+(i*50)+(cells[i][j][0]*50),y:50+(j*50)+(cells[i][j][1]*50)};
+										p2={x:50+((i+1)*50)+(cells[i+1][j][0]*50),y:50+(j*50)+(cells[i+1][j][1]*50)};
+										p3={x:50+((i+1)*50)+(cells[i+1][j+1][0]*50),y:50+((j+1)*50)+(cells[i+1][j+1][1]*50)};
+										p4={x:50+((i)*50)+(cells[i][j+1][0]*50),y:50+((j+1)*50)+(cells[i][j+1][1]*50)};
+									
+										if((i%2)==0){
+												/*
+												c.beginPath();											
+												c.moveTo(p1.x,p1.y);
+												c.lineTo(p2.x,p2.y);
+												c.lineTo(p3.x,p3.y);
+												c.lineTo(p1.x,p1.y);
+											
+												c.moveTo(p3.x,p3.y);
+												c.lineTo(p4.x,p4.y);
+												c.lineTo(p1.x,p1.y);
+												c.lineTo(p3.x,p3.y);											
+												c.stroke();
+												*/
+										}else{
+												c.beginPath();												
+												c.moveTo(p1.x,p1.y);
+												c.lineTo(p2.x,p2.y);
+												c.lineTo(p4.x,p4.y);
+												c.lineTo(p1.x,p1.y);
+												c.moveTo(p2.x,p2.y);
+												c.lineTo(p4.x,p4.y);
+												c.lineTo(p3.x,p3.y);
+												c.lineTo(p2.x,p2.y);											
+												c.stroke(); 										
+										}
+										
+								}
+						}
+					
+
+						window.requestAnimationFrame(drawit);
+				} 			
+			
+				function generate(){
+						for(var i=0;i<10;i++){
+								str="[";
+								for(var j=0;j<10;j++){
+										str+="[";
+										str+=(Math.floor(Math.random()*100))/100;
+										str+=","+(Math.floor(Math.random()*100))/100;							
+										str+="]";
+										if(j<10) str+=",";
+								}
+								str+="]";
+								console.log(str);
+						}
+				}
+			
+			
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>
