@@ -1,0 +1,137 @@
+<html>
+	<head>
+	<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+		
+// Challenge: Closure and Triangulation
+// Closure for small 
+
+var c;
+
+var xmax=1430;
+var ymax=780;
+
+var mx,my,mb;
+		
+// Color index start
+var colstart=0;
+		
+const delay=30;
+		
+var points=[{x:100,y:100},{x:140,y:300},{x:120,y:260},{x:240,y:240},{x:40,y:170},{x:240,y:90},{x:180,y:160},{x:280,y:110},{x:180,y:70},{x:150,y:150},{x:210,y:60}];
+		
+function drawCirc(x,y,r,fill)
+{
+	c.beginPath();
+	c.arc(x, y, r, 0, 2 * 3.1415, false);
+	if(fill==true){
+			c.fill();	
+	}else{
+			c.stroke();	
+	}
+
+}
+	
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+	
+		var col=0;	
+
+		setTimeout(drawHead,delay);
+}
+				
+const radius=220;
+var offs=0;
+		
+//----------------------------------------------------------------------------------
+// dist - Euclidian Distance Function
+//----------------------------------------------------------------------------------
+
+function dist(px, py , x, y)
+{
+    var dx = x - px;
+    var dy = y - py;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+//----------------------------------------------------------------------------------
+// distToSegment - Point to Line Segment Distance
+//----------------------------------------------------------------------------------
+// https://gist.github.com/mattdesl/47412d930dcd8cd765c871a65532ffac
+// https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+// We find projection of point p onto the line. 
+// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+// We clamp t from [0,1] to handle points outside the segment vw.		 
+
+function distToSegment(px,py,x1,y2,x2,y2)
+{
+    var dx = x3 - x1;
+    var dy = y2 - y1;
+    var l2 = dx * dx + dy * dy;
+
+    if (l2 == 0) return this.dist(px,py,x1,y1);
+
+    var t = ((px - x1) * dx + (py - y1) * dy) / l2;
+    t = Math.max(0, Math.min(1, t));
+
+    return this.dist(px,py, x1 + t * dx, y1 + t * dy);
+}
+
+//----------------------------------------------------------------------------------
+// dot - vector dot product
+//----------------------------------------------------------------------------------
+// https://www.mathsisfun.com/algebra/vectors-dot-product.html
+// https://gamedev.stackexchange.com/questions/7131/how-can-i-calculate-the-angle-and-proper-turn-direction-between-two-2d-vectors
+		 
+function dot(ax,ay,bx,by)
+{
+    return (ax*bx)+(ay*by);
+}
+
+//----------------------------------------------------------------------------------
+// cross - vector cross product
+//----------------------------------------------------------------------------------
+
+function cross(ax,ay,bx,by)
+{
+    // just calculate the z-component
+    return ax*by - ay*bx;
+}
+
+//----------------------------------------------------------------------------------
+// drawHead - Clear screen and keep drawing
+//----------------------------------------------------------------------------------
+		
+function drawHead()
+{
+	
+		c.clearRect(0,0,500,500);
+	
+		for(var i=0;i<points.length;i++){
+        var point=points[i];
+        drawCirc(point.x,point.y,5,"#46d");
+    }
+	
+		window.requestAnimationFrame(drawHead);
+		// setTimeout(drawHead,delay);	
+}
+		
+function mousemove(e)
+{
+		var rect = e.target.getBoundingClientRect();
+		mx = e.clientX - rect.left; //x position within the element.
+		my = e.clientY - rect.top;  //y position within the element.				
+}
+
+	</script>
+	</head>
+	<body onload="setupSlides();">
+	<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	</body>
+
+</html>
