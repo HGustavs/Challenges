@@ -21,7 +21,7 @@ var colstart=0;
 		
 const delay=30;
 		
-var points=[{x:100,y:100},{x:140,y:300},{x:120,y:260},{x:240,y:240},{x:40,y:170},{x:240,y:90},{x:180,y:160},{x:280,y:110},{x:180,y:70},{x:150,y:150},{x:210,y:60}];
+var points=[{x:100,y:100},{x:140,y:300},{x:120,y:260},{x:240,y:240},{x:240,y:290},{x:240,y:90},{x:40,y:170},{x:180,y:160},{x:280,y:110},{x:180,y:70},{x:150,y:150},{x:210,y:60}];
 		
 function drawCirc(x,y,r,fill)
 {
@@ -47,7 +47,23 @@ function setupSlides()
 				
 const radius=220;
 var offs=0;
-		
+
+//----------------------------------------------------------------------------------
+// inseg - Point Insdide Segment List Function
+//----------------------------------------------------------------------------------
+
+function inSegment(px, py, segmentlist)
+{
+  for(var i=0;i<segmentlist.length;i++){
+        var segment=segmentlist[i];
+        c.strokeStyle="#000";
+        c.beginPath();
+        c.moveTo(segment.x1,segment.y1);
+        c.lineTo(segment.x2,segment.y2);
+        c.stroke();
+    }
+}
+
 //----------------------------------------------------------------------------------
 // dist - Euclidian Distance Function
 //----------------------------------------------------------------------------------
@@ -104,6 +120,64 @@ function cross(ax,ay,bx,by)
 }
 
 //----------------------------------------------------------------------------------
+// closure - make closure of point set and return line segment list
+//----------------------------------------------------------------------------------
+
+function closure(points)
+{
+    var segments=[];
+
+    // Find minimum X
+    var minx=1000;
+    var pindex=null;
+		for(var i=0;i<points.length;i++){
+        if(points[i].x<minx){
+            pindex=i;
+            minx=points[i].x;
+        }
+        points[i].visited=false;
+      }
+
+    // Standard gift wrapping closure algorithm
+    var lastindex=pindex;
+    var lastpoint=points[pindex];
+    var bestindex=0;
+    var bestpoint=points[bestindex];
+    var j=0;
+    do{
+        for(var i=0;i<points.length;i++){
+            // Do not compare current point
+            currpoint=points[i];
+            if(i!=lastindex&&i!=bestindex&&currpoint.visited!=true){
+                j++;
+                // compare fresh deltas
+                if(cross((lastpoint.x-bestpoint.x),(lastpoint.y-bestpoint.y),(lastpoint.x-currpoint.x),(lastpoint.y-currpoint.y))<0){
+                    bestindex=i;
+                    bestpoint=points[bestindex];
+                }
+            }
+
+        }    
+
+        bestpoint.visited=true;
+        if(lastpoint.y>bestpoint.y){
+            segments.push({x1:bestpoint.x,y1:bestpoint.y,x2:lastpoint.x,y2:lastpoint.y});
+        }else{
+          segments.push({x1:lastpoint.x,y1:lastpoint.y,x2:bestpoint.x,y2:bestpoint.y});
+        }
+
+        if(bestindex==pindex) break;
+        lastindex=bestindex;
+        lastpoint=points[bestindex];
+        bestindex=lastindex+1;
+        if(bestindex==points.length) bestindex=0;
+        bestpoint=points[bestindex];        
+    }while(true);
+
+    return segments;
+}
+
+//----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
 		
@@ -111,13 +185,26 @@ function drawHead()
 {
 	
 		c.clearRect(0,0,500,500);
-	
+
+/*
+    c.strokeStyle="#4b3";
+    c.beginPath();
+    c.moveTo(points[pindex].x,0);
+    c.lineTo(points[pindex].x,300);
+    c.stroke();
+*/
+
+    c.fillStyle="#46d";
+    
 		for(var i=0;i<points.length;i++){
         var point=points[i];
-        drawCirc(point.x,point.y,5,"#46d");
+        drawCirc(point.x,point.y,5,true);
     }
-	
-		window.requestAnimationFrame(drawHead);
+
+    var segments=closure(points);
+    inSegment(140,100,segments);
+
+		//window.requestAnimationFrame(drawHead);
 		// setTimeout(drawHead,delay);	
 }
 		
