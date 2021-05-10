@@ -2,6 +2,9 @@
 	<head>
 	<script>
 
+// Documentation
+// Clustering Algorithms https://web.stanford.edu/class/cs345a/slides/12-clustering.pdf
+
 //------------------------------------=======############==========----------------------------------------
 //                                 Canvas Slide Constants and Variables
 //------------------------------------=======############==========----------------------------------------
@@ -32,7 +35,15 @@ function drawCirc(x,y,r,fill)
 	}else{
 			c.stroke();	
 	}
+}
 
+function drawLine(x1,y1,x2,y2,style)
+{
+  c.strokeStyle=style;
+  c.beginPath();
+  c.moveTo(x1,y1);
+  c.lineTo(x2,y2);
+	c.stroke();	
 }
 	
 function setupSlides()
@@ -50,18 +61,29 @@ var offs=0;
 
 //----------------------------------------------------------------------------------
 // inseg - Point Insdide Segment List Function
+// Makes use of even-odd rule
 //----------------------------------------------------------------------------------
 
 function inSegment(px, py, segmentlist)
 {
+  var cnt=0;
   for(var i=0;i<segmentlist.length;i++){
         var segment=segmentlist[i];
-        c.strokeStyle="#000";
+        
+        // If point is inside segment extents in Y axis
+        if((segment.y1>segment.y2&&py<=segment.y1&&py>=segment.y2)||(segment.y1<=segment.y2&&py>=segment.y1&&py<=segment.y2)){
+            k=(segment.x2-segment.x1)/(segment.y2-segment.y1);
+            m=segment.x1-(k*segment.y1);
+            drawCirc((k*py)+m,py,5,true);
+        }
+
         c.beginPath();
         c.moveTo(segment.x1,segment.y1);
         c.lineTo(segment.x2,segment.y2);
         c.stroke();
     }
+    drawLine(0,py,300,py,"#d44");
+    drawLine(px,py-20,px,py+20,"#d44");
 }
 
 //----------------------------------------------------------------------------------
@@ -120,6 +142,51 @@ function cross(ax,ay,bx,by)
 }
 
 //----------------------------------------------------------------------------------
+// angle - Angle between segments
+//----------------------------------------------------------------------------------
+// Dot(A,B)/Length(A)*Length(B)
+
+function segangle(segments)
+{
+    // 
+    for(var i=0;i<segments.length;i++){
+        segment=segments[i];
+        dx=segment.x2-segment.x1;
+        dy=segment.y2-segment.y1;
+        segment.len=Math.sqrt((dx*dx)+(dy*dy));
+    }
+
+    var mindst=1000;
+    var minindex=-1;
+    for(var i=0;i<segments.length;i++){
+        var sega=segments[i];
+        var segb=segments[(i+1)%segments.length];
+        var dotval=dot(sega.x2-sega.x1,sega.y2-sega.y1,segb.x2-segb.x1,segb.y2-segb.y1);
+        var dst=Math.abs(Math.acos(dotval/(sega.len*segb.len))-1.57);
+
+        if(dst<mindst){
+            mindist=dst;
+            minindex=i;
+        }
+    }
+
+    var sega=segments[minindex];
+    var segb=segments[(minindex+1)%segments.length];    
+
+    c.lineWidth=4;
+    c.strokeStyle="#f25";
+    c.beginPath();
+    c.moveTo(sega.x1,sega.y1);
+    c.lineTo(sega.x2,sega.y2);
+    c.moveTo(segb.x1,segb.y1);
+    c.lineTo(segb.x2,segb.y2);
+    c.stroke();
+    c.lineWidth=1.5;
+
+    console.log(segments);
+}
+
+//----------------------------------------------------------------------------------
 // closure - make closure of point set and return line segment list
 //----------------------------------------------------------------------------------
 
@@ -160,11 +227,7 @@ function closure(points)
         }    
 
         bestpoint.visited=true;
-        if(lastpoint.y>bestpoint.y){
-            segments.push({x1:bestpoint.x,y1:bestpoint.y,x2:lastpoint.x,y2:lastpoint.y});
-        }else{
-          segments.push({x1:lastpoint.x,y1:lastpoint.y,x2:bestpoint.x,y2:bestpoint.y});
-        }
+        segments.push({x1:lastpoint.x,y1:lastpoint.y,x2:bestpoint.x,y2:bestpoint.y});
 
         if(bestindex==pindex) break;
         lastindex=bestindex;
@@ -202,7 +265,8 @@ function drawHead()
     }
 
     var segments=closure(points);
-    inSegment(140,100,segments);
+    inSegment(140,125,segments);
+    segangle(segments);
 
 		//window.requestAnimationFrame(drawHead);
 		// setTimeout(drawHead,delay);	
