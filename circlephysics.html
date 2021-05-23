@@ -11,9 +11,9 @@
 						var cc = document.getElementById("myCanvas");
 				    c = cc.getContext("2d");
 					
-            circles.push({x:100,y:100,r:20});
-            circles.push({x:120,y:110,r:30});
-            circles.push({x:90,y:120,r:20});
+            circles.push({x:100,y:100,r:30});
+            circles.push({x:120,y:110,r:40});
+            circles.push({x:90,y:120,r:30});
 
 						setInterval(updatestate,20);
 					
@@ -23,7 +23,25 @@
 				function updatestate()
 				{
             // Compare circles to circles and push away according to center
-            
+            for(var i=0;i<circles.length;i++){
+                for(var j=0;j<circles.length;j++){
+                    if(j!=i){
+                        var c1=circles[i];
+                        var c2=circles[j];
+                        dx=c2.x-c1.x;
+                        dy=c2.y-c1.y;
+                        len=Math.sqrt((dx*dx)+(dy*dy));
+                        if(len<(c1.r+c2.r)){
+                            var pdx=((c1.x+c2.x)*0.5)-c1.x;
+                            var pdy=((c1.y+c2.y)*0.5)-c1.y;
+                            c1.x-=pdx/55;
+                            c1.y-=pdy/55;
+                            c2.x+=pdx/55;
+                            c2.y+=pdy/55;
+                        }
+                    }
+                } 
+            }
 				}
 			
 				function mouseUp(e)
@@ -76,7 +94,15 @@
             }else{
                 c.stroke();	
             }
-        }        
+        }
+
+        function drawLine(x1,y1,x2,y2)
+        {
+            c.beginPath();
+            c.moveTo(x1,y1);
+            c.lineTo(x2,y2);
+            c.stroke();
+        }
 			
 				function drawit()
 				{	
@@ -98,6 +124,16 @@
             drawCirc(ax,ay,5);
             drawCirc(bx,by,5);
             drawCirc(px,py,5);
+
+            for(var i=0;i<circles.length;i++){
+                for(var j=0;j<circles.length;j++){
+                    if(j>i){
+                        var c1=circles[i];
+                        var c2=circles[j];
+                        drawLine(c1.x,c1.y,c2.x,c2.y);
+                    }
+                } 
+            }
 
             c.strokeStyle="#a6a";
             for(var i=0;i<circles.length;i++){
