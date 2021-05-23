@@ -1,0 +1,115 @@
+<html>
+<head>
+		<script>
+				var c;
+			  var mx,my,mb=0;
+				var circles=[];
+				var curr=-1;
+			
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    c = cc.getContext("2d");
+					
+            circles.push({x:100,y:100,r:20});
+            circles.push({x:120,y:110,r:30});
+            circles.push({x:90,y:120,r:20});
+
+						setInterval(updatestate,20);
+					
+						drawit();
+				}
+								
+				function updatestate()
+				{
+            // Compare circles to circles and push away according to center
+            
+				}
+			
+				function mouseUp(e)
+				{
+						mb=0;
+				}
+			
+				function mouseDown(e)
+				{
+						mb=e.which;
+				}
+			
+				function mouseMove(e,t)
+				{
+						var rect = e.target.getBoundingClientRect();
+            mx = e.clientX - rect.left; //x position within the element.
+            my = e.clientY - rect.top;  //y position within the element
+				}
+
+
+        //----------------------------------------------------------------------------------
+        // inseg - Uses projection to find the point along a segment that is closest to a line
+        //----------------------------------------------------------------------------------        
+        // Closest point along a line
+        // https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+        // https://jsfiddle.net/soulwire/UA6H5/
+
+        function project( ax,ay,bx,by,px,py ) {
+            var dx=bx-ax;
+            var dy=by-ay;
+            var pdx=px-ax;
+            var pdy=py-ay;
+            var len=(dx*dx)+(dy*dy);
+            var dot=(pdx*dx)+(pdy*dy);
+            var t = Math.min( 1, Math.max( 0, dot / len ) );
+            dot = (bx-ax)*(py-ay)-(by-ay)*(px-ax);
+            return {x:ax+dx*t,
+                    y:ay+dy*t,
+                    d:dot,
+                    t:t
+           }
+    }
+
+        function drawCirc(x,y,r,fill)
+        {
+            c.beginPath();
+            c.arc(x, y, r, 0, 2 * 3.1415, false);
+            if(fill==true){
+                c.fill();	
+            }else{
+                c.stroke();	
+            }
+        }        
+			
+				function drawit()
+				{	
+						c.clearRect(0,0,900,900);
+					
+						c.font="20px Arial Narrow";
+						// c.fillText("Mb:"+dx+" "+dy+" "+ang,100,50);
+
+            px=200;
+            py=200;
+            ax=20;
+            ay=300;
+            bx=300;
+            by=340;
+            pnt=project(20,300,300,340,200,200);
+
+            c.strokeStyle="#6aa";
+            drawCirc(pnt.x,pnt.y,5);
+            drawCirc(ax,ay,5);
+            drawCirc(bx,by,5);
+            drawCirc(px,py,5);
+
+            c.strokeStyle="#a6a";
+            for(var i=0;i<circles.length;i++){
+                var circ=circles[i];
+                drawCirc(circ.x,circ.y,circ.r);
+            }
+            
+						window.requestAnimationFrame(drawit);
+				} 			
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

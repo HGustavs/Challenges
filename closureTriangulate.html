@@ -59,6 +59,24 @@ function setupSlides()
 const radius=220;
 var offs=0;
 
+
+function lineIntersection(x1,y1,x2,y2,x3,y3,x4,y4)
+{
+    var sx1 = x2 - x1;     
+    var sy1 = y2 - y1;
+    var sx2 = x4 - x3;     
+    var sy2 = y4 - y3;
+
+    var s = (-sy1 * (x1 - x3) + sx1 * (y2 - y3)) / (-sx2 * sy2 + sx1 * sy2);
+    var t = ( sx2 * (y1 - y3) - sy2 * (x1 - x3)) / (-sx2 * sy1 + sx1 * sy2);
+
+    if (s >= 0 && s <= 1 && t >= 0 && t <= 1){
+        return {x:x1+(t * sx1),y:y1+(t*sy1)}
+    }else{
+        return false;
+    }
+}
+
 //----------------------------------------------------------------------------------
 // inseg - Point Insdide Segment List Function
 // Makes use of even-odd rule
@@ -146,6 +164,8 @@ function cross(ax,ay,bx,by)
 //----------------------------------------------------------------------------------
 // Dot(A,B)/Length(A)*Length(B)
 
+var triangles=[];
+
 function segangle(segments)
 {
     // 
@@ -156,32 +176,52 @@ function segangle(segments)
         segment.len=Math.sqrt((dx*dx)+(dy*dy));
     }
 
-    var mindst=1000;
-    var minindex=-1;
-    for(var i=0;i<segments.length;i++){
-        var sega=segments[i];
-        var segb=segments[(i+1)%segments.length];
-        var dotval=dot(sega.x2-sega.x1,sega.y2-sega.y1,segb.x2-segb.x1,segb.y2-segb.y1);
-        var dst=Math.abs(Math.acos(dotval/(sega.len*segb.len))-1.57);
+    while(segments.length>3){
+        var mindst=1000;
+        var minindex=-1;
+        for(var i=0;i<segments.length;i++){
+            var sega=segments[i];
+            var segb=segments[(i+1)%segments.length];
+            var dotval=dot(sega.x2-sega.x1,sega.y2-sega.y1,segb.x1-segb.x2,segb.y1-segb.y2);
+            var dst=Math.abs(1.57-Math.acos(dotval/(sega.len*segb.len)));
 
-        if(dst<mindst){
-            mindist=dst;
-            minindex=i;
+            if(dst<mindst){
+                mindst=dst;
+                minindex=i;
+            }
         }
-    }
 
-    var sega=segments[minindex];
-    var segb=segments[(minindex+1)%segments.length];    
+        // Join segments and delete excess
+        var sega=segments[minindex];
+        var segb=segments[(minindex+1)%segments.length];
+
+        // Create triangle
+        triangles.push({x1:sega.x1,y1:sega.y1,x2:sega.x2,y2:sega.y2,x3:segb.x2,y3:segb.y2});
+
+        // Remove one point from segment
+        sega.x2=segb.x2;
+        sega.y2=segb.y2;
+        var dx=segment.x2-segment.x1;
+        var dy=segment.y2-segment.y1;
+        sega.len=Math.sqrt((dx*dx)+(dy*dy));
+        segments.splice((minindex+1)%segments.length,1);
+    }
+    if(segments.length==3){
+      triangles.push({x1:segments[0].x1,y1:segments[0].y1,x2:segments[1].x1,y2:segments[1].y1,x3:segments[2].x1,y3:segments[2].y1});        
+    }
 
     c.lineWidth=4;
     c.strokeStyle="#f25";
-    c.beginPath();
-    c.moveTo(sega.x1,sega.y1);
-    c.lineTo(sega.x2,sega.y2);
-    c.moveTo(segb.x1,segb.y1);
-    c.lineTo(segb.x2,segb.y2);
-    c.stroke();
-    c.lineWidth=1.5;
+    for(var i=0;i<triangles.length;i++){
+        var triangle=triangles[i];
+        c.beginPath();
+        c.moveTo(triangle.x1,triangle.y1);
+        c.lineTo(triangle.x2,triangle.y2);
+        c.lineTo(triangle.x3,triangle.y3);
+        c.lineTo(triangle.x1,triangle.y1);    
+        c.stroke();
+    }
+    c.lineWidth=1.5;    
 
     console.log(segments);
 }
@@ -265,8 +305,22 @@ function drawHead()
     }
 
     var segments=closure(points);
-    inSegment(140,125,segments);
-    segangle(segments);
+/*
+    var segments=[
+      {x1:0,y1:189,x2:237,y2:20},
+      {x1:237,y1:20,x2:385,y2:56},
+      {x1:385,y1:56,x2:462,y2:135},
+      {x1:462,y1:135,x2:578,y2:0},
+      {x1:578,y1:0,x2:750,y2:20},
+      {x1:750,y1:20,x2:740,y2:169},
+      {x1:740,y1:169,x2:812,y2:287},
+      {x1:812,y1:287,x2:664,y2:468},
+      {x1:664,y1:468,x2:254,y2:347},
+      {x1:254,y1:347,x2:0,y2:189},
+ ];
+*/
+    // inSegment(140,105,segments);
+    // segangle(segments);
 
 		//window.requestAnimationFrame(drawHead);
 		// setTimeout(drawHead,delay);	
