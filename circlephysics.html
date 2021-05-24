@@ -3,7 +3,10 @@
 		<script>
 				var c;
 			  var mx,my,mb=0;
-				var circles=[];
+				
+        var circles=[];
+        var lines=[];
+
 				var curr=-1;
 			
 				function setup()
@@ -11,9 +14,13 @@
 						var cc = document.getElementById("myCanvas");
 				    c = cc.getContext("2d");
 					
-            circles.push({x:100,y:100,r:30});
+            circles.push({x:70,y:100,r:30});
             circles.push({x:120,y:110,r:40});
-            circles.push({x:90,y:120,r:30});
+            circles.push({x:90,y:80,r:30});
+
+            lines.push({x1:20,y1:140,x2:300,y2:220});
+            lines.push({x1:400,y1:300,x2:210,y2:370});
+            lines.push({x1:20,y1:400,x2:300,y2:520});
 
 						setInterval(updatestate,20);
 					
@@ -22,22 +29,47 @@
 								
 				function updatestate()
 				{
+            // Update fall parabola
+            for(var i=0;i<circles.length;i++){
+                var circle=circles[i];
+                circle.y+=3;
+            }            
+
+            // Move circles to avoid stationary objects
+            for(var i=0;i<lines.length;i++){
+                var line=lines[i];
+                for(var j=0;j<circles.length;j++){
+                    var circle=circles[j];
+                    var pnt=project(line.x1,line.y1,line.x2,line.y2,circle.x,circle.y);
+                    if(pnt.l<(circle.r*circle.r)){
+                        var len=Math.sqrt(pnt.l);
+                        var part=(circle.r-len)/len;
+                        var dx=(pnt.x-circle.x)*part;
+                        var dy=(pnt.y-circle.y)*part;
+                        circle.x-=dx;
+                        circle.y-=dy;                      
+                    }
+                }
+            }
+
             // Compare circles to circles and push away according to center
             for(var i=0;i<circles.length;i++){
                 for(var j=0;j<circles.length;j++){
                     if(j!=i){
                         var c1=circles[i];
                         var c2=circles[j];
+                        var tot=c1.r+c2.r;
                         dx=c2.x-c1.x;
                         dy=c2.y-c1.y;
+                        // This sqrt can be avoided
                         len=Math.sqrt((dx*dx)+(dy*dy));
-                        if(len<(c1.r+c2.r)){
-                            var pdx=((c1.x+c2.x)*0.5)-c1.x;
-                            var pdy=((c1.y+c2.y)*0.5)-c1.y;
-                            c1.x-=pdx/55;
-                            c1.y-=pdy/55;
-                            c2.x+=pdx/55;
-                            c2.y+=pdy/55;
+                        if(len<tot){
+                            var ox=dx*((len-c1.r-c2.r)/len/2);
+                            var oy=dy*((len-c1.r-c2.r)/len/2);
+                            c1.x+=ox;
+                            c1.y+=oy;
+                            c2.x-=ox;
+                            c2.y-=oy;
                         }
                     }
                 } 
@@ -65,7 +97,7 @@
         //----------------------------------------------------------------------------------
         // inseg - Uses projection to find the point along a segment that is closest to a line
         //----------------------------------------------------------------------------------        
-        // Closest point along a line
+        // Returns closest point along a line and squared length of line
         // https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
         // https://jsfiddle.net/soulwire/UA6H5/
 
@@ -78,11 +110,11 @@
             var dot=(pdx*dx)+(pdy*dy);
             var t = Math.min( 1, Math.max( 0, dot / len ) );
             dot = (bx-ax)*(py-ay)-(by-ay)*(px-ax);
-            return {x:ax+dx*t,
-                    y:ay+dy*t,
-                    d:dot,
-                    t:t
-           }
+            var xk=ax+dx*t;
+            var yk=ay+dy*t;
+            dx=xk-px;
+            dy=yk-py;
+            return {x:xk,y:yk,l:((dx*dx)+(dy*dy))}
     }
 
         function drawCirc(x,y,r,fill)
@@ -111,28 +143,10 @@
 						c.font="20px Arial Narrow";
 						// c.fillText("Mb:"+dx+" "+dy+" "+ang,100,50);
 
-            px=200;
-            py=200;
-            ax=20;
-            ay=300;
-            bx=300;
-            by=340;
-            pnt=project(20,300,300,340,200,200);
-
             c.strokeStyle="#6aa";
-            drawCirc(pnt.x,pnt.y,5);
-            drawCirc(ax,ay,5);
-            drawCirc(bx,by,5);
-            drawCirc(px,py,5);
-
-            for(var i=0;i<circles.length;i++){
-                for(var j=0;j<circles.length;j++){
-                    if(j>i){
-                        var c1=circles[i];
-                        var c2=circles[j];
-                        drawLine(c1.x,c1.y,c2.x,c2.y);
-                    }
-                } 
+            for(var i=0;i<lines.length;i++){
+                var line=lines[i];
+                drawLine(line.x1,line.y1,line.x2,line.y2);
             }
 
             c.strokeStyle="#a6a";
