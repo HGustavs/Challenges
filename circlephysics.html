@@ -7,16 +7,26 @@
         var circles=[];
         var lines=[];
 
+        var vx=0.5;
+        var vy=-2;
+
 				var curr=-1;
+
+        var friction=0.90;
+        var gravity=0.5;
 			
 				function setup()
 				{
 						var cc = document.getElementById("myCanvas");
 				    c = cc.getContext("2d");
-					
-            circles.push({x:70,y:100,r:30});
-            circles.push({x:120,y:110,r:40});
-            circles.push({x:90,y:80,r:30});
+
+            //circles.push({x:70,y:100,r:30,vx:0.5,vy:1,streak:[]});
+            //circles.push({x:120,y:110,r:40,vx:-0.5,vy:1.2,streak:[]});
+            //circles.push({x:90,y:80,r:30,vx:0.8,vy:1.5,streak:[]});
+
+            circles.push({x:70,y:100,r:30,vx:0.5,vy:0,streak:[]});
+            circles.push({x:120,y:110,r:40,vx:-0.5,vy:0,streak:[]});
+            circles.push({x:90,y:80,r:30,vx:0.8,vy:0,streak:[]});
 
             lines.push({x1:20,y1:140,x2:300,y2:220});
             lines.push({x1:400,y1:300,x2:210,y2:370});
@@ -32,7 +42,14 @@
             // Update fall parabola
             for(var i=0;i<circles.length;i++){
                 var circle=circles[i];
-                circle.y+=3;
+                //circle.y+=3;
+
+                circle.vy+=gravity;
+
+                circle.x+=circle.vx;
+                circle.y+=circle.vy;
+
+                circle.streak.push({x:circle.x,y:circle.y})
             }            
 
             // Move circles to avoid stationary objects
@@ -47,7 +64,11 @@
                         var dx=(pnt.x-circle.x)*part;
                         var dy=(pnt.y-circle.y)*part;
                         circle.x-=dx;
-                        circle.y-=dy;                      
+                        circle.y-=dy;
+                        
+                        var v=reflect(line.x1,line.y1,line.x2,line.y2,circle.vx,circle.vy);
+                        circle.vx=v.x*friction;
+                        circle.vy=v.y*friction;
                     }
                 }
             }
@@ -93,6 +114,25 @@
             my = e.clientY - rect.top;  //y position within the element
 				}
 
+        function makeNormal(x1,y1,x2,y2)
+        {
+            var dx=x2-x1;
+            var dy=y2-y1;
+            var len=Math.sqrt((dx*dx)+(dy*dy));
+            
+            return {x:dy/len,y:-dx/len};
+        }
+
+        // Reflect dx vector using line segment
+        // Line normal can be precomputed
+        // https://math.stackexchange.com/questions/13261/how-to-get-a-reflection-vector
+        function reflect(x1,y1,x2,y2,vx,vy)
+        {
+            var n=makeNormal(x1,y1,x2,y2)
+            var d=(vx*n.x)+(vy*n.y);
+
+            return {x:vx-(2.0*d*n.x),y:vy-(2.0*d*n.y)};
+        }
 
         //----------------------------------------------------------------------------------
         // inseg - Uses projection to find the point along a segment that is closest to a line
@@ -154,8 +194,24 @@
                 var circ=circles[i];
                 drawCirc(circ.x,circ.y,circ.r);
             }
-            
-						window.requestAnimationFrame(drawit);
+
+            c.strokeStyle="#d72";
+            for(var i=0;i<circles.length;i++){
+                var circ=circles[i];
+                c.beginPath();
+                
+                for(var j=0;j<circ.streak.length;j++){
+                      var st=circ.streak[j];
+                      if(j==0){
+                          c.moveTo(st.x,st.y);
+                      }
+                      c.lineTo(st.x,st.y);
+                }
+                c.stroke();
+            }
+
+
+            window.requestAnimationFrame(drawit);
 				} 			
 
 		</script>
