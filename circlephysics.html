@@ -14,6 +14,8 @@
 
         var friction=0.90;
         var gravity=0.5;
+
+        var stop=false;
 			
 				function setup()
 				{
@@ -26,10 +28,10 @@
 
             circles.push({x:70,y:100,r:30,vx:0.5,vy:0,streak:[]});
             circles.push({x:120,y:110,r:40,vx:-0.5,vy:0,streak:[]});
-            circles.push({x:90,y:80,r:30,vx:0.8,vy:0,streak:[]});
+            circles.push({x:90,y:40,r:30,vx:0.8,vy:0,streak:[]});
 
             lines.push({x1:20,y1:140,x2:300,y2:220});
-            lines.push({x1:400,y1:300,x2:210,y2:370});
+            lines.push({x1:500,y1:270,x2:210,y2:370});
             lines.push({x1:20,y1:400,x2:300,y2:520});
 
 						setInterval(updatestate,20);
@@ -39,61 +41,83 @@
 								
 				function updatestate()
 				{
-            // Update fall parabola
-            for(var i=0;i<circles.length;i++){
-                var circle=circles[i];
-                //circle.y+=3;
+            if(stop==false){
+                // Update fall parabola
+                for(var i=0;i<circles.length;i++){
+                    var circle=circles[i];
+                    circle.vy+=gravity;
+                    circle.x+=circle.vx;
+                    circle.y+=circle.vy;
+                    circle.streak.push({x:circle.x,y:circle.y})
+                }            
 
-                circle.vy+=gravity;
-
-                circle.x+=circle.vx;
-                circle.y+=circle.vy;
-
-                circle.streak.push({x:circle.x,y:circle.y})
-            }            
-
-            // Move circles to avoid stationary objects
-            for(var i=0;i<lines.length;i++){
-                var line=lines[i];
-                for(var j=0;j<circles.length;j++){
-                    var circle=circles[j];
-                    var pnt=project(line.x1,line.y1,line.x2,line.y2,circle.x,circle.y);
-                    if(pnt.l<(circle.r*circle.r)){
-                        var len=Math.sqrt(pnt.l);
-                        var part=(circle.r-len)/len;
-                        var dx=(pnt.x-circle.x)*part;
-                        var dy=(pnt.y-circle.y)*part;
-                        circle.x-=dx;
-                        circle.y-=dy;
-                        
-                        var v=reflect(line.x1,line.y1,line.x2,line.y2,circle.vx,circle.vy);
-                        circle.vx=v.x*friction;
-                        circle.vy=v.y*friction;
-                    }
-                }
-            }
-
-            // Compare circles to circles and push away according to center
-            for(var i=0;i<circles.length;i++){
-                for(var j=0;j<circles.length;j++){
-                    if(j!=i){
-                        var c1=circles[i];
-                        var c2=circles[j];
-                        var tot=c1.r+c2.r;
-                        dx=c2.x-c1.x;
-                        dy=c2.y-c1.y;
-                        // This sqrt can be avoided
-                        len=Math.sqrt((dx*dx)+(dy*dy));
-                        if(len<tot){
-                            var ox=dx*((len-c1.r-c2.r)/len/2);
-                            var oy=dy*((len-c1.r-c2.r)/len/2);
-                            c1.x+=ox;
-                            c1.y+=oy;
-                            c2.x-=ox;
-                            c2.y-=oy;
+                // Move circles to avoid stationary objects
+                for(var i=0;i<lines.length;i++){
+                    var line=lines[i];
+                    for(var j=0;j<circles.length;j++){
+                        var circle=circles[j];
+                        var pnt=project(line.x1,line.y1,line.x2,line.y2,circle.x,circle.y);
+                        if(pnt.l<(circle.r*circle.r)){
+                            var len=Math.sqrt(pnt.l);
+                            var part=(circle.r-len)/len;
+                            var dx=(pnt.x-circle.x)*part;
+                            var dy=(pnt.y-circle.y)*part;
+                            circle.x-=dx;
+                            circle.y-=dy;
+                            
+                            var v=reflect(line.x1,line.y1,line.x2,line.y2,circle.vx,circle.vy);
+                            circle.vx=v.x*friction;
+                            circle.vy=v.y*friction;
                         }
                     }
-                } 
+                }
+
+                // Compare circles to circles and push away according to center
+                // https://web.archive.org/web/20160418004153/http://freespace.virgin.net/hugo.elias/models/m_snokr.htm
+                for(var i=0;i<circles.length;i++){
+                    for(var j=0;j<circles.length;j++){
+                        if(j!=i){
+                            var c1=circles[i];
+                            var c2=circles[j];
+                            var tot=c1.r+c2.r;
+                            dx=c2.x-c1.x;
+                            dy=c2.y-c1.y;
+                            // This sqrt can be avoided
+                            len=Math.sqrt((dx*dx)+(dy*dy));
+                            if(len<tot){
+                                // Two spheres have collided we assume radius is mass Impact is difference in velocity vectors impulse is angle of hit
+                                var impactX=c2.vx-c1.vx;
+                                var impactY=c2.vy-c1.vy;
+                                var impulseX=dx/len;
+                                var impulseY=dy/len;
+
+                                // Un-normalized Dot product of impact and impulse
+                                var impactSpeed=(impactX * impulseX) + (impactY * impulseY);
+
+                                // We compute impulse vector by multiplying Impact speed with masses
+                                // gamedev.stackexchange.com/questions/7862/is-there-an-algorithm-for-a-pool-game
+                                var  coefficient = 0.7;
+                                var impulseMag = (1 + coefficient) * impactSpeed * (1 / c1.r + 1 / c2.r)
+       
+                                impulseX=impulseX*impulseMag;
+                                impulseY=impulseY*impulseMag;
+
+                                // Resulting velocities from impulse vector divided by mass
+                                c1.vx=c1.vx-(impulseX/c1.r);
+                                c1.vy=c1.vy-(impulseY/c1.r);
+                                c2.vx=c2.vx+(impulseX/c2.r);
+                                c2.vy=c2.vy+(impulseY/c2.r);
+
+                                var ox=dx*((len-c1.r-c2.r)/len/2);
+                                var oy=dy*((len-c1.r-c2.r)/len/2);
+                                c1.x+=ox;
+                                c1.y+=oy;
+                                c2.x-=ox;
+                                c2.y-=oy;
+                            }
+                        }
+                    } 
+                }
             }
 				}
 			
