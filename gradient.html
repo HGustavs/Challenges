@@ -1,0 +1,120 @@
+<html>
+<head>
+		<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+
+// Gradient 2d and 3d
+
+var ctx;
+var mx,my,mb=0;
+
+// Array of array of lines of balls
+
+var gradient=[
+  {r:0.25,g:0.6,b:0.99},
+  {r:0.17,g:0.75,b:0.85},
+  {r:0.27,g:0.91,b:0.58},
+  {r:0.75,g:0.95,b:0.2},
+  {r:0.99,g:0.62,b:0.15},
+  {r:0.99,g:0.36,b:0.53},
+  {r:0.48,g:0.36,b:0.9},
+  {r:0.38,g:0.54,b:0.99}
+];
+
+var bgradient=[
+  {r:0.0,g:0.0,b:0.0},
+  {r:0.5,g:0.5,b:0.5},
+  {r:1.0,g:1.0,b:1.0}
+];
+
+//----------------------------------------------------------------------------------
+// Canvas Setup
+//----------------------------------------------------------------------------------
+
+function grad(arr,val)
+{
+    var cnt=arr.length;
+    var fr=Math.min(Math.max(val,0.0),1.0)*cnt;
+    var pos=Math.floor(fr);
+    var dec=fr-pos;
+
+    p1=arr[pos%cnt];
+    p2=arr[(pos+1)%cnt];
+
+    var r=Math.round((p1.r+(p2.r-p1.r)*dec)*255.0);
+    var g=Math.round((p1.g+(p2.g-p1.g)*dec)*255.0);
+    var b=Math.round((p1.b+(p2.b-p1.b)*dec)*255.0);
+ 
+    return `RGB(${r},${g},${b})`;
+}
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+
+    drawit();
+}
+        
+function updatestate()
+{
+
+}
+
+function mouseUp(e)
+{
+    mb=0;
+}
+
+function mouseDown(e)
+{
+    mb=e.which;
+}
+
+function mouseMove(e,t)
+{
+    var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element
+}
+
+function drawit()
+{	
+    ctx.clearRect(0,0,900,900);
+
+    for(var i=0;i<25;i++){
+          ctx.fillStyle=grad(gradient,i/25);
+          ctx.beginPath();
+          ctx.moveTo(i*30,100);
+          ctx.lineTo((i+1)*30,100);
+          ctx.lineTo((i+1)*30,130);
+          ctx.lineTo(i*30,130);
+          ctx.lineTo(i*30,100);
+          ctx.fill();
+    }
+
+    // window.requestAnimationFrame(drawit);
+} 			
+
+/*
+
+    ctx.strokeStyle="#a44";
+    ctx.beginPath();
+    ctx.moveTo(line[i].x,line[i].y);
+    ctx.lineTo(nline[i].x,nline[i].y);
+    ctx.moveTo(line[i].x,line[i].y);
+    ctx.lineTo(nline[i+1].x,nline[i+1].y);          
+    ctx.moveTo(nline[i].x,nline[i].y);
+    ctx.lineTo(nline[i+1].x,nline[i+1].y); 
+    ctx.stroke(); 
+
+*/
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

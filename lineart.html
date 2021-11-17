@@ -1,0 +1,108 @@
+<html>
+<head>
+		<script>
+// https://keystrokecountdown.com/articles/genart/index.html
+// Replicate 'System 190304a-c "Connections"'' by Frederik Vanhoutte
+// https://twitter.com/wblut/status/1102557824192835584
+//
+// With modification that we aim to continue any line from the right to the left and we connect the first input to the last output.
+//
+// This way the pattern should tile seamlessly.
+// 
+// We keep a counter of startingpoints at each starting point. This way we can spread starting points evenly.
+// We keep a counter of crossing point at each crossing point.  This way we can spread crossing points evenly.
+// Each line knows its crossing point since we know the counters at the inception
+
+var startingpoints=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+var crossingpoints=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+var endingpoints=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+var lines=[];
+
+var ctx;
+var mx,my,mb=0;
+var boxes=[];
+var curr=-1;
+
+var linecount=5;
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+
+    // Make X lines
+    var start=Math.floor(Math.random()*10);
+    var sp=(start*10)+startingpoints[start+1];
+    startingpoints[start]++;
+    for(i=0;i<linecount;i++){
+        // figure out start and cross for line
+        var end=Math.floor(Math.random()*10);
+        var ep=(end*10)+(startingpoints[end]+1);
+        startingpoints[end]++;
+ 
+        var cross=1+Math.floor(Math.random()*8);
+        var cp=(cross*10)+crossingpoints[cross];
+        crossingpoints[cross]++;
+
+        lines.push({sp:sp,cp:cp,ep:ep});
+
+        sp=ep;
+    }
+
+    console.log(lines);
+
+    setInterval(updatestate,20);
+  
+    drawit();
+}
+        
+function updatestate()
+{
+
+}
+
+function mouseUp(e)
+{
+    mb=0;
+}
+
+function mouseDown(e)
+{
+    mb=e.which;
+}
+
+function mouseMove(e,t)
+{
+    var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element
+}
+
+function drawit()
+{	
+    ctx.clearRect(0,0,900,900);
+
+    var scale=6;
+    for(var i=0;i<lines.length;i++){
+        ctx.beginPath();
+        ctx.moveTo(0,lines[i].sp*scale)
+        ctx.lineTo(lines[i].cp*scale,lines[i].sp*scale);
+        ctx.lineTo(lines[i].cp*scale,lines[i].ep*scale);
+        ctx.lineTo(100*scale,lines[i].ep*scale);
+        ctx.stroke();
+    }
+
+/*
+    ctx.beginPath();
+    ctx.moveTo(Math.random()*500,Math.random()*500);
+    ctx.lineTo(Math.random()*500,Math.random()*500);
+    ctx.stroke();
+*/
+    window.requestAnimationFrame(drawit);
+} 			
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

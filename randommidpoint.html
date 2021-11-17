@@ -1,0 +1,253 @@
+<html>
+<head>
+		<script>
+
+// https://bitesofcode.wordpress.com/2016/12/23/landscape-generation-using-midpoint-displacement/
+// https://www.somethinghitme.com/2013/11/11/simple-2d-terrain-with-midpoint-displacement/
+// https://observablehq.com/@douglyuckling/2d-midpoint-displacement-terrain-generator
+// https://learn.64bitdragon.com/articles/computer-science/procedural-generation/midpoint-displacement-in-two-dimensions
+// https://antimatroid.wordpress.com/tag/midpoint-displacement/
+// Fractal Geometry in Architecture and Design https://www.welo.at/research-publications/master-thesis/iii-fractals/36-midpoint-displacement/
+// https://developpaper.com/lighting-rendering-simulating-lighting-effect-with-canvas/
+
+// This is an attempt to replicate a midpoint displacement algorithm in pseudo 3d
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+
+var ctx;
+var mx,my,mb=0;
+
+// Hashed Array of lines
+var lines=[];
+
+// List of polygons
+var polys=[];
+
+// List of coordintes
+var coords=[];
+
+//----------------------------------------------------------------------------------
+// sub - vector subtraction - returns new vector 
+//----------------------------------------------------------------------------------
+
+function subVec(v1,v2)
+{
+    return {x:v1.x-v2.x,y:v1.y-v2.y,z:v1.z-v2.z};
+}
+
+//----------------------------------------------------------------------------------
+// cross - vector cross product - returns new vector 
+//----------------------------------------------------------------------------------
+
+function crossVec(v,w)
+{
+    var nx=(v.y*w.z)-(v.z*w.y);
+    var ny=(v.z*w.x)-(v.x*w.z);
+    var nz=(v.x*w.y)-(v.y*w.x);
+
+    return {x:nx,y:ny,z:nz};
+}
+
+//----------------------------------------------------------------------------------
+// normalize - vector normalize - returns new vector 
+//----------------------------------------------------------------------------------
+
+function normalVec(v)
+{
+    var len=Math.sqrt((v.x*v.x)+(v.y*v.y)+(v.z*v.z));
+    return {x:v.x/len,y:v.y/len,z:v.z/len};
+}
+
+//----------------------------------------------------------------------------------
+// makeCoord - Create new previously unknown coordinate 
+//----------------------------------------------------------------------------------
+
+function makeCoord(x,y,z)
+{
+    return coords.push({x:Math.floor(x),y:Math.floor(y),z:Math.floor(z)})-1;
+}
+
+//----------------------------------------------------------------------------------
+// makePoly - Create new polygon with known points
+//----------------------------------------------------------------------------------
+
+function makePoly(p1,p2,p3,generation,color)
+{
+    var v=subVec(coords[p1],coords[p2]);
+    var w=subVec(coords[p2],coords[p3]);
+    var n=normalVec(crossVec(v,w));
+
+    console.log(v,w,n);
+
+    polys.push({p1:p1,p2:p2,p3:p3,generation:generation,color:color,normal:n});
+}
+
+//----------------------------------------------------------------------------------
+// findOr - Return existing random midpoint OR create a new one
+//----------------------------------------------------------------------------------
+
+function findOr(p1,p2,jitter)
+{
+    let hash="H"+p1+"H"+p2;
+    let rhash="H"+p2+"H"+p1;
+    if(typeof lines[hash] != 'undefined'){
+        return lines[hash];
+    }else if(typeof lines[rhash] != 'undefined'){
+        return lines[rhash];
+    }else{
+        let xk=((coords[p1].x+coords[p2].x)*0.5)+((Math.random()*jitter)-(jitter*0.5));   
+        let yk=((coords[p1].y+coords[p2].y)*0.5)+((Math.random()*jitter)-(jitter*0.5));  
+        let zk=((coords[p1].z+coords[p2].z)*0.5)+((Math.random()*jitter)-(jitter*0.5));  
+        let ind=makeCoord(xk,yk,zk);
+        lines[hash]=ind;
+        return ind;
+    }
+}
+
+function makeCenter(p1,p2,p3,jitter)
+{
+        let xk=((coords[p1].x+coords[p2].x+coords[p3].x)*0.33)+((Math.random()*jitter)-(jitter*0.5));   
+        let yk=((coords[p1].y+coords[p2].y+coords[p3].y)*0.33)+((Math.random()*jitter)-(jitter*0.5));  
+        let zk=((coords[p1].z+coords[p2].z+coords[p3].z)*0.33)+((Math.random()*jitter)-(jitter*0.5)); 
+        
+        return makeCoord(xk,yk,zk);
+}
+
+//----------------------------------------------------------------------------------
+// subdivideLow - Subdivide triangle into four triangles
+//----------------------------------------------------------------------------------
+
+function subdivideLow(p1,p2,p3,generation,jitter,color)
+{
+    // Stop subdividing and return -1
+    if(generation>3){
+        return -1;
+    }else{
+        jitter=jitter*0.5;
+
+        // Find existing midpoints or generate new ones
+        m1=findOr(p1,p2,jitter);
+        m2=findOr(p2,p3,jitter);
+        m3=findOr(p3,p1,jitter);
+
+        // Make new triangles from given points
+        makePoly(p1,m1,m3,generation+1,color);
+        makePoly(p2,m2,m1,generation+1,color);
+        makePoly(p3,m3,m2,generation+1,color);
+        makePoly(m1,m2,m3,generation+1,color);
+
+        return 1;
+      }
+}
+
+//----------------------------------------------------------------------------------
+// subdivideLow - Subdivide triangle into six triangles
+//----------------------------------------------------------------------------------
+
+function subdivideHi(p1,p2,p3,generation,jitter,color)
+{
+    // Stop subdividing and return -1
+    if(generation>2){
+        return -1;
+    }else{
+        jitter=jitter*0.5;
+
+        // Find existing midpoints or generate new ones
+        m1=findOr(p1,p2,jitter);
+        m2=findOr(p2,p3,jitter);
+        m3=findOr(p3,p1,jitter);
+
+        m4=makeCenter(p1,p2,p3,jitter);
+
+        // Make new triangles from given points
+        makePoly(p1,m1,m3,generation+1,color);
+        makePoly(p2,m1,m4,generation+1,color); 
+        makePoly(p2,m4,m2,generation+1,color); 
+        makePoly(p3,m3,m2,generation+1,color);
+        makePoly(m1,m3,m4,generation+1,color); 
+        makePoly(m2,m4,m3,generation+1,color);                                        
+//        makePoly(p2,m2,m1,generation+1,color);
+//        makePoly(p3,m3,m2,generation+1,color);
+//        makePoly(m1,m2,m3,generation+1,color);
+
+        return 1;
+      }
+}
+
+//----------------------------------------------------------------------------------
+// Canvas Setup
+//----------------------------------------------------------------------------------
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+
+    var p1=makeCoord(300,100,100);
+    var p2=makeCoord(100,500,500);
+    var p3=makeCoord(600,600,500);
+
+    makePoly(p1,p2,p3,0,0.5);
+
+    do{
+          var poly=polys[0];
+          if(subdivideHi(poly.p1,poly.p2,poly.p3,poly.generation,50,0.5)>-1){
+              polys.splice(0,1);
+          }else{
+              break;
+          } 
+    }while(true);
+
+    drawit();
+}
+        
+function updatestate()
+{
+
+}
+
+function mouseUp(e)
+{
+    mb=0;
+}
+
+function mouseDown(e)
+{
+    mb=e.which;
+}
+
+function mouseMove(e,t)
+{
+    var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element
+}
+
+function drawit()
+{	
+    ctx.clearRect(0,0,900,900);
+
+    for(i=0;i<polys.length;i++){
+        var poly=polys[i];
+        var r=Math.abs(poly.normal.x);
+        var g=Math.abs(poly.normal.y);
+        var b=Math.abs(poly.normal.z);
+        ctx.fillStyle=`rgb(${Math.floor(r*255)},${Math.floor(g*255)},${Math.floor(b*255)})`;
+        ctx.beginPath();
+        ctx.moveTo(coords[poly.p1].x,coords[poly.p1].y);
+        ctx.lineTo(coords[poly.p2].x,coords[poly.p2].y);
+        ctx.lineTo(coords[poly.p3].x,coords[poly.p3].y);
+        ctx.lineTo(coords[poly.p1].x,coords[poly.p1].y);
+        ctx.fill();
+    }
+
+    window.requestAnimationFrame(drawit);
+} 			
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

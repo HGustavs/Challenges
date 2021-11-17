@@ -1,0 +1,151 @@
+<html>
+<head>
+		<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+
+// Virrvarr
+// Biosphere https://en.wikipedia.org/wiki/Montreal_Biosphere
+
+var ctx;
+var mx,my,mb=0;
+
+// Array of array of lines of balls
+var lines=[];
+var line=[];
+
+//----------------------------------------------------------------------------------
+// Canvas Setup
+//----------------------------------------------------------------------------------
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+
+    bcx=200;
+    bcy=600;
+    bang=4.1;
+
+    ang=bang;
+    for(var j=0;j<10;j++){
+        ang=bang;
+        bang+=0.15;
+        var xv=Math.cos(ang);
+        var yv=Math.sin(ang);
+
+        bcx+=30;
+        cy=bcy;
+        cx=bcx;
+        var line=[];
+        v=30;
+        va=3;
+
+        if((j%2)==1){
+            cx+=(xv*(v*0.7));
+            cy+=(yv*(v*0.7));           
+        }
+
+        // Iterate X times
+        for(var i=0;i<10;i++){
+            cx+=(xv*v);
+            cy+=(yv*v);
+            line.push({x:cx,y:cy});
+            v+=va;
+        }
+        lines.push(line);
+    }
+
+    drawit();
+}
+        
+function updatestate()
+{
+
+}
+
+function mouseUp(e)
+{
+    mb=0;
+}
+
+function mouseDown(e)
+{
+    mb=e.which;
+}
+
+function mouseMove(e,t)
+{
+    var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element
+}
+
+function drawit()
+{	
+    ctx.clearRect(0,0,900,900);
+
+    for(var j=0;j<(lines.length-1);j++){
+        var line=lines[j];
+        var nline=lines[j+1];
+
+        if(j%2==0){
+            for(var i=1;i<(line.length-2);i++){
+                  ctx.strokeStyle="#44a";
+                  ctx.fillStyle="#44a";
+
+                  ctx.beginPath();
+                  ctx.moveTo(line[i].x,line[i].y);
+                  ctx.lineTo(line[i+1].x,line[i+1].y);
+                  ctx.lineTo(nline[i].x,nline[i].y); 
+                  ctx.lineTo(line[i].x,line[i].y);
+                  ctx.fill(); 
+            }
+        }else{
+            for(var i=1;i<(line.length-2);i++){
+                ctx.strokeStyle="#4a4";
+                ctx.fillStyle="#4a4";
+
+                ctx.beginPath();
+                ctx.moveTo(line[i].x,line[i].y);
+                ctx.lineTo(nline[i].x,nline[i].y);
+                ctx.lineTo(nline[i+1].x,nline[i+1].y);
+                ctx.lineTo(line[i].x,line[i].y);
+                ctx.fill(); 
+               
+                ctx.fillStyle="#a44";
+                ctx.strokeStyle="#a44";
+                ctx.beginPath();
+                ctx.moveTo(line[i].x,line[i].y);
+                ctx.lineTo(line[i+1].x,line[i+1].y);
+                ctx.lineTo(nline[i+1].x,nline[i+1].y);
+                ctx.lineTo(line[i].x,line[i].y);
+                ctx.fill();                 
+          }
+        }
+    }
+
+    window.requestAnimationFrame(drawit);
+} 			
+
+/*
+
+    ctx.strokeStyle="#a44";
+    ctx.beginPath();
+    ctx.moveTo(line[i].x,line[i].y);
+    ctx.lineTo(nline[i].x,nline[i].y);
+    ctx.moveTo(line[i].x,line[i].y);
+    ctx.lineTo(nline[i+1].x,nline[i+1].y);          
+    ctx.moveTo(nline[i].x,nline[i].y);
+    ctx.lineTo(nline[i+1].x,nline[i+1].y); 
+    ctx.stroke(); 
+
+*/
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>
