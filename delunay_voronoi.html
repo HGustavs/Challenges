@@ -1,0 +1,243 @@
+<html>
+<head>
+		<script>
+				var ctx;
+			  var mx,my,mb=0;
+
+        const drawscale=5;
+			
+			  // https://heredragonsabound.blogspot.com/2016/10/making-islands.html
+			  // http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/
+        // https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0193350
+        // https://en.wikipedia.org/wiki/Circumscribed_circle#Circumscribed_circles_of_triangles
+        // https://web.archive.org/web/20020601162223if_/http://astronomy.swin.edu.au:80/~pbourke/terrain/triangulate/triangulate.c
+        // https://web.archive.org/web/20020423210345/http://astronomy.swin.edu.au/~pbourke/terrain/triangulate/
+
+        var points=[
+          {x:64,y:14,tri:[]},
+          {x:113,y:7,tri:[]},
+          {x:28,y:33,tri:[]},
+          {x:143,y:37,tri:[]},
+          {x:88,y:42,tri:[]},
+          {x:56,y:54,tri:[]},
+          {x:117,y:57,tri:[]},
+          {x:158,y:63,tri:[]},
+          {x:88,y:70,tri:[]},
+          {x:11,y:72,tri:[]},
+          {x:46,y:84,tri:[]},
+          {x:123,y:89,tri:[]},
+          {x:81,y:101,tri:[]},
+          {x:15,y:106,tri:[]},
+          {x:146,y:107,tri:[]},
+          {x:60,y:117,tri:[]},
+          {x:106,y:123,tri:[]},
+          {x:132,y:140,tri:[]},
+          {x:43,y:143,tri:[]},
+          {x:84,y:151,tri:[]},
+        ];
+
+        var triangles=[
+            {p1: 0, p2: 1 , p3: 4},
+            {p1: 0, p2: 2 , p3: 5},
+            {p1: 0, p2: 5 , p3: 4},
+            {p1: 1, p2: 4 , p3: 6},
+            {p1: 1, p2: 3 , p3: 6},
+            {p1: 3, p2: 6 , p3: 7},
+            {p1: 2, p2: 9 , p3: 5},
+            {p1: 5, p2: 8 , p3: 4},
+            {p1: 8, p2: 4 , p3: 6},
+            {p1: 9, p2: 10 , p3: 5},
+            {p1: 10, p2: 8 , p3: 5},
+            {p1: 8, p2: 6 , p3: 11},
+            {p1: 6, p2: 7 , p3: 11},
+            {p1: 10, p2: 12 , p3: 8},
+            {p1: 8, p2: 12 , p3: 11},
+            {p1: 9, p2: 10 , p3: 13},
+            {p1: 10, p2: 13 , p3: 15},
+            {p1: 10, p2: 15 , p3: 12},
+            {p1: 12, p2: 16 , p3: 11},
+            {p1: 11, p2: 7 , p3: 14},
+            {p1: 12, p2: 16 , p3: 19},
+            {p1: 12, p2: 15 , p3: 19},
+            {p1: 16, p2: 14 , p3: 11},
+            {p1: 13, p2: 15 , p3: 18},
+            {p1: 15, p2: 18 , p3: 19},
+            {p1: 17, p2: 16 , p3: 19},
+            {p1: 16, p2: 17 , p3: 14}
+          ];
+			
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    ctx = cc.getContext("2d");
+					
+						setInterval(updatestate,20);
+
+            for(var i=0;i<triangles.length;i++){
+                  points[triangles[i].p1].tri.push(i);
+                  points[triangles[i].p2].tri.push(i);
+                  points[triangles[i].p3].tri.push(i);
+            }
+					
+						drawit();
+				}
+								
+				function updatestate()
+				{
+
+				}
+			
+				function mouseUp(e)
+				{
+						mb=0;
+				}
+			
+				function mouseDown(e)
+				{
+						mb=e.which;
+				}
+			
+				function mouseMove(e,t)
+				{
+						var rect = e.target.getBoundingClientRect();
+            mx = e.clientX - rect.left; //x position within the element.
+            my = e.clientY - rect.top;  //y position within the element
+				}
+
+				// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+				// Determine the intersection point of two line segments
+				function intersect(p1,p2,p3,p4) {
+            // Check if none of the lines are of length 0
+            if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+
+            denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+          
+            // Lines are parallel
+            if (denominator === 0) return false;
+
+            let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+            let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+            // Return a object with the x and y coordinates of the intersection
+            let x = p1.x + ua * (p2.x - p1.x)
+            let y = p1.y + ua * (p2.y - p1.y)
+            
+            return {x:x, y:y}
+        }        
+
+        // Returns x,y coordinate for 
+        function crossMidpoint(p1,p2,p3)
+        {
+            var c1={x:(p1.x+p2.x)*0.5,y:(p1.y+p2.y)*0.5};
+            var c2={x:(p1.x+p3.x)*0.5,y:(p1.y+p3.y)*0.5};
+
+            var d1={x:c1.x+p1.y-p2.y,y:c1.y+p2.x-p1.x};
+            var d2={x:c2.x+p1.y-p3.y,y:c2.y+p3.x-p1.x};
+
+            return {p1:intersect(c1,d1,c2,d2),p2:c1,p3:c2};
+        }
+
+        function circ(x,y)
+        {
+            ctx.beginPath();
+            ctx.arc(x*drawscale,y*drawscale, 5, 0, 6.28);
+            ctx.stroke();
+        }
+			
+				function drawit()
+				{	
+            console.log(points);
+						ctx.clearRect(0,0,900,900);
+						
+            ctx.font="20px Arial Narrow";
+
+            for(var i=0;i<points.length;i++){
+                  newtri=points[i].tri;
+                  if(newtri.length>0){
+                      var next=0;
+                      var curr=-1;
+                      while(newtri.length>0){
+                          if(curr==-1){
+                              triangle=triangles[newtri[0]];
+                              curr=0;
+                          }else{
+                              for(var k=0;k<newtri.length;k++){
+                                  triangle=triangles[newtri[k]];
+                                  if(triangle.p1==next||triangle.p2==next||triangle.p3==next){
+                                    curr=k;
+                                    break;
+                                  }
+                              }
+                          }
+                          var pnt;
+                          if(triangle.p1==i){
+                              pnt=crossMidpoint(points[triangle.p1],points[triangle.p2],points[triangle.p3]);
+                              if(next==triangle.p2){
+                                  next=triangle.p3;
+                              }else{
+                                  next=triangle.p2;
+                              }
+                          }else if(triangle.p2==i){
+                              pnt=crossMidpoint(points[triangle.p2],points[triangle.p1],points[triangle.p3]);
+                              if(next==triangle.p1){
+                                  next=triangle.p3;
+                              }else{
+                                  next=triangle.p1;
+                              }
+                          }else{
+                              pnt=crossMidpoint(points[triangle.p3],points[triangle.p1],points[triangle.p2]);
+                              if(next==triangle.p1){
+                                  next=triangle.p2;
+                              }else{
+                                  next=triangle.p1;
+                              }
+                          }
+
+                          ctx.setLineDash([8,8]);
+                          ctx.beginPath();
+                          ctx.moveTo(pnt.p1.x*drawscale,pnt.p1.y*drawscale);
+                          ctx.lineTo(pnt.p2.x*drawscale,pnt.p2.y*drawscale);
+                          ctx.moveTo(pnt.p1.x*drawscale,pnt.p1.y*drawscale);
+                          ctx.lineTo(pnt.p3.x*drawscale,pnt.p3.y*drawscale);
+                          ctx.stroke();
+                          ctx.setLineDash([]);
+
+                          newtri.splice(curr,1);
+                      }
+                  }
+            }
+
+            //var pnt=crossMidpoint(points[5],points[2],points[0]);
+            //circ(pnt.x, pnt.y);
+
+            // Algorithm for voronoi duality of delunay traingulation
+            // Find all triangles that join at a certain point
+            // For that triangle add colision of midpoint normals
+
+            for(var i=0;i<points.length;i++){
+                  //circ(points[i].x, points[i].y);
+                  ctx.fillText(i,(points[i].x*drawscale)+(2.0*drawscale), points[i].y*drawscale);										
+            }
+
+            for(var i=0;i<triangles.length;i++){
+                  var triangle=triangles[i];
+                  ctx.beginPath();
+                  ctx.moveTo(points[triangle.p1].x*drawscale,points[triangle.p1].y*drawscale);
+                  ctx.lineTo(points[triangle.p2].x*drawscale,points[triangle.p2].y*drawscale);
+                  ctx.lineTo(points[triangle.p3].x*drawscale,points[triangle.p3].y*drawscale);
+                  ctx.lineTo(points[triangle.p1].x*drawscale,points[triangle.p1].y*drawscale);
+                  ctx.stroke();
+
+                  cx=(points[triangle.p1].x*drawscale)+(points[triangle.p2].x*drawscale)+(points[triangle.p3].x*drawscale);
+                  cy=(points[triangle.p1].y*drawscale)+(points[triangle.p2].y*5)+(points[triangle.p3].y*5);
+
+                  ctx.fillText(i,cx/3,cy/3);
+            }            
+						// window.requestAnimationFrame(drawit);
+				} 			
+						
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

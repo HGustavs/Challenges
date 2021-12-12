@@ -12,8 +12,8 @@ var ctx;
 var mx,my,mb=0;
 
 // Array of array of lines of balls
-
-var jgradient=[{r:0.76,g:0.91,b:0.94},{r:0.32,g:0.62,b:0.75},{r:0.16,g:0.12,b:0.33},{r:0.63,g:0.14,b:0.21},{r:0.99,g:0.85,b:0.63},{r:0.97,g:0.99,b:0.94}];
+var agradient=[{r:0.25,g:0.6,b:0.99},{r:0.17,g:0.75,b:0.85},{r:0.27,g:0.91,b:0.58},{r:0.75,g:0.95,b:0.2},{r:0.99,g:0.62,b:0.15},{r:0.99,g:0.36,b:0.53},{r:0.48,g:0.36,b:0.9},{r:0.38,g:0.54,b:0.99}];
+var bgradient=[{r:0.92,g:0.46,b:0.14},{r:0.74,g:0.30,b:0.28},{r:0.43,g:0.31,b:0.43},{r:0.43,g:0.52,b:0.53},{r:0.50,g:0.63,b:0.42},{r:0.99,g:0.53,b:0.17}];
 
 //----------------------------------------------------------------------------------
 // Canvas Setup
@@ -33,6 +33,42 @@ function grad(arr,val)
     var g=Math.round((p1.g+(p2.g-p1.g)*dec)*255.0);
     var b=Math.round((p1.b+(p2.b-p1.b)*dec)*255.0);
  
+    return `RGB(${r},${g},${b})`;
+}
+
+function grad2(arr1,arr2,val1,val2)
+{
+    var cnt1=arr1.length;
+    var cnt2=arr2.length;
+
+    val2=Math.min(Math.max(val2,0.0),1.0);
+
+    var fr1=Math.min(Math.max(val1,0.0),1.0)*cnt1;
+    var fr2=Math.min(Math.max(val1,0.0),1.0)*cnt2;
+
+    var pos1=Math.floor(fr1);
+    var pos2=Math.floor(fr2);
+
+    var dec1=fr1-pos1;
+    var dec2=fr2-pos2;
+
+    p1a=arr1[pos1%cnt1];
+    p2a=arr1[(pos1+1)%cnt1];
+    p1b=arr2[pos2%cnt2];
+    p2b=arr2[(pos2+1)%cnt2];
+
+    var ra=((p1a.r+(p2a.r-p1a.r)*dec1));
+    var ga=((p1a.g+(p2a.g-p1a.g)*dec1));
+    var ba=((p1a.b+(p2a.b-p1a.b)*dec1));
+
+    var rb=((p1b.r+(p2b.r-p1b.r)*dec2));
+    var gb=((p1b.g+(p2b.g-p1b.g)*dec2));
+    var bb=((p1b.b+(p2b.b-p1b.b)*dec2));
+
+    var r=Math.round((ra+((rb-ra)*val2))*255);
+    var g=Math.round((ga+((gb-ga)*val2))*255);
+    var b=Math.round((ba+((bb-ba)*val2))*255);
+
     return `RGB(${r},${g},${b})`;
 }
 
@@ -67,7 +103,7 @@ function mouseMove(e,t)
 }
 
 var vv=0.0;
-function spiral(xk,yk)
+function spiral(xk,yk,revo)
 {
     // Center 0..1 coordinates
     xk=(Math.max(0.0,Math.min(1.0,xk))-0.5)*2.0;
@@ -75,9 +111,7 @@ function spiral(xk,yk)
     
     len=Math.sqrt((xk*xk)+(yk*yk));
 
-    var revo=1.0/2;
-
-    return ((((Math.atan2(yk,xk)+3.14)/(3.14*revo))+len)%1.0);
+    return grad2(agradient,bgradient,((((Math.atan2(yk,xk)+3.14)/(3.14*0.5))+len)%1.0),len*0.7);
 }
 
 
@@ -90,8 +124,7 @@ function drawit()
     for(var j=0;j<tcnt;j++){
         for(var i=0;i<tcnt;i++){
             var sp=spiral(i/tcnt,j/tcnt);
-            console.log(sp);
-            ctx.fillStyle=grad(jgradient,sp);
+            ctx.fillStyle=sp;
             ctx.beginPath();
             ctx.moveTo(i*twidth,j*twidth);
             ctx.lineTo((i+1)*twidth,j*twidth);

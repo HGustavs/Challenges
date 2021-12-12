@@ -6,6 +6,11 @@
 //                                 Canvas Slide Constants and Variables
 //------------------------------------=======############==========----------------------------------------
 
+// https://stackoverflow.com/questions/15408522/rgb-to-xyz-and-lab-colours-conversion
+// https://stackoverflow.com/questions/58973890/lab-to-xyz-and-xyz-to-rgb-color-space-conversion-algorithm
+// https://www.easyrgb.com/en/math.php
+// https://github.com/antimatter15/rgb-lab/blob/master/color.js
+
 // Gradient 2d and 3d
 
 var ctx;
@@ -13,7 +18,7 @@ var mx,my,mb=0;
 
 // Array of array of lines of balls
 
-var gradient=[{r:0.25,g:0.6,b:0.99},{r:0.17,g:0.75,b:0.85},{r:0.27,g:0.91,b:0.58},{r:0.75,g:0.95,b:0.2},{r:0.99,g:0.62,b:0.15},{r:0.99,g:0.36,b:0.53},{r:0.48,g:0.36,b:0.9},{r:0.38,g:0.54,b:0.99}];
+var agradient=[{r:0.25,g:0.6,b:0.99},{r:0.17,g:0.75,b:0.85},{r:0.27,g:0.91,b:0.58},{r:0.75,g:0.95,b:0.2},{r:0.99,g:0.62,b:0.15},{r:0.99,g:0.36,b:0.53},{r:0.48,g:0.36,b:0.9},{r:0.38,g:0.54,b:0.99}];
 var bgradient=[{r:0.0,g:0.0,b:0.0},{r:0.5,g:0.5,b:0.5},{r:1.0,g:1.0,b:1.0}];
 var cgradient=[{r:0.92,g:0.46,b:0.14},{r:0.74,g:0.30,b:0.28},{r:0.43,g:0.31,b:0.43},{r:0.43,g:0.52,b:0.53},{r:0.50,g:0.63,b:0.42},{r:0.99,g:0.53,b:0.17},];
 var dgradient=[{r:0.69,g:0.07,b:0.44},{r:0.89,g:0.35,b:0.39},{r:0.99,g:0.70,b:0.42},{r:0.99,g:0.81,b:0.70},{r:0.69,g:0.82,b:0.98},{r:0.49,g:0.73,b:0.91},{r:0.82,g:0.49,b:0.68}];
@@ -23,11 +28,66 @@ var ggradient=[{r:0.28,g:0.32,b:0.52},{r:0.57,g:0.41,b:0.50},{r:0.88,g:0.63,b:0.
 var hgradient=[{r:0.67,g:0.15,b:0.14},{r:0.99,g:0.57,b:0.21},{r:0.91,g:0.83,b:0.43},{r:0.29,g:0.74,b:0.39},{r:0.05,g:0.68,b:0.70},{r:0.16,g:0.45,b:0.60},{r:0.61,g:0.37,b:0.58},{r:0.56,g:0.13,b:0.37}];
 var igradient=[{r:0.93,g:0.32,b:0.12},{r:0.98,g:0.66,b:0.42},{r:0.89,g:0.93,b:0.70},{r:0.73,g:0.86,b:0.72},{r:0.89,g:0.93,b:0.70},{r:0.28,g:0.82,b:0.85}];
 var jgradient=[{r:0.76,g:0.91,b:0.94},{r:0.32,g:0.62,b:0.75},{r:0.16,g:0.12,b:0.33},{r:0.63,g:0.14,b:0.21},{r:0.99,g:0.85,b:0.63},{r:0.97,g:0.99,b:0.94}];
-
+var kgradient=[{r:0.0,g:0.0,b:0.0},{r:0.0,g:0.3,b:1.0},{r:1.0,g:0.3,b:0.0},{r:1.0,g:1.0,b:0.0},{r:1.0,g:1.0,b:1.0}];
+var lgradient=[{r:0.69,g:0.07,b:0.44},{r:0.99,g:0.70,b:0.42},{r:0.99,g:0.81,b:0.70},{r:0.69,g:0.82,b:0.98}];
+// {r:0.89,g:0.35,b:0.39},
+// {r:0.89,g:0.35,b:0.39},
+// ,,{r:0.82,g:0.49,b:0.68}
 //----------------------------------------------------------------------------------
 // Canvas Setup
 //----------------------------------------------------------------------------------
 
+function lab2rgb(lab){
+  var y = (lab.l + 16) / 116;
+  var x = lab.a / 500 + y;
+  var z = y - lab.b / 200;
+
+  x = 0.95047 * ((x * x * x > 0.008856) ? x * x * x : (x - 16/116) / 7.787);
+  y = 1.00000 * ((y * y * y > 0.008856) ? y * y * y : (y - 16/116) / 7.787);
+  z = 1.08883 * ((z * z * z > 0.008856) ? z * z * z : (z - 16/116) / 7.787);
+
+  var r = x *  3.2406 + y * -1.5372 + z * -0.4986;
+  var g = x * -0.9689 + y *  1.8758 + z *  0.0415;
+  var b = x *  0.0557 + y * -0.2040 + z *  1.0570;
+
+  r = (r > 0.0031308) ? (1.055 * Math.pow(r, 1/2.4) - 0.055) : 12.92 * r;
+  g = (g > 0.0031308) ? (1.055 * Math.pow(g, 1/2.4) - 0.055) : 12.92 * g;
+  b = (b > 0.0031308) ? (1.055 * Math.pow(b, 1/2.4) - 0.055) : 12.92 * b;
+
+  return {
+          r: Math.max(0, Math.min(1, r)), 
+          g: Math.max(0, Math.min(1, g)), 
+          b: Math.max(0, Math.min(1, b))
+        }
+}
+
+function rgb2lab(rgb){
+
+  var r = (rgb.r > 0.04045) ? Math.pow((rgb.r + 0.055) / 1.055, 2.4) : rgb.r / 12.92;
+  var g = (rgb.g > 0.04045) ? Math.pow((rgb.g + 0.055) / 1.055, 2.4) : rgb.g / 12.92;
+  var b = (rgb.b > 0.04045) ? Math.pow((rgb.b + 0.055) / 1.055, 2.4) : rgb.b / 12.92;
+
+  var x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+  var y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
+  var z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+
+  x = (x > 0.008856) ? Math.pow(x, 1/3) : (7.787 * x) + 16/116;
+  y = (y > 0.008856) ? Math.pow(y, 1/3) : (7.787 * y) + 16/116;
+  z = (z > 0.008856) ? Math.pow(z, 1/3) : (7.787 * z) + 16/116;
+
+  return {
+    l:(116 * y) - 16, 
+    a:500 * (x - y), 
+    b: 200 * (y - z)
+  }
+}
+
+function rgb2html(rgb)
+{
+  return `RGB(${Math.floor(rgb.r*255)},${Math.floor(rgb.g*255)},${Math.floor(rgb.b*255)})`;
+}
+
+// Normal gradient
 function grad(arr,val)
 {
     var cnt=arr.length;
@@ -38,12 +98,53 @@ function grad(arr,val)
     p1=arr[pos%cnt];
     p2=arr[(pos+1)%cnt];
 
-    var r=Math.round((p1.r+(p2.r-p1.r)*dec)*255.0);
-    var g=Math.round((p1.g+(p2.g-p1.g)*dec)*255.0);
-    var b=Math.round((p1.b+(p2.b-p1.b)*dec)*255.0);
+    return {r:(p1.r+(p2.r-p1.r)*dec),
+           g:(p1.g+(p2.g-p1.g)*dec),
+           b:(p1.b+(p2.b-p1.b)*dec)
+    };
+ }
+
+// Normal gradient
+function gradlab(arr,val)
+{
+    var cnt=arr.length;
+    var fr=Math.min(Math.max(val,0.0),1.0)*cnt;
+    var pos=Math.floor(fr);
+    var dec=fr-pos;
+
+    p1=rgb2lab(arr[pos%cnt]);
+    p2=rgb2lab(arr[(pos+1)%cnt]);
+
+    var lab={};
+    lab.l=(p1.l+(p2.l-p1.l)*dec);
+    lab.a=(p1.a+(p2.a-p1.a)*dec);
+    lab.b=(p1.b+(p2.b-p1.b)*dec);
  
-    return `RGB(${r},${g},${b})`;
+    return lab2rgb(lab);
 }
+
+function interplab(cola,colb,val)
+{
+    cola=rgb2lab(cola);
+    colb=rgb2lab(colb);
+
+    var lab={};
+    lab.l=cola.l+((colb.l-cola.l)*val);
+    lab.a=cola.a+((colb.a-cola.a)*val);
+    lab.b=cola.b+((colb.b-cola.b)*val);
+
+    return lab2rgb(lab);
+}
+
+function interprgb(cola,colb,val)
+{
+    return {
+    r:cola.r+((colb.r-cola.r)*val),
+    g:cola.g+((colb.g-cola.g)*val),
+    b:cola.b+((colb.b-cola.b)*val),
+    }; 
+}
+
 
 function setup()
 {
@@ -75,22 +176,56 @@ function mouseMove(e,t)
     my = e.clientY - rect.top;  //y position within the element
 }
 
+function reckt(x,y,col,size)
+{
+    ctx.fillStyle=col;
+    
+    ctx.beginPath();
+    ctx.moveTo((x*size),(y*size));
+    ctx.lineTo((x*size)+size,(y*size));
+    ctx.lineTo((x*size)+size,(y*size)+size);
+    ctx.lineTo((x*size),(y*size)+size);
+    ctx.lineTo((x*size),(y*size));
+    ctx.fill();    
+
+  }
+
 function drawit()
 {	
     ctx.clearRect(0,0,900,900);
 
-    for(var i=0;i<25;i++){
-          ctx.fillStyle=grad(jgradient,i/25);
-          ctx.beginPath();
-          ctx.moveTo(i*30,100);
-          ctx.lineTo((i+1)*30,100);
-          ctx.lineTo((i+1)*30,130);
-          ctx.lineTo(i*30,130);
-          ctx.lineTo(i*30,100);
-          ctx.fill();
-    }
+    //var yellow=rgb2lab({r:1.0,g:1.0,b:0.0});
+    //var blue=rgb2lab({r:0.0,g:0.0,b:1.0});
+    //var mid={l:(yellow.l+blue.l)*0.5,a:(yellow.a+blue.a)*0.5,b:(yellow.b+blue.b)*0.5};
 
-    // window.requestAnimationFrame(drawit);
+    // mid=rgb2lab({r:1.0,g:1.0,b:0.0});
+
+     //console.log(mid,lab2rgb(mid));
+
+    for(var i=0;i<25;i++){
+
+          reckt(i,5,rgb2html(interplab({r:1.0,g:0.0,b:0.0},{r:0.0,g:1.0,b:1.0},i/25)),30);
+          reckt(i,6,rgb2html(interprgb({r:1.0,g:0.0,b:0.0},{r:0.0,g:1.0,b:1.0},i/25)),30);
+
+          reckt(i,8,rgb2html(gradlab(dgradient,i/25)),30);
+          reckt(i,9,rgb2html(grad(dgradient,i/25)),30);      
+
+          reckt(i,10,rgb2html(gradlab(lgradient,i/25)),30);
+          reckt(i,11,rgb2html(grad(lgradient,i/25)),30); 
+    }
+    
+    for(var i=0;i<20;i++){
+        c1=interprgb({r:1.0,g:0.0,b:0.0},{r:0.0,g:1.0,b:1.0},i/20);
+        c2=interprgb({r:1.0,g:1.0,b:0.0},{r:0.0,g:0.0,b:1.0},i/20);
+        c3=interplab({r:1.0,g:0.0,b:0.0},{r:0.0,g:1.0,b:1.0},i/20);
+        c4=interplab({r:1.0,g:1.0,b:0.0},{r:0.0,g:0.0,b:1.0},i/20);
+
+        for(var j=0;j<20;j++){
+              reckt(j,i+20,rgb2html(interprgb(c1,c2,j/20)),20);  
+              reckt(j+21,i+20,rgb2html(interplab(c3,c4,j/20)),20);  
+        }
+    }
+   // window.requestAnimationFrame(drawit);
 } 			
 
 		</script>

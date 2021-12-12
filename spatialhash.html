@@ -1,0 +1,140 @@
+<html>
+<head>
+		<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+
+// Boids spatial hashing 
+// https://www.semanticscholar.org/paper/A-hash-table-construction-algorithm-for-spatial-on-Pozzer-Pahins/9917f5f6401313c493a96371d7a28611e2311e80
+// https://slsdo.github.io/steering-behaviors/
+// https://www.red3d.com/cwr/steer/gdc99/
+
+var ctx;
+
+var objs=[];
+var pivot=[];
+var hashtab=[];
+var prio=[];
+var clustcnt=3;
+
+const cellwidth=50;
+const cellcnt=10;
+
+//----------------------------------------------------------------------------------
+// Canvas Setup
+//----------------------------------------------------------------------------------
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+
+    for(var i=0;i<100;i++){
+          var ang=Math.random()*6.28;
+          var radi=Math.random()*Math.random()*220;
+          var xk=230+(Math.cos(ang)*radi);
+          var yk=230+(Math.sin(ang)*radi);
+          objs.push({x:xk,y:yk});
+    }
+
+    for(var i=0;i<(cellcnt*cellcnt);i++){
+        pivot[i]={cnt:0,from:0,to:0};
+    }
+
+    for(var i=0;i<clustcnt;i++){
+        prio[i]={numb:0,val:0};
+    }
+
+    drawit();
+}
+
+// Function for recomputing hash values
+function recomputeHashes()
+{
+    // Clear pivot map
+    for(var i=0;i<(cellcnt*cellcnt);i++){
+        pivot[i].cnt=0;
+        pivot[i].tot=0;
+    }
+
+    // Compute hash and count for each object
+    for(var i=0;i<objs.length;i++){
+        var hash=Math.floor(objs[i].x/cellwidth)+(cellcnt*Math.floor(objs[i].y/cellwidth));
+        objs[i].hash=hash;
+        pivot[hash].cnt++;
+        pivot[hash].tot++;
+    }
+
+    // Compute offsets and find highest 
+    var pos=0;
+    for(var i=0;i<(cellcnt*cellcnt);i++){
+        // If bigger than last in prio
+        if(pivot[i].cnt>prio[clustcnt-1].val){
+            // insert last in prio queue
+            prio[clustcnt-1].val=pivot[i].cnt;
+            prio[clustcnt-1].numb=i;
+
+            // Ordinary bubble sort
+            for(var j=clustcnt-1;j>0;j--){
+                // If higher elements are smaller switch those also
+                if(prio[j].val>prio[j-1].val){
+                    // Switch elements
+                    var tmpval=prio[j-1].val;
+                    var tmpnumb=prio[j-1].numb;
+                    prio[j-1].val=prio[j].val;
+                    prio[j-1].numb=prio[j].numb;
+                    prio[j].val=tmpval;
+                    prio[j].numb=tmpnumb;
+                }else{
+                    break;
+                }
+            }
+
+        }
+        pivot[i].from=pos;
+        pos+=pivot[i].cnt;
+        pivot[i].to=pos;
+    }
+
+    // Compute hash and count for each object
+    for(var i=0;i<objs.length;i++){
+        pivotobj=pivot[objs[i].hash];
+        hashtab[pivotobj.from+pivotobj.cnt-1]=objs[i];
+        pivotobj.cnt--;
+    }
+
+    console.log(prio);
+}
+        
+function drawit()
+{	
+    ctx.clearRect(0,0,900,900);
+
+    recomputeHashes();
+
+    for(var i=0;i<=(cellcnt*cellwidth);i+=cellwidth){
+        ctx.beginPath();
+        ctx.moveTo(0,i);
+        ctx.lineTo((cellcnt*cellwidth),i);
+        ctx.moveTo(i,0);
+        ctx.lineTo(i,(cellcnt*cellwidth));
+        ctx.stroke();
+    }
+
+    ctx.fillStyle="#b23";
+    for(var i=0;i<objs.length;i++){
+        ctx.beginPath();
+        ctx.arc(objs[i].x,objs[i].y, 5, 0, 2 * Math.PI);
+        ctx.fill(); 
+    }
+
+    //window.requestAnimationFrame(drawit);
+} 			
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>
