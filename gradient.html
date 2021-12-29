@@ -30,6 +30,8 @@ var igradient=[{r:0.93,g:0.32,b:0.12},{r:0.98,g:0.66,b:0.42},{r:0.89,g:0.93,b:0.
 var jgradient=[{r:0.76,g:0.91,b:0.94},{r:0.32,g:0.62,b:0.75},{r:0.16,g:0.12,b:0.33},{r:0.63,g:0.14,b:0.21},{r:0.99,g:0.85,b:0.63},{r:0.97,g:0.99,b:0.94}];
 var kgradient=[{r:0.0,g:0.0,b:0.0},{r:0.0,g:0.3,b:1.0},{r:1.0,g:0.3,b:0.0},{r:1.0,g:1.0,b:0.0},{r:1.0,g:1.0,b:1.0}];
 var lgradient=[{r:0.69,g:0.07,b:0.44},{r:0.99,g:0.70,b:0.42},{r:0.99,g:0.81,b:0.70},{r:0.69,g:0.82,b:0.98}];
+var mgradient=[{r:0.67,g:0.15,b:0.14},{r:0.91,g:0.83,b:0.43},{r:0.29,g:0.74,b:0.39},{r:0.05,g:0.68,b:0.70},{r:0.16,g:0.45,b:0.60}];
+
 // {r:0.89,g:0.35,b:0.39},
 // {r:0.89,g:0.35,b:0.39},
 // ,,{r:0.82,g:0.49,b:0.68}
@@ -207,8 +209,8 @@ function drawit()
           reckt(i,5,rgb2html(interplab({r:1.0,g:0.0,b:0.0},{r:0.0,g:1.0,b:1.0},i/25)),30);
           reckt(i,6,rgb2html(interprgb({r:1.0,g:0.0,b:0.0},{r:0.0,g:1.0,b:1.0},i/25)),30);
 
-          reckt(i,8,rgb2html(gradlab(dgradient,i/25)),30);
-          reckt(i,9,rgb2html(grad(dgradient,i/25)),30);      
+          reckt(i,8,rgb2html(gradlab(hgradient,i/25)),30);
+          reckt(i,9,rgb2html(gradlab(mgradient,i/25)),30);      
 
           reckt(i,10,rgb2html(gradlab(lgradient,i/25)),30);
           reckt(i,11,rgb2html(grad(lgradient,i/25)),30); 
