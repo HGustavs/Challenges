@@ -38,6 +38,10 @@
           {x:46,y:9}, 
         ];
 
+        var segs=[];
+
+        var triangles=[];
+
 				function setup()
 				{
 						var cc = document.getElementById("myCanvas");
@@ -100,13 +104,55 @@
         function inside(p1,p2,p3)
         {
             // We test reflex vertices
-            for(var i=0;i<points.length;i++){
-                var pnt=points[i];
-                if(pnt.convex!=true&&pnt.index!=p1.index&&pnt.index!=p2.index&&pnt.index!=p3.indexx){
-                    if(isInsideTriangle(p1,p2,p3,pnt)) return true;
+            for(var i=0;i<segs.length;i++){
+                var pnt=segs[i];
+                if(pnt.convex!=true&&pnt.index!=p1.index&&pnt.index!=p2.index&&pnt.index!=p3.index){
+                  console.log(pnt.convex,p1.index,p2.index,p3.index);
+                  if(isInsideTriangle(p1,p2,p3,pnt)) return true;
                 }
             }
             return false;
+        }
+
+        function visualize()
+        {
+            // Show all ears found
+            for(var i=0;i<segs.length;i++){
+                if(segs[i].ear){
+                    ctx.strokeStyle="#cd8";
+                    ctx.beginPath();
+                    ctx.moveTo(segs[i].prev.x*drawscale,segs[i].prev.y*drawscale);
+                    ctx.lineTo(segs[i].x*drawscale,segs[i].y*drawscale);
+                    ctx.lineTo(segs[i].next.x*drawscale,segs[i].next.y*drawscale);
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+            }
+            
+            // Show reflex/convex segs and indices
+            for(var i=0;i<segs.length;i++){
+                var color;
+                if(segs[i].convex){
+                    color="#bb8"
+                }else{
+                    color="#48b";
+                }
+
+                ctx.fillStyle="#000";
+                ctx.fillText(segs[i].index, (segs[i].x+4)*drawscale, segs[i].y*drawscale);
+
+                circ(segs[i].x,segs[i].y,color);                
+            }
+            ctx.strokeStyle="#000";
+        }
+
+        function evaluate(pnt)
+        {
+            if(pnt.convex){
+                return !inside(pnt.prev,pnt,pnt.next);
+            }else{
+                return false;
+            }            
         }
 
 				function drawit()
@@ -115,40 +161,62 @@
 						
             ctx.font="20px Arial Narrow";
             
-            // Prepare previous, next and current 
             for(var i=0;i<points.length;i++){
-                points[i].index=i;
-                points[i].prev=points[mod(i-1,points.length)];
-                points[i].next=points[mod(i+1,points.length)];
-                points[i].convex=isConvex(points[mod(i-1,points.length)],points[i],points[mod(i+1,points.length)]);
+                segs.push({x:points[i].x,y:points[i].y});
             }
 
-            // Inside tests must happen after we prepare reflex/convex state for all points
-            for(var i=0;i<points.length;i++){
-                if(points[i].convex){
-                      var state=false;
-                      points[i].ear=inside(points[i].prev,points[i],points[i].next);
-                  }else{
-                      points[i].ear=false;
-                  }            
+            // Prepare previous, next and current linked list
+            for(var i=0;i<segs.length;i++){
+                segs[i].index=i;
+                segs[i].prev=segs[mod(i-1,segs.length)];
+                segs[i].next=segs[mod(i+1,segs.length)];
+                segs[i].convex=isConvex(segs[i].prev,segs[i],segs[i].next);
             }
-
-            for(var i=0;i<points.length;i++){
-                var color;
-                if(points[i].convex){
-                    color="#bb8"
-                }else{
-                    color="#48b";
-                }
-                circ(points[i].x,points[i].y,color);
-            }
-
-            console.log(points);
 
             ctx.beginPath();
-            for(var i=0;i<points.length;i++){
-                ctx.moveTo(points[i].x*drawscale,points[i].y*drawscale);
-                ctx.lineTo(points[(i+1)%points.length].x*drawscale,points[(i+1)%points.length].y*drawscale);
+            ctx.strokeStyle="#cc8";
+            ctx.setLineDash([5, 5]);
+            for(var i=0;i<segs.length;i++){
+                ctx.moveTo(segs[i].x*drawscale,segs[i].y*drawscale);
+                ctx.lineTo(segs[(i+1)%segs.length].x*drawscale,segs[(i+1)%segs.length].y*drawscale);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.strokeStyle="#000";
+
+            // Inside tests must happen after we prepare reflex/convex state for all segs
+            for(var i=0;i<segs.length;i++){
+                segs[i].ear=evaluate(segs[i]);
+            }
+            
+            do{
+                // Find an ear and remove it
+                for(var i=0;i<segs.length;i++){
+                    if(segs[i].ear){
+                        // Set up previous and next elements to point around current element
+                        segs[i].prev.next=segs[i].next;
+                        segs[i].next.prev=segs[i].prev;
+                        if(!segs[i].prev.convex){
+                            segs[i].prev.convex=isConvex(segs[i].prev.prev,segs[i].prev,segs[i].prev.next);                
+                        }
+                        if(!segs[i].next.convex){
+                            segs[i].next.convex=isConvex(segs[i].next.prev,segs[i].next,segs[i].next.next);                
+                        }
+                        segs[i].prev.ear=evaluate(segs[i].prev);
+                        segs[i].next.ear=evaluate(segs[i].next);
+                        segs.splice(i,1);
+                        break;
+                    }
+                }
+            }while(segs.length>3) 
+            console.log(segs);
+
+            visualize();
+
+            ctx.beginPath();
+            for(var i=0;i<segs.length;i++){
+                ctx.moveTo(segs[i].x*drawscale,segs[i].y*drawscale);
+                ctx.lineTo(segs[(i+1)%segs.length].x*drawscale,segs[(i+1)%segs.length].y*drawscale);
             }
             ctx.stroke();
 
