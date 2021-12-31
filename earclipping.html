@@ -74,6 +74,15 @@
             my = e.clientY - rect.top;  //y position within the element
 				}
 
+        function randomColor(offs)
+        {
+            var R=Math.round(((Math.random()*(1.0-offs))+offs)*255);
+            var G=Math.round(((Math.random()*(1.0-offs))+offs)*255);
+            var B=Math.round(((Math.random()*(1.0-offs))+offs)*255);
+
+            return `RGB(${R},${G},${B})`;
+        }
+        
         function circ(x,y,color)
         {
             ctx.beginPath();
@@ -224,11 +233,13 @@
             */
 
             for(var i=0;i<triangles.length;i++){
+                ctx.fillStyle=randomColor(0.6);
                 ctx.beginPath();
                 ctx.moveTo(points[triangles[i].p1].x*drawscale,points[triangles[i].p1].y*drawscale);
                 ctx.lineTo(points[triangles[i].p2].x*drawscale,points[triangles[i].p2].y*drawscale);
                 ctx.lineTo(points[triangles[i].p3].x*drawscale,points[triangles[i].p3].y*drawscale);
                 ctx.closePath();
+                ctx.fill();
                 ctx.stroke();
             }
 
