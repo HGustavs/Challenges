@@ -161,6 +161,7 @@
 						
             ctx.font="20px Arial Narrow";
             
+            // Initiate segments list
             for(var i=0;i<points.length;i++){
                 segs.push({x:points[i].x,y:points[i].y});
             }
@@ -204,21 +205,32 @@
                         }
                         segs[i].prev.ear=evaluate(segs[i].prev);
                         segs[i].next.ear=evaluate(segs[i].next);
+                        triangles.push({p1:segs[i].prev.index,p2:segs[i].index,p3:segs[i].next.index});
                         segs.splice(i,1);
                         break;
                     }
                 }
-            }while(segs.length>3) 
-            console.log(segs);
+            }while(segs.length>2) 
+            console.log(triangles);
 
+            /*
             visualize();
-
             ctx.beginPath();
             for(var i=0;i<segs.length;i++){
                 ctx.moveTo(segs[i].x*drawscale,segs[i].y*drawscale);
                 ctx.lineTo(segs[(i+1)%segs.length].x*drawscale,segs[(i+1)%segs.length].y*drawscale);
             }
             ctx.stroke();
+            */
+
+            for(var i=0;i<triangles.length;i++){
+                ctx.beginPath();
+                ctx.moveTo(points[triangles[i].p1].x*drawscale,points[triangles[i].p1].y*drawscale);
+                ctx.lineTo(points[triangles[i].p2].x*drawscale,points[triangles[i].p2].y*drawscale);
+                ctx.lineTo(points[triangles[i].p3].x*drawscale,points[triangles[i].p3].y*drawscale);
+                ctx.closePath();
+                ctx.stroke();
+            }
 
    						// window.requestAnimationFrame(drawit);
 				} 			
