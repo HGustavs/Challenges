@@ -134,7 +134,7 @@
             }
         }
 
-        function shareSeg(p1,p2)
+        function shareSeg(p1,p2,tri)
         {
             stf="H"+pad(p1)+pad(p2);
             str="H"+pad(p2)+pad(p1);
@@ -142,10 +142,20 @@
                 if(typeof tsegs[str]=="undefined"){
                     return false;
                 }else{
-                    return tsegs[str];
+                    for(var i=0;i<tsegs[str].length;i++){
+                        if(tsegs[str][i].ind!=tri.ind){
+                            return tsegs[str][i];
+                        }
+                    }
+                    return false;
                 }
             }else{
-                return tsegs[stf];
+                for(var i=0;i<tsegs[stf].length;i++){
+                    if(tsegs[stf][i].ind!=tri.ind){
+                        return tsegs[stf][i];
+                    }
+                }
+                return false;
             }              
         }
 
@@ -226,6 +236,20 @@
                 ctx.fillText(tri.ind,(cx*drawscale),(cy*drawscale)+7);
         }
 
+        function drawQuad(quad)
+        {
+            ctx.strokeStyle="#f46";
+            ctx.lineWidth=4.0;
+            ctx.beginPath();
+            ctx.moveTo(points[quad.p1].x*drawscale,points[quad.p1].y*drawscale);
+            ctx.lineTo(points[quad.p2].x*drawscale,points[quad.p2].y*drawscale);
+            ctx.lineTo(points[quad.p3].x*drawscale,points[quad.p3].y*drawscale);
+            ctx.lineTo(points[quad.p4].x*drawscale,points[quad.p4].y*drawscale);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.lineWidth=1.0;
+        }
+
 				function drawit()
 				{	
 						ctx.clearRect(0,0,900,900);
@@ -276,33 +300,34 @@
                         }
                         segs[i].prev.ear=evaluate(segs[i].prev);
                         segs[i].next.ear=evaluate(segs[i].next);
-                        triangles.push({p1:segs[i].prev.index,p2:segs[i].index,p3:segs[i].next.index,ind:triangles.length});
+
+                        // Create triangle
+                        var triangle={p1:segs[i].prev.index,p2:segs[i].index,p3:segs[i].next.index,ind:triangles.length};
+
+                        // Store shared segments in hashed list
+                        storeSeg(triangle.p1,triangle.p2,triangle);
+                        storeSeg(triangle.p2,triangle.p3,triangle);
+                        storeSeg(triangle.p3,triangle.p1,triangle);
+
+                        // Create triangle
+                        triangles.push(triangle);
                         segs.splice(i,1);
                         break;
                     }
                 }
             }while(segs.length>2) 
 
-            // console.log(triangles);
+            // Draw triagles with random background
             for(var i=0;i<triangles.length;i++){
                 drawTri(triangles[i]);
-                //ctx.stroke();
             }
 
-            // Hashed config of shared lines
-            for(var i=0;i<triangles.length;i++){
-                var p1=triangles[i].p1;
-                var p2=triangles[i].p2;
-                var p3=triangles[i].p3
+            // drawQuad({p1:1,p2:2,p3:3,p4:4});
 
-                storeSeg(p1,p2,triangles[i]);
-                storeSeg(p2,p3,triangles[i]);
-                storeSeg(p3,p1,triangles[i]);
-            }
+            // console.log(triangles);
+            console.log(shareSeg(triangles[3].p3,triangles[3].p1,triangles[3]));
 
-            console.log(shareSeg(triangles[3].p3,triangles[3].p1));
-
-            console.log(segs);
+//            console.log(segs);
 
    						// window.requestAnimationFrame(drawit);
 				} 			
