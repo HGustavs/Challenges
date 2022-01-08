@@ -39,8 +39,8 @@
         ];
 
         var segs=[];
-
         var triangles=[];
+        var tsegs=[];
 
 				function setup()
 				{
@@ -110,6 +110,45 @@
             return ((x%m)+m)%m;
         }
 
+        function pad(v)
+        {
+            if(v<10) return "00"+v;
+            if(v<100) return "0"+v;
+            return v;
+
+        }
+
+        function storeSeg(p1,p2,item)
+        {
+            stf="H"+pad(p1)+pad(p2);
+            str="H"+pad(p2)+pad(p1);
+            if(typeof tsegs[stf]=="undefined"){
+                if(typeof tsegs[str]=="undefined"){
+                    tsegs[str]=[];
+                    tsegs[str].push(item);
+                }else{
+                    tsegs[str].push(item);
+                }
+            }else{
+                tsegs[stf].push(item);
+            }
+        }
+
+        function shareSeg(p1,p2)
+        {
+            stf="H"+pad(p1)+pad(p2);
+            str="H"+pad(p2)+pad(p1);
+            if(typeof tsegs[stf]=="undefined"){
+                if(typeof tsegs[str]=="undefined"){
+                    return false;
+                }else{
+                    return tsegs[str];
+                }
+            }else{
+                return tsegs[stf];
+            }              
+        }
+
         function inside(p1,p2,p3)
         {
             // We test reflex vertices
@@ -164,6 +203,29 @@
             }            
         }
 
+        function drawTri(tri){
+                ctx.fillStyle=randomColor(0.6);
+                ctx.beginPath();
+                ctx.moveTo(points[tri.p1].x*drawscale,points[tri.p1].y*drawscale);
+                ctx.lineTo(points[tri.p2].x*drawscale,points[tri.p2].y*drawscale);
+                ctx.lineTo(points[tri.p3].x*drawscale,points[tri.p3].y*drawscale);
+                ctx.closePath();
+                ctx.fill();
+
+                cx=(points[tri.p1].x+points[tri.p2].x+points[tri.p3].x)/3;
+                cy=(points[tri.p1].y+points[tri.p2].y+points[tri.p3].y)/3;
+
+                ctx.fillStyle="#000";
+
+                ctx.beginPath();
+                ctx.arc(cx*drawscale,cy*drawscale, 14, 0, 6.28);
+                ctx.fill();
+
+                ctx.fillStyle="#fff";
+                ctx.textAlign = "center"; 
+                ctx.fillText(tri.ind,(cx*drawscale),(cy*drawscale)+7);
+        }
+
 				function drawit()
 				{	
 						ctx.clearRect(0,0,900,900);
@@ -184,7 +246,7 @@
             }
 
             ctx.beginPath();
-            ctx.strokeStyle="#cc8";
+            ctx.strokeStyle="#008";
             ctx.setLineDash([5, 5]);
             for(var i=0;i<segs.length;i++){
                 ctx.moveTo(segs[i].x*drawscale,segs[i].y*drawscale);
@@ -214,34 +276,33 @@
                         }
                         segs[i].prev.ear=evaluate(segs[i].prev);
                         segs[i].next.ear=evaluate(segs[i].next);
-                        triangles.push({p1:segs[i].prev.index,p2:segs[i].index,p3:segs[i].next.index});
+                        triangles.push({p1:segs[i].prev.index,p2:segs[i].index,p3:segs[i].next.index,ind:triangles.length});
                         segs.splice(i,1);
                         break;
                     }
                 }
             }while(segs.length>2) 
-            console.log(triangles);
 
-            /*
-            visualize();
-            ctx.beginPath();
-            for(var i=0;i<segs.length;i++){
-                ctx.moveTo(segs[i].x*drawscale,segs[i].y*drawscale);
-                ctx.lineTo(segs[(i+1)%segs.length].x*drawscale,segs[(i+1)%segs.length].y*drawscale);
-            }
-            ctx.stroke();
-            */
-
+            // console.log(triangles);
             for(var i=0;i<triangles.length;i++){
-                ctx.fillStyle=randomColor(0.6);
-                ctx.beginPath();
-                ctx.moveTo(points[triangles[i].p1].x*drawscale,points[triangles[i].p1].y*drawscale);
-                ctx.lineTo(points[triangles[i].p2].x*drawscale,points[triangles[i].p2].y*drawscale);
-                ctx.lineTo(points[triangles[i].p3].x*drawscale,points[triangles[i].p3].y*drawscale);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
+                drawTri(triangles[i]);
+                //ctx.stroke();
             }
+
+            // Hashed config of shared lines
+            for(var i=0;i<triangles.length;i++){
+                var p1=triangles[i].p1;
+                var p2=triangles[i].p2;
+                var p3=triangles[i].p3
+
+                storeSeg(p1,p2,triangles[i]);
+                storeSeg(p2,p3,triangles[i]);
+                storeSeg(p3,p1,triangles[i]);
+            }
+
+            console.log(shareSeg(triangles[3].p3,triangles[3].p1));
+
+            console.log(segs);
 
    						// window.requestAnimationFrame(drawit);
 				} 			
