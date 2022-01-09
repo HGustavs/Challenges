@@ -159,6 +159,19 @@
             }              
         }
 
+        function opposite(p1,p2,tri)
+        {
+            // Three different options, we first take care of p3 opposite variant.
+            if((tri.p1==p1 && tri.p2==p2)||(tri.p1==p2 && tri.p2==p1)){
+                return tri.p3;
+            }else if((tri.p1==p1 && tri.p3==p2)||(tri.p1==p2 && tri.p3==p1)){
+                // We know that it is not p3 so we check for p2
+                return tri.p2;
+            }else{
+                return tri.p1;
+            }
+        }
+
         function inside(p1,p2,p3)
         {
             // We test reflex vertices
@@ -325,8 +338,13 @@
             // drawQuad({p1:1,p2:2,p3:3,p4:4});
 
             // console.log(triangles);
-            console.log(shareSeg(triangles[3].p3,triangles[3].p1,triangles[3]));
 
+            var other=shareSeg(triangles[3].p3,triangles[3].p1,triangles[3]);
+            var oppo=opposite(triangles[3].p3,triangles[3].p1,other)
+            console.log(other);
+            console.log(oppo);
+
+            var quad={p1:triangles[3].p2,p2:triangles[3].p3,p3:oppo,p4:};
 //            console.log(segs);
 
    						// window.requestAnimationFrame(drawit);
