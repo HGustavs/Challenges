@@ -247,6 +247,14 @@
                 ctx.fillStyle="#fff";
                 ctx.textAlign = "center"; 
                 ctx.fillText(tri.ind,(cx*drawscale),(cy*drawscale)+7);
+
+                ctx.fillStyle="#000";
+                ctx.fillText(tri.p1, points[tri.p1].x*drawscale,(points[tri.p1].y-2)*drawscale);
+                ctx.fillText(tri.p2, points[tri.p2].x*drawscale,(points[tri.p2].y-2)*drawscale);
+                ctx.fillText(tri.p3, points[tri.p3].x*drawscale,(points[tri.p3].y-2)*drawscale);                                
+                circ(points[tri.p1].x,points[tri.p1].y,"#def"); 
+                circ(points[tri.p2].x,points[tri.p2].y,"#def"); 
+                circ(points[tri.p3].x,points[tri.p3].y,"#def");                                  
         }
 
         function drawQuad(quad)
@@ -332,22 +340,32 @@
 
             // Draw triagles with random background
             for(var i=0;i<triangles.length;i++){
-                drawTri(triangles[i]);
+                // drawTri(triangles[i]);
             }
 
-            // drawQuad({p1:1,p2:2,p3:3,p4:4});
+            for(var i=0;i<3;i++){
+                var tri=triangles[Math.floor(i/3)];
+                drawTri(tri);
+                var side=i%3;
+                // Instantiate current side
+                var p1,p2,p3;
+                if(side==0){
+                    p1=triangle.p1;
+                    p2=triangle.p2;
+                    p3=triangle.p3;
+                }else if(side==1){
+                    p1=triangle.p2;
+                    p2=triangle.p3;
+                    p3=triangle.p1;
+                }else{
+                    p1=triangle.p3;
+                    p2=triangle.p1;
+                    p3=triangle.p2;
+                }
+                var other=shareSeg(p2,p3,tri);
+                console.log(tri,side,p1,p2,p3,other);
+            }
 
-            // console.log(triangles);
-
-            var other=shareSeg(triangles[3].p3,triangles[3].p1,triangles[3]);
-            var oppo=opposite(triangles[3].p3,triangles[3].p1,other)
-            console.log(other);
-            console.log(oppo);
-
-            var quad={p1:triangles[3].p2,p2:triangles[3].p3,p3:oppo,p4:};
-//            console.log(segs);
-
-   						// window.requestAnimationFrame(drawit);
 				} 			
 						
 		</script>
