@@ -343,27 +343,34 @@
                 // drawTri(triangles[i]);
             }
 
-            for(var i=0;i<3;i++){
-                var tri=triangles[Math.floor(i/3)];
-                drawTri(tri);
+            // Iterate over triangle sides and check for 
+            for(var i=0;i<6;i++){
+                var tria=triangles[Math.floor(i/3)];
+                drawTri(tria);
                 var side=i%3;
                 // Instantiate current side
                 var p1,p2,p3;
                 if(side==0){
-                    p1=triangle.p1;
-                    p2=triangle.p2;
-                    p3=triangle.p3;
+                    p1=tria.p1;
+                    p2=tria.p2;
+                    p3=tria.p3;
                 }else if(side==1){
-                    p1=triangle.p2;
-                    p2=triangle.p3;
-                    p3=triangle.p1;
+                    p1=tria.p2;
+                    p2=tria.p3;
+                    p3=tria.p1;
                 }else{
-                    p1=triangle.p3;
-                    p2=triangle.p1;
-                    p3=triangle.p2;
+                    p1=tria.p3;
+                    p2=tria.p1;
+                    p3=tria.p2;
                 }
-                var other=shareSeg(p2,p3,tri);
-                console.log(tri,side,p1,p2,p3,other);
+                var other=shareSeg(p2,p3,tria);
+                if(other!=false){
+                    // Edge is shared 
+                    var oppo=opposite(p2,p3,other);
+                    var quad={p1:p1,p2:p2,p3:oppo,p4:p3};
+                    drawTri(other);                    
+                    drawQuad(quad);
+                }
             }
 
 				} 			
