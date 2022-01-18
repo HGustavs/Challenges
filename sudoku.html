@@ -1,0 +1,118 @@
+<html>
+<head>
+		<script>
+				var ctx;
+			  var mx,my,mb=0;
+
+        const pixw=30;
+        const marg=40;
+			
+        // https://www.youtube.com/watch?v=wO1G7GkIrWE
+        // Sudoku App
+
+        // Grid
+        numbers=[
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+        ];
+
+        // Initial values
+
+        init=[
+          {x:3,y:6,val:2}
+        ]
+			
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    ctx = cc.getContext("2d");
+					
+						setInterval(updatestate,20);
+
+            for(var j=0;j<9;j++){
+                  var item=numbers[j];
+                  for(var i=0;i<9;i++){
+                      var val=-1;
+                      for(var k=0;k<init.length;k++){
+                          if((init[k].x==i)&&(init[k].y==j)) val=init[k].val;
+                      }
+                      numbers[j][i]=val;
+                  }
+            }
+					
+						drawit();
+				}
+								
+				function updatestate()
+				{
+
+				}
+			
+				function mouseUp(e)
+				{
+						mb=0;
+				}
+			
+				function mouseDown(e)
+				{
+						mb=e.which;
+				}
+			
+				function mouseMove(e,t)
+				{
+						var rect = e.target.getBoundingClientRect();
+            mx = e.clientX - rect.left; //x position within the element.
+            my = e.clientY - rect.top;  //y position within the element
+				}
+			
+				function drawit()
+				{	
+						ctx.clearRect(0,0,900,900);
+					
+						ctx.font="20px Arial Narrow";
+
+            // Draw squares
+            for(var i=0;i<10;i++){
+                  if((i%3)==0){
+                      ctx.lineWidth=4;
+                  }else{
+                      ctx.lineWidth=1;
+                  }
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(marg,(i*pixw)+marg);
+                  ctx.lineTo((pixw*9)+marg,(i*pixw)+marg);
+                  ctx.stroke();
+
+                  ctx.beginPath();
+                  ctx.moveTo((i*pixw)+marg,marg);
+                  ctx.lineTo((i*pixw)+marg,(pixw*9)+marg);
+                  ctx.stroke();
+            }
+
+            // Draw numbers
+            for(var j=0;j<9;j++){
+                  var item=numbers[j];
+                  for(var i=0;i<9;i++){
+                      var val=numbers[j][i];
+                      ctx.fillText(val,(i*pixw)+marg+(pixw*0.5),(j*pixw)+marg+(pixw*0.5));
+                  }
+            }
+
+          
+
+//						window.requestAnimationFrame(drawit);
+				} 			
+			
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

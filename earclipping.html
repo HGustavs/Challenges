@@ -97,6 +97,27 @@
             return Math.sign((p3.x - p1.x) * (-p2.y + p1.y) + (p3.y - p1.y) * (p2.x - p1.x))==-1;
         }
 
+        function isConvexQuad(quad)
+        {
+            if(!isConvex(points[quad.p1],points[quad.p2],points[quad.p3])){
+              circ(points[quad.p2].x,points[quad.p2].y,"#f00"); 
+              return false;
+            }
+            if(!isConvex(points[quad.p2],points[quad.p3],points[quad.p4])){
+              circ(points[quad.p3].x,points[quad.p3].y,"#f00"); 
+              return false;
+            }
+            if(!isConvex(points[quad.p3],points[quad.p4],points[quad.p1])){
+              circ(points[quad.p4].x,points[quad.p4].y,"#f00"); 
+              return false;
+            }
+            if(!isConvex(points[quad.p4],points[quad.p1],points[quad.p2])){
+              circ(points[quad.p1].x,points[quad.p1].y,"#f00"); 
+              return false;
+            }
+            return true;
+        }
+
         function isInsideTriangle(a,b,c,p)
         {
             var area = 0.5*(-b.y * c.x + a.y * (-b.x + c.x) + a.x * (b.y - c.y) + b.x * c.y);
@@ -249,6 +270,7 @@
                 ctx.fillText(tri.ind,(cx*drawscale),(cy*drawscale)+7);
 
                 ctx.fillStyle="#000";
+                
                 ctx.fillText(tri.p1, points[tri.p1].x*drawscale,(points[tri.p1].y-2)*drawscale);
                 ctx.fillText(tri.p2, points[tri.p2].x*drawscale,(points[tri.p2].y-2)*drawscale);
                 ctx.fillText(tri.p3, points[tri.p3].x*drawscale,(points[tri.p3].y-2)*drawscale);                                
@@ -257,9 +279,9 @@
                 circ(points[tri.p3].x,points[tri.p3].y,"#def");                                  
         }
 
-        function drawQuad(quad)
+        function drawQuad(quad,col)
         {
-            ctx.strokeStyle="#f46";
+            ctx.strokeStyle=col;
             ctx.lineWidth=4.0;
             ctx.beginPath();
             ctx.moveTo(points[quad.p1].x*drawscale,points[quad.p1].y*drawscale);
@@ -269,6 +291,7 @@
             ctx.closePath();
             ctx.stroke();
             ctx.lineWidth=1.0;
+
         }
 
 				function drawit()
@@ -344,9 +367,8 @@
             }
 
             // Iterate over triangle sides and check for 
-            for(var i=0;i<6;i++){
+            for(var i=0;i<39;i++){
                 var tria=triangles[Math.floor(i/3)];
-                drawTri(tria);
                 var side=i%3;
                 // Instantiate current side
                 var p1,p2,p3;
@@ -368,8 +390,12 @@
                     // Edge is shared 
                     var oppo=opposite(p2,p3,other);
                     var quad={p1:p1,p2:p2,p3:oppo,p4:p3};
-                    drawTri(other);                    
-                    drawQuad(quad);
+                    // drawTri(other);                    
+                    if(isConvexQuad(quad)){
+                        drawQuad(quad,"#f00");
+                    }else{
+                        //drawQuad(quad,"#000");
+                    }
                 }
             }
 
