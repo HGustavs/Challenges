@@ -4,8 +4,9 @@
 				var ctx;
 			  var mx,my,mb=0;
 
-        const pixw=30;
+        const pixw=50;
         const marg=40;
+        const cageoffs=5;
 			
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
         // Sudoku App
@@ -29,6 +30,47 @@
           {x:3,y:6,val:2}
         ]
 			
+        // Cages
+
+        cages=[
+            {
+                lines:[{x:0,y:0},{x:5,y:0},{x:5,y:1},{x:1,y:1},{x:1,y:4},{x:3,y:4},{x:3,y:7},{x:0,y:7},{x:0,y:7}],
+                items:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:0,y:3},{x:1,y:3}]
+            },
+            {
+                lines:[{x:4,y:2},{x:5,y:2},{x:5,y:10},{x:7,y:10},{x:7,y:11},{x:4,y:11},{x:4,y:9},{x:1,y:9},{x:1,y:11},{x:0,y:11},{x:0,y:8},{x:4,y:8}],
+                items:[{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:3,y:5},{x:2,y:4},{x:1,y:4},{x:0,y:5}]
+            },
+            {
+                lines:[{x:0,y:12},{x:7,y:12},{x:7,y:13},{x:5,y:13},{x:5,y:17},{x:4,y:17},{x:4,y:13},{x:1,y:13},{x:1,y:17},{x:0,y:17}],
+                items:[{x:0,y:6},{x:1,y:6},{x:2,y:6},{x:3,y:6},{x:0,y:7},{x:2,y:7},{x:0,y:8},{x:2,y:8}]
+            },
+            {
+                lines:[{x:6,y:0},{x:11,y:0},{x:11,y:3},{x:10,y:3},{x:10,y:1},{x:7,y:1},{x:7,y:8},{x:9,y:8},{x:9,y:9},{x:6,y:9}],
+                items:[]
+            },
+            {
+                lines:[{x:8,y:2},{x:9,y:2},{x:9,y:6},{x:11,y:6},{x:11,y:8},{x:13,y:8},{x:13,y:9},{x:10,y:9},{x:10,y:9},{x:10,y:7},{x:8,y:7}],
+                items:[]
+            },            
+            {
+                lines:[{x:12,y:0},{x:17,y:0},{x:17,y:3},{x:16,y:3},{x:16,y:1},{x:13,y:1},{x:13,y:7},{x:12,y:7},{x:12,y:6},{x:12,y:5},{x:10,y:5},{x:10,y:4},{x:12,y:4}],
+                items:[]
+            }, 
+            {
+                lines:[{x:14,y:2},{x:15,y:2},{x:15,y:4},{x:17,y:4},{x:17,y:11},{x:16,y:11},{x:16,y:5},{x:14,y:5}],
+                items:[]
+            }, 
+            {
+                lines:[{x:14,y:8},{x:15,y:8},{x:15,y:12},{x:17,y:12},{x:17,y:17},{x:12,y:17},{x:12,y:16},{x:14,y:16}],
+                items:[]
+            }, 
+            {
+                lines:[{x:6,y:17},{x:6,y:16},{x:8,y:16},{x:8,y:10},{x:9,y:10},{x:9,y:12},{x:12,y:12},{x:12,y:10},{x:13,y:10},{x:13,y:15},{x:12,y:15},{x:12,y:13},{x:9,y:13},{x:9,y:17}],
+                items:[]
+            },             
+          ]
+
 				function setup()
 				{
 						var cc = document.getElementById("myCanvas");
@@ -39,7 +81,7 @@
             for(var j=0;j<9;j++){
                   var item=numbers[j];
                   for(var i=0;i<9;i++){
-                      var val=-1;
+                      var val=0;
                       for(var k=0;k<init.length;k++){
                           if((init[k].x==i)&&(init[k].y==j)) val=init[k].val;
                       }
@@ -76,9 +118,8 @@
 				{	
 						ctx.clearRect(0,0,900,900);
 					
-						ctx.font="20px Arial Narrow";
-
             // Draw squares
+            ctx.strokeStyle="#000";
             for(var i=0;i<10;i++){
                   if((i%3)==0){
                       ctx.lineWidth=4;
@@ -98,12 +139,52 @@
             }
 
             // Draw numbers
+						ctx.font="30px Arial Narrow";            
+            ctx.textAlign = "center"; 
+            ctx.textBaseline = 'middle';
             for(var j=0;j<9;j++){
                   var item=numbers[j];
                   for(var i=0;i<9;i++){
                       var val=numbers[j][i];
-                      ctx.fillText(val,(i*pixw)+marg+(pixw*0.5),(j*pixw)+marg+(pixw*0.5));
+                      if(val>0){
+                          ctx.fillText(val,(i*pixw)+marg+(pixw*0.5),(j*pixw)+marg+(pixw*0.5));
+                      }
                   }
+            }
+
+            // Draw cages
+            for(var i=0;i<cages.length;i++){
+                  var cage=cages[i];
+                  var lines=cage.lines;
+
+                  ctx.strokeStyle="#888";
+                  ctx.lineWidth=2;                      
+                  ctx.setLineDash([5, 5]);
+                  ctx.beginPath();
+                  for(var j=0;j<lines.length;j++){
+                      var item=lines[j];
+
+                      if((item.x%2)==1){
+                          var x1=marg+((Math.floor(item.x/2)*pixw)+pixw)-cageoffs;
+                      }else{
+                          var x1=marg+((Math.floor(item.x/2)*pixw))+cageoffs;
+                      }
+
+                      if((item.y%2)==1){
+                          var y1=marg+((Math.floor(item.y/2)*pixw)+pixw)-cageoffs;
+                      }else{
+                          var y1=marg+((Math.floor(item.y/2)*pixw))+cageoffs;
+                      }
+
+                      if(j==0){
+                        ctx.moveTo(x1,y1);
+                      }else{
+                        ctx.lineTo(x1,y1);
+                      }
+                 }
+                 ctx.closePath();
+                 ctx.stroke();
+                 ctx.setLineDash([]); 
             }
 
           
