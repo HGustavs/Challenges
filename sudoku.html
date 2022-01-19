@@ -117,6 +117,11 @@
 				function drawit()
 				{	
 						ctx.clearRect(0,0,900,900);
+
+            cmx=Math.floor((mx-marg)/pixw);
+            cmy=Math.floor((my-marg)/pixw);
+
+            ctx.fillText(cmx+" "+cmy,60,520);
 					
             // Draw squares
             ctx.strokeStyle="#000";
@@ -189,7 +194,7 @@
 
           
 
-//						window.requestAnimationFrame(drawit);
+						window.requestAnimationFrame(drawit);
 				} 			
 			
 		</script>
