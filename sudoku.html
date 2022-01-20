@@ -3,10 +3,14 @@
 		<script>
 				var ctx;
 			  var mx,my,mb=0;
+        var cmx,cmy;
+        var smx,smy;
 
         const pixw=50;
         const marg=40;
         const cageoffs=5;
+
+        var currentguess=[1,6,8,3];
 			
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
         // Sudoku App
@@ -47,28 +51,28 @@
             },
             {
                 lines:[{x:6,y:0},{x:11,y:0},{x:11,y:3},{x:10,y:3},{x:10,y:1},{x:7,y:1},{x:7,y:8},{x:9,y:8},{x:9,y:9},{x:6,y:9}],
-                items:[]
+                items:[{x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:4,y:4},{x:4,y:0},{x:5,y:0},{x:5,y:1}]
             },
             {
                 lines:[{x:8,y:2},{x:9,y:2},{x:9,y:6},{x:11,y:6},{x:11,y:8},{x:13,y:8},{x:13,y:9},{x:10,y:9},{x:10,y:9},{x:10,y:7},{x:8,y:7}],
-                items:[]
+                items:[{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:5,y:3},{x:5,y:4},{x:6,y:4}]
             },            
             {
+                lines:[{x:6,y:17},{x:6,y:16},{x:8,y:16},{x:8,y:10},{x:9,y:10},{x:9,y:12},{x:12,y:12},{x:12,y:10},{x:13,y:10},{x:13,y:15},{x:12,y:15},{x:12,y:13},{x:9,y:13},{x:9,y:17}],
+                items:[{x:3,y:8},{x:4,y:5},{x:4,y:6},{x:4,y:7},{x:4,y:8},{x:5,y:6},{x:6,y:5},{x:6,y:6},{x:6,y:7}]
+            },  
+            {
                 lines:[{x:12,y:0},{x:17,y:0},{x:17,y:3},{x:16,y:3},{x:16,y:1},{x:13,y:1},{x:13,y:7},{x:12,y:7},{x:12,y:6},{x:12,y:5},{x:10,y:5},{x:10,y:4},{x:12,y:4}],
-                items:[]
+                items:[{x:5,y:2},{x:6,y:0},{x:6,y:1},{x:6,y:2},{x:6,y:3},{x:7,y:0},{x:8,y:0},{x:8,y:1}]
             }, 
             {
                 lines:[{x:14,y:2},{x:15,y:2},{x:15,y:4},{x:17,y:4},{x:17,y:11},{x:16,y:11},{x:16,y:5},{x:14,y:5}],
-                items:[]
+                items:[{x:7,y:1},{x:7,y:2},{x:8,y:2},{x:8,y:3},{x:8,y:4},{x:8,y:5}]
             }, 
             {
                 lines:[{x:14,y:8},{x:15,y:8},{x:15,y:12},{x:17,y:12},{x:17,y:17},{x:12,y:17},{x:12,y:16},{x:14,y:16}],
-                items:[]
-            }, 
-            {
-                lines:[{x:6,y:17},{x:6,y:16},{x:8,y:16},{x:8,y:10},{x:9,y:10},{x:9,y:12},{x:12,y:12},{x:12,y:10},{x:13,y:10},{x:13,y:15},{x:12,y:15},{x:12,y:13},{x:9,y:13},{x:9,y:17}],
-                items:[]
-            },             
+                items:[{x:6,y:8},{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}]
+            }
           ]
 
 				function setup()
@@ -85,10 +89,13 @@
                       for(var k=0;k<init.length;k++){
                           if((init[k].x==i)&&(init[k].y==j)) val=init[k].val;
                       }
-                      numbers[j][i]=val;
+                      numbers[j][i]={val:val,guess:[],backg:"none"};
                   }
             }
-					
+
+            numbers[2][4].guess=[4];
+            numbers[3][6].guess=[2,7];
+
 						drawit();
 				}
 								
@@ -100,6 +107,8 @@
 				function mouseUp(e)
 				{
 						mb=0;
+            smx=cmx;
+            smy=cmy;
 				}
 			
 				function mouseDown(e)
@@ -113,6 +122,17 @@
             mx = e.clientX - rect.left; //x position within the element.
             my = e.clientY - rect.top;  //y position within the element
 				}
+
+        function findcage(xk,yk)
+        {
+          for(var i=0;i<cages.length;i++){
+                var cage=cages[i];
+                for(var j=0;j<cage.items.length;j++){
+                    if(cage.items[j].x==xk&&cage.items[j].y==yk) return i;
+                }
+            }
+            return -1;
+        }
 			
 				function drawit()
 				{	
@@ -121,8 +141,46 @@
             cmx=Math.floor((mx-marg)/pixw);
             cmy=Math.floor((my-marg)/pixw);
 
-            ctx.fillText(cmx+" "+cmy,60,520);
-					
+            var currentcage=findcage(cmx,cmy);
+
+            // ctx.fillText(cmx+" "+cmy,60,520);
+
+            // Draw numbers / Fills
+            
+            ctx.textAlign = "center"; 
+            ctx.textBaseline = 'middle';
+            for(var j=0;j<9;j++){
+                  var item=numbers[j];
+                  for(var i=0;i<9;i++){
+                      var numb=numbers[j][i];
+                      if(j==smy&&i==smx){
+                          ctx.fillStyle="#def";
+                          ctx.beginPath();
+                          ctx.moveTo((i*pixw)+marg,(j*pixw)+marg);
+                          ctx.lineTo((i*pixw)+marg+pixw,(j*pixw)+marg);
+                          ctx.lineTo((i*pixw)+marg+pixw,(j*pixw)+marg+pixw);
+                          ctx.lineTo((i*pixw)+marg,(j*pixw)+marg+pixw);
+                          ctx.closePath();
+                          ctx.fill();
+                      }
+                      ctx.font="30px Arial Narrow";  
+                      if(numb.val>0){
+                          ctx.fillStyle="#000";                      
+                          ctx.fillText(numb.val,(i*pixw)+marg+(pixw*0.5),(j*pixw)+marg+(pixw*0.5));
+                      }else if(numb.guess.length==1){
+                          // Hide guesses if we finalize number - If one guess draw same size as fixed number
+                          ctx.fillStyle="#46e";                      
+                          ctx.fillText(numb.guess[0],(i*pixw)+marg+(pixw*0.5),(j*pixw)+marg+(pixw*0.5));
+                      }else if(numb.guess.length==2){
+                          //  If two guesses draw smaller size than fixed number
+                          ctx.font="22px Arial Narrow";                          
+                          ctx.fillStyle="#46e";                      
+                          ctx.fillText(numb.guess[0],(i*pixw)+marg+(pixw*0.25),(j*pixw)+marg+(pixw*0.5));
+                          ctx.fillText(numb.guess[1],(i*pixw)+marg+(pixw*0.75),(j*pixw)+marg+(pixw*0.5));
+                      }
+                  }
+            }
+
             // Draw squares
             ctx.strokeStyle="#000";
             for(var i=0;i<10;i++){
@@ -141,30 +199,23 @@
                   ctx.moveTo((i*pixw)+marg,marg);
                   ctx.lineTo((i*pixw)+marg,(pixw*9)+marg);
                   ctx.stroke();
-            }
-
-            // Draw numbers
-						ctx.font="30px Arial Narrow";            
-            ctx.textAlign = "center"; 
-            ctx.textBaseline = 'middle';
-            for(var j=0;j<9;j++){
-                  var item=numbers[j];
-                  for(var i=0;i<9;i++){
-                      var val=numbers[j][i];
-                      if(val>0){
-                          ctx.fillText(val,(i*pixw)+marg+(pixw*0.5),(j*pixw)+marg+(pixw*0.5));
-                      }
-                  }
-            }
+            }            
 
             // Draw cages
             for(var i=0;i<cages.length;i++){
                   var cage=cages[i];
                   var lines=cage.lines;
 
-                  ctx.strokeStyle="#888";
-                  ctx.lineWidth=2;                      
-                  ctx.setLineDash([5, 5]);
+                  if(i==currentcage){
+                    ctx.lineWidth=3;                      
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle="#f44";
+                  }else{
+                    ctx.lineWidth=2;                      
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeStyle="#888";
+                  }
+
                   ctx.beginPath();
                   for(var j=0;j<lines.length;j++){
                       var item=lines[j];
@@ -192,7 +243,20 @@
                  ctx.setLineDash([]); 
             }
 
-          
+            // Draw menu
+            for(var i=0;i<9;i++){
+                ctx.fillStyle="#def";
+                ctx.beginPath();
+                ctx.moveTo((i*pixw)+marg+cageoffs,(10*pixw)+marg+cageoffs);
+                ctx.lineTo((i*pixw)+marg+pixw-cageoffs,(10*pixw)+marg+cageoffs);
+                ctx.lineTo((i*pixw)+marg+pixw-cageoffs,(10*pixw)+marg+pixw-cageoffs);
+                ctx.lineTo((i*pixw)+marg+cageoffs,(10*pixw)+marg+pixw-cageoffs);
+                ctx.closePath();
+                ctx.stroke();            
+
+                ctx.fillStyle="#000";                      
+                ctx.fillText(i+1,(i*pixw)+marg+(pixw*0.5),(10*pixw)+marg+(pixw*0.5));
+          }
 
 						window.requestAnimationFrame(drawit);
 				} 			
