@@ -122,7 +122,9 @@
 						var rect = e.target.getBoundingClientRect();
             mx = e.clientX - rect.left; //x position within the element.
             my = e.clientY - rect.top;  //y position within the element
-				}
+            cmx=Math.floor((mx-marg)/pixw);
+            cmy=Math.floor((my-marg)/pixw);
+        }
 
         function findcage(xk,yk)
         {
@@ -139,6 +141,7 @@
         const textcolor="";
         function drawbox(x,y,cage,number,guess,bordercolor,fillcolor)
         {
+            ctx.lineWidth=2.0;
             ctx.beginPath();
             ctx.moveTo(x+cage,y+cage);
             ctx.lineTo(x+pixw-cage,y+cage);
@@ -171,7 +174,10 @@
                 ctx.font="16px Arial Narrow";                          
                 for(var i=0;i<3;i++){
                     for(var j=0;j<3;j++){
-                        ctx.fillText((j*3)+i+1,x+2+(pixw*(0.15+(i*0.3))),y+4+(pixw*(0.15+(j*0.3))));
+                        theval=(j*3)+i+1;
+                        if(guess.indexOf(theval)!=-1){
+                            ctx.fillText(theval,x+2+(pixw*(0.15+(i*0.3))),y+4+(pixw*(0.15+(j*0.3))));
+                        }
                     }
                 }
             }
@@ -181,9 +187,6 @@
 				function drawit()
 				{	
 						ctx.clearRect(0,0,900,900);
-
-            cmx=Math.floor((mx-marg)/pixw);
-            cmy=Math.floor((my-marg)/pixw);
 
             var currentcage=findcage(cmx,cmy);
 
@@ -265,8 +268,23 @@
             }
 
             // Draw menu
+            var guess=[];
+            var numb=-1;
+            if(smx>0&&smx<10&&smy>0&&smy<10){
+                guess=numbers[smy][smx].guess;
+                numb=numbers[smy][smx].val;
+            }
             for(var i=0;i<9;i++){
-                drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#e44","#def");
+                if(numb==(i+1)){
+                    drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#888","#eee");
+                }else{
+                    drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#eee","#fee");
+                }
+                if(guess.indexOf(i+1)!=-1){
+                    drawbox((i*pixw)+marg,(11*pixw)+marg,cageoffs,i+1,[],"#e44","#fed");
+                }else{
+                    drawbox((i*pixw)+marg,(11*pixw)+marg,cageoffs,i+1,[],"#ccc","#eee");
+                }
             }
 
 						window.requestAnimationFrame(drawit);
