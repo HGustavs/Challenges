@@ -15,27 +15,18 @@
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
         // Sudoku App
 
+        // Pastel Colors
+        var pastels=["#fed","#def","#dfe","#ffd","#dff","#fdf","#fcd","#dfc","#eee"];
+
         // Grid
-        numbers=[
-          [],
-          [],
-          [],
-          [],
-          [],
-          [],
-          [],
-          [],
-          [],
-        ];
+        numbers=[[],[],[],[],[],[],[],[],[]];
 
         // Initial values
-
         init=[
           {x:3,y:6,val:2}
         ]
 			
         // Cages
-
         cages=[
             {
                 lines:[{x:0,y:0},{x:5,y:0},{x:5,y:1},{x:1,y:1},{x:1,y:4},{x:3,y:4},{x:3,y:7},{x:0,y:7},{x:0,y:7}],
@@ -93,10 +84,6 @@
                   }
             }
 
-            numbers[2][4].guess=[4];
-            numbers[3][6].guess=[2,7];
-            numbers[5][7].guess=[2,5,7,8];
-
 						drawit();
 				}
 								
@@ -107,10 +94,36 @@
 			
 				function mouseUp(e)
 				{
-						mb=0;
-            smx=cmx;
-            smy=cmy;
-				}
+            mb=0;
+            if(cmx>=0&&cmx<9&&cmy>=0&&cmy<9){
+              smx=cmx;
+              smy=cmy;
+            }else if(cmx>=0&&cmx<9&&cmy<13){
+                if(smx>=0&&smx<9&&smy>=0&&smy<9){
+                    if(cmy==10){
+                        // If number is the same clear, otherwise set
+                        if(numbers[smy][smx].val==(cmx+1)){
+                            numbers[smy][smx].val=0;
+                        }else{
+                            numbers[smy][smx].val=(cmx+1);
+                        }
+                    }else if(cmy==11){
+                        // Number was found in list then we clear
+                        if(numbers[smy][smx].guess.indexOf(cmx+1)!=-1){
+                            numbers[smy][smx].guess.splice(numbers[smy][smx].guess.indexOf(cmx+1),1);
+                        }else{
+                            numbers[smy][smx].guess.push(cmx+1);
+                        }
+                    }else if(cmy==12){
+                        if(numbers[smy][smx].backg==pastels[(cmx+1)]){
+                              numbers[smy][smx].backg="#000";
+                          }else{
+                              numbers[smy][smx].backg=pastels[cmx];
+                          }
+                    }
+                }
+            }				
+        }
 			
 				function mouseDown(e)
 				{
@@ -200,7 +213,7 @@
                       if(j==smy&&i==smx){
                           drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none","#def");
                       }else{
-                          drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none","none");
+                          drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none",numb.backg);
                       }
                   }
             }
@@ -270,20 +283,27 @@
             // Draw menu
             var guess=[];
             var numb=-1;
+            var col="#000";
             if(smx>0&&smx<10&&smy>0&&smy<10){
                 guess=numbers[smy][smx].guess;
                 numb=numbers[smy][smx].val;
+                col=numbers[smy][smx].backg;
             }
             for(var i=0;i<9;i++){
                 if(numb==(i+1)){
-                    drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#888","#eee");
+                  drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#e44","#fee");
                 }else{
-                    drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#eee","#fee");
+                  drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#ccc","#eee");
                 }
                 if(guess.indexOf(i+1)!=-1){
                     drawbox((i*pixw)+marg,(11*pixw)+marg,cageoffs,i+1,[],"#e44","#fed");
                 }else{
                     drawbox((i*pixw)+marg,(11*pixw)+marg,cageoffs,i+1,[],"#ccc","#eee");
+                }
+                if(col==pastels[i]){
+                    drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#fed",pastels[i]);
+                }else{
+                    drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#888",pastels[i]);
                 }
             }
 
