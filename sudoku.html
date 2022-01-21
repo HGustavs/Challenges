@@ -71,8 +71,6 @@
 						var cc = document.getElementById("myCanvas");
 				    ctx = cc.getContext("2d");
 					
-						setInterval(updatestate,20);
-
             for(var j=0;j<9;j++){
                   var item=numbers[j];
                   for(var i=0;i<9;i++){
@@ -86,18 +84,62 @@
 
 						drawit();
 				}
-								
-				function updatestate()
+						
+        // We check sudoku state 
+				function checkState(sudoku,cages,ortho)
 				{
+            // Clear all errors
+            for(var i=0;i<9;i++){
+                for(var j=0;j<9;j++){
+                    numbers[i][j].err=false;
+                }
+              }
+                
+            for(var i=0;i<9;i++){
+                  for(var j=0;j<9;j++){
+                      // We check if number is above 0
+                      var theval=numbers[i][j].val;
+                      if(theval>0){
+                          // We first go over all on same row / column and check for duplicates
+                          for(var k=0;k<9;k++){
+                              if((k!=j)&&(numbers[i][k].val==theval)){
+                                numbers[i][j].err=true;
+                                numbers[i][k].err=true;
+                              }
+                              if((k!=i)&&(numbers[k][j].val==theval)){
+                                numbers[i][j].err=true;
+                                numbers[k][j].err=true;
+                              }
+                          }
+                          // We then go over all in same block
+                          var ci=Math.floor(i/3)*3;
+                          var cj=Math.floor(j/3)*3;
+                          for(var k=0;k<3;k++){
+                              for(var l=0;l<3;l++){
+                                  if((numbers[ci+k][cj+l].val==theval)&&(!((i==(ci+k))&&(j==(cj+l))))){
+                                      numbers[i][j].err=true;
+                                      numbers[ci+k][cj+l].err=true;
+                                  }
+                              }
+                          }
+                          
+                      }
+                      
+                  }
+            }
 
+            
+            
+            // We go over all in same square and check for duplicates
 				}
 			
 				function mouseUp(e)
 				{
             mb=0;
             if(cmx>=0&&cmx<9&&cmy>=0&&cmy<9){
-              smx=cmx;
-              smy=cmy;
+                // We only perform this if we are not on an init square this way we can not mark / update init squares
+                smx=cmx;
+                smy=cmy;
             }else if(cmx>=0&&cmx<9&&cmy<13){
                 if(smx>=0&&smx<9&&smy>=0&&smy<9){
                     if(cmy==10){
@@ -115,13 +157,14 @@
                             numbers[smy][smx].guess.push(cmx+1);
                         }
                     }else if(cmy==12){
-                        if(numbers[smy][smx].backg==pastels[(cmx+1)]){
-                              numbers[smy][smx].backg="#000";
+                        if(numbers[smy][smx].backg==pastels[cmx]){
+                              numbers[smy][smx].backg="none";
                           }else{
                               numbers[smy][smx].backg=pastels[cmx];
                           }
                     }
                 }
+                checkState(true,true,true);            
             }				
         }
 			
@@ -152,9 +195,10 @@
 
         const guesscolor="";
         const textcolor="";
-        function drawbox(x,y,cage,number,guess,bordercolor,fillcolor)
+        function drawbox(x,y,cage,number,guess,bordercolor,fillcolor,err,sel)
         {
             ctx.lineWidth=2.0;
+            if(sel) ctx.lineWidth=4;
             ctx.beginPath();
             ctx.moveTo(x+cage,y+cage);
             ctx.lineTo(x+pixw-cage,y+cage);
@@ -171,10 +215,30 @@
                 ctx.stroke();
             }
 
+            ctx.strokeStyle="#f44";
+            if(err){
+                ctx.lineWidth=1.0;
+                ctx.beginPath();
+                var add=pixw/8;
+                for(var i=0;i<pixw;i+=add){
+                    ctx.moveTo(x+i,y);
+                    ctx.lineTo(x+pixw,y+pixw-i);
+                    if(i>0){
+                        ctx.moveTo(x,y+pixw-i);
+                        ctx.lineTo(x+i,y+pixw);
+                    }
+                }
+                ctx.stroke();
+            }
+
             ctx.font="30px Arial Narrow";
             ctx.fillStyle="#46e";
             if(number>0&&number<=9){
-                ctx.fillStyle="#000";                      
+                if(err){
+                    ctx.fillStyle="#f44";                      
+                }else{
+                  ctx.fillStyle="#000";                      
+                }
                 ctx.fillText(number,x+(pixw*0.5),y+(pixw*0.5));
             }else if(guess.length==1){                   
                 ctx.fillText(guess[0],x+(pixw*0.5),y+(pixw*0.5));
@@ -211,9 +275,9 @@
                   for(var i=0;i<9;i++){
                       var numb=numbers[j][i];
                       if(j==smy&&i==smx){
-                          drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none","#def");
+                          drawbox((i*pixw)+marg,(j*pixw)+marg,4,numb.val,numb.guess,"#fc5",numb.backg,numb.err,true);
                       }else{
-                          drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none",numb.backg);
+                          drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none",numb.backg,numb.err,false);
                       }
                   }
             }
