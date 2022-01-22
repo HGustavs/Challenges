@@ -1,5 +1,6 @@
 <html>
 <head>
+    <script src="helperFunction/icons.js"></script>
 		<script>
 				var ctx;
 			  var mx,my,mb=0;
@@ -16,7 +17,7 @@
         // Sudoku App
 
         // Pastel Colors
-        var pastels=["#fed","#def","#dfe","#ffd","#dff","#fdf","#fcd","#dfc","#eee"];
+        var pastels=["#eee","#fed","#def","#dfe","#ffd","#dff","#fdf","#fcd","#dfc"];
 
         // Grid
         numbers=[[],[],[],[],[],[],[],[],[]];
@@ -364,10 +365,17 @@
                 }else{
                     drawbox((i*pixw)+marg,(11*pixw)+marg,cageoffs,i+1,[],"#ccc","#eee");
                 }
-                if(col==pastels[i]){
-                    drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#fed",pastels[i]);
+                if(i>0){
+                    if(col==pastels[i]){
+                        drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#fed",pastels[i]);
+                    }else{
+                        drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#888",pastels[i]);
+                    }
                 }else{
-                    drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#888",pastels[i]);
+                    ctx.save();
+                    ctx.translate((i*pixw)+marg+cageoffs+3,(12*pixw)+marg+cageoffs+2);
+                    floppy();
+                    ctx.restore();
                 }
             }
 
