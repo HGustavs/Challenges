@@ -79,7 +79,7 @@
                       for(var k=0;k<init.length;k++){
                           if((init[k].x==i)&&(init[k].y==j)) val=init[k].val;
                       }
-                      numbers[j][i]={val:val,guess:[],backg:"none"};
+                      numbers[j][i]={val:val,guess:[],backg:"none",selected:false};
                   }
             }
 
@@ -161,10 +161,6 @@
                 var jstr=localStorage.getItem("Numbers");
                 numbers=JSON.parse(jstr);
             }else if(cmx>=0&&cmx<9&&cmy>=0&&cmy<9){
-                // We only perform this if we are not on an init square this way we can not mark / update init squares
-                for(i=0;i<init.length;i++){
-                      if(cmx==init[i].x&&cmy==init[i].y) return false;
-                }
                 smx=cmx;
                 smy=cmy;
             }else if(cmx>=0&&cmx<9&&cmy<13){
@@ -198,19 +194,38 @@
 				function mouseDown(e)
 				{
 						mb=e.which;
-				}
+            toggleSel(cmx,cmy);
+ 				}
+
+        function toggleSel(tx,ty)
+        {
+            if(tx<0||tx>8||ty<0||ty>8) return false;
+            
+            // We only perform this if we are not on an init square this way we can not mark / update init squares
+            for(i=0;i<init.length;i++){
+                  if(tx==init[i].x&&ty==init[i].y) return false;
+            }
+
+            if(numbers[ty][tx].selected){
+                numbers[ty][tx].selected=false;
+            }else{
+                numbers[ty][tx].selected=true;
+            }
+        }
 			
 				function mouseMove(e,t)
 				{
 						var rect = e.target.getBoundingClientRect();
             mx = e.clientX - rect.left; //x position within the element.
             my = e.clientY - rect.top;  //y position within the element
-            var omx=cmx;
-            var omy=cmy;
+            omx=cmx;
+            omy=cmy;
             cmx=Math.floor((mx-marg)/pixw);
             cmy=Math.floor((my-marg)/pixw);
-            if(cmx!=omx||cmy!=omy){
-
+            if(mb){
+                if(cmx!=omx||cmy!=omy){
+                    toggleSel(cmx,cmy);
+                }
             }
         }
 
@@ -306,7 +321,7 @@
                   var item=numbers[j];
                   for(var i=0;i<9;i++){
                       var numb=numbers[j][i];
-                      if(j==smy&&i==smx){
+                      if(numb.selected){
                           drawbox((i*pixw)+marg,(j*pixw)+marg,4,numb.val,numb.guess,"#fc5",numb.backg,numb.err,true);
                       }else{
                           drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none",numb.backg,numb.err,false);
