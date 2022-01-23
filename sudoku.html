@@ -87,8 +87,9 @@
 				}
 
         // Set error state optimization.
-        function setErr(){
-
+        function setErr(x1,y1,x2,y2){
+            numbers[y1][x1].err=true;
+            numbers[y2][x2].err=true;            
         }
 						
         // We check sudoku state 
@@ -108,24 +109,15 @@
                       if(theval>0){
                           // We first go over all on same row / column and check for duplicates
                           for(var k=0;k<9;k++){
-                              if((k!=j)&&(numbers[i][k].val==theval)){
-                                numbers[i][j].err=true;
-                                numbers[i][k].err=true;
-                              }
-                              if((k!=i)&&(numbers[k][j].val==theval)){
-                                numbers[i][j].err=true;
-                                numbers[k][j].err=true;
-                              }
+                              if((k!=j)&&(numbers[i][k].val==theval)) setErr(j,i,k,i);
+                              if((k!=i)&&(numbers[k][j].val==theval)) setErr(j,i,j,k);
                           }
                           // We then go over all in same block
                           var ci=Math.floor(i/3)*3;
                           var cj=Math.floor(j/3)*3;
                           for(var k=0;k<3;k++){
                               for(var l=0;l<3;l++){
-                                  if((numbers[ci+k][cj+l].val==theval)&&(!((i==(ci+k))&&(j==(cj+l))))){
-                                      numbers[i][j].err=true;
-                                      numbers[ci+k][cj+l].err=true;
-                                  }
+                                  if((numbers[ci+k][cj+l].val==theval)&&(!((i==(ci+k))&&(j==(cj+l))))) setErr(j,i,cj+l,ci+k);
                               }
                           }
 
@@ -135,46 +127,27 @@
                               ncage=cages[cageno];
                               for(var l=0;l<ncage.items.length;l++){
                                   if(!(ncage.items[l].x==j&&ncage.items[l].y==i)){
-                                      if(theval==numbers[ncage.items[l].y][ncage.items[l].x].val){
-                                          numbers[i][j].err=true;
-                                          numbers[ncage.items[l].y][ncage.items[l].x].err=true;
-                                      }
+                                      if(theval==numbers[ncage.items[l].y][ncage.items[l].x].val) setErr(j,i,ncage.items[l].x,ncage.items[l].y);
                                   }
                               }
                           }
 
                           // Ortho higher test
                           if(j>0){
-                              if(numbers[i][j-1].val==(theval-1)&&theval>1){
-                                  numbers[i][j].err=true;
-                                  numbers[i][j-1].err=true;
-                              }                              
+                              if(numbers[i][j-1].val==(theval-1)&&theval>1) setErr(j,i,j-1,i);
                           }
                           if(j<8){
-                              if(numbers[i][j+1].val==(theval-1)&&theval>1){
-                                  numbers[i][j].err=true;
-                                  numbers[i][j+1].err=true;
-                              }                              
+                              if(numbers[i][j+1].val==(theval-1)&&theval>1) setErr(j,i,j+1,i);
                           }
                           if(i>0){
-                              if(numbers[i-1][j].val==(theval-1)&&theval>1){
-                                  numbers[i][j].err=true;
-                                  numbers[i-1][j].err=true;
-                              }
+                              if(numbers[i-1][j].val==(theval-1)&&theval>1) setErr(j,i,j,i-1);
                           }
                           if(i<8){
-                              if(numbers[i+1][j].val==(theval-1)&&theval>1){
-                                  numbers[i][j].err=true;
-                                  numbers[i+1][j].err=true;
-                              }
+                              if(numbers[i+1][j].val==(theval-1)&&theval>1) setErr(j,i,j,i+1);
                           }        
                       }
                 }
             }
-
-            
-            
-            // We go over all in same square and check for duplicates
 				}
 			
 				function mouseUp(e)
@@ -232,8 +205,13 @@
 						var rect = e.target.getBoundingClientRect();
             mx = e.clientX - rect.left; //x position within the element.
             my = e.clientY - rect.top;  //y position within the element
+            var omx=cmx;
+            var omy=cmy;
             cmx=Math.floor((mx-marg)/pixw);
             cmy=Math.floor((my-marg)/pixw);
+            if(cmx!=omx||cmy!=omy){
+
+            }
         }
 
         function findcage(xk,yk)
