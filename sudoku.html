@@ -85,6 +85,11 @@
 
 						drawit();
 				}
+
+        // Set error state optimization.
+        function setErr(){
+
+        }
 						
         // We check sudoku state 
 				function checkState(checksudoku,checkcages,checkortho)
@@ -123,23 +128,48 @@
                                   }
                               }
                           }
-                          
-                      }
-                      
-                      // We go over the items in the cage of the current number element
-                      var cageno=findcage(j,i);
-                      if(cageno!=-1){
-                          ncage=cages[cageno];
-                          for(var l=0;l<ncage.items.length;l++){
-                              if(!(ncage.items[l].x==j&&ncage.items[l].y==i)){
-                                  if(theval==numbers[ncage.items[l].y][ncage.items[l].x].val&&theval>0){
-                                      numbers[i][j].err=true;
-                                      numbers[ncage.items[l].y][ncage.items[l].x].err=true;
+
+                          // We go over the items in the cage of the current number element
+                          var cageno=findcage(j,i);
+                          if(cageno!=-1){
+                              ncage=cages[cageno];
+                              for(var l=0;l<ncage.items.length;l++){
+                                  if(!(ncage.items[l].x==j&&ncage.items[l].y==i)){
+                                      if(theval==numbers[ncage.items[l].y][ncage.items[l].x].val){
+                                          numbers[i][j].err=true;
+                                          numbers[ncage.items[l].y][ncage.items[l].x].err=true;
+                                      }
                                   }
                               }
                           }
+
+                          // Ortho higher test
+                          if(j>0){
+                              if(numbers[i][j-1].val==(theval-1)&&theval>1){
+                                  numbers[i][j].err=true;
+                                  numbers[i][j-1].err=true;
+                              }                              
+                          }
+                          if(j<8){
+                              if(numbers[i][j+1].val==(theval-1)&&theval>1){
+                                  numbers[i][j].err=true;
+                                  numbers[i][j+1].err=true;
+                              }                              
+                          }
+                          if(i>0){
+                              if(numbers[i-1][j].val==(theval-1)&&theval>1){
+                                  numbers[i][j].err=true;
+                                  numbers[i-1][j].err=true;
+                              }
+                          }
+                          if(i<8){
+                              if(numbers[i+1][j].val==(theval-1)&&theval>1){
+                                  numbers[i][j].err=true;
+                                  numbers[i+1][j].err=true;
+                              }
+                          }        
                       }
-                  }
+                }
             }
 
             
