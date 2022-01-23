@@ -137,7 +137,14 @@
 				function mouseUp(e)
 				{
             mb=0;
-            if(cmx>=0&&cmx<9&&cmy>=0&&cmy<9){
+            if(cmx==0&&cmy==12){
+                var jstr=JSON.stringify(numbers);
+                localStorage.setItem("Numbers",jstr);
+                alert(jstr.length+" bytes saved" );
+            }else if(cmx==1&&cmy==12){
+                var jstr=localStorage.getItem("Numbers");
+                numbers=JSON.parse(jstr);
+            }else if(cmx>=0&&cmx<9&&cmy>=0&&cmy<9){
                 // We only perform this if we are not on an init square this way we can not mark / update init squares
                 smx=cmx;
                 smy=cmy;
