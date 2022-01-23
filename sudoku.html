@@ -20,15 +20,15 @@
         var pastels=["#eee","#eee","#fed","#def","#dfe","#ffd","#dff","#fdf","#dfc","#fcd"];
 
         // Grid
-        numbers=[[],[],[],[],[],[],[],[],[]];
+        var numbers=[[],[],[],[],[],[],[],[],[]];
 
         // Initial values
-        init=[
+        var init=[
           {x:3,y:6,val:2}
         ]
 			
         // Cages
-        cages=[
+        var cages=[
             {
                 lines:[{x:0,y:0},{x:5,y:0},{x:5,y:1},{x:1,y:1},{x:1,y:4},{x:3,y:4},{x:3,y:7},{x:0,y:7},{x:0,y:7}],
                 items:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:0,y:3},{x:1,y:3}]
@@ -65,7 +65,7 @@
                 lines:[{x:14,y:8},{x:15,y:8},{x:15,y:12},{x:17,y:12},{x:17,y:17},{x:12,y:17},{x:12,y:16},{x:14,y:16}],
                 items:[{x:6,y:8},{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}]
             }
-          ]
+          ];
 
 				function setup()
 				{
@@ -87,14 +87,14 @@
 				}
 						
         // We check sudoku state 
-				function checkState(sudoku,cages,ortho)
+				function checkState(checksudoku,checkcages,checkortho)
 				{
             // Clear all errors
             for(var i=0;i<9;i++){
                 for(var j=0;j<9;j++){
                     numbers[i][j].err=false;
                 }
-              }
+            }
                 
             for(var i=0;i<9;i++){
                   for(var j=0;j<9;j++){
@@ -126,6 +126,19 @@
                           
                       }
                       
+                      // We go over the items in the cage of the current number element
+                      var cageno=findcage(j,i);
+                      if(cageno!=-1){
+                          ncage=cages[cageno];
+                          for(var l=0;l<ncage.items.length;l++){
+                              if(!(ncage.items[l].x==j&&ncage.items[l].y==i)){
+                                  if(theval==numbers[ncage.items[l].y][ncage.items[l].x].val&&theval>0){
+                                      numbers[i][j].err=true;
+                                      numbers[ncage.items[l].y][ncage.items[l].x].err=true;
+                                  }
+                              }
+                          }
+                      }
                   }
             }
 
@@ -146,6 +159,9 @@
                 numbers=JSON.parse(jstr);
             }else if(cmx>=0&&cmx<9&&cmy>=0&&cmy<9){
                 // We only perform this if we are not on an init square this way we can not mark / update init squares
+                for(i=0;i<init.length;i++){
+                      if(cmx==init[i].x&&cmy==init[i].y) return false;
+                }
                 smx=cmx;
                 smy=cmy;
             }else if(cmx>=0&&cmx<9&&cmy<13){
