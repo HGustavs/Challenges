@@ -17,7 +17,7 @@
         // Sudoku App
 
         // Pastel Colors
-        var pastels=["#eee","#fed","#def","#dfe","#ffd","#dff","#fdf","#fcd","#dfc"];
+        var pastels=["#eee","#eee","#fed","#def","#dfe","#ffd","#dff","#fdf","#dfc","#fcd"];
 
         // Grid
         numbers=[[],[],[],[],[],[],[],[],[]];
@@ -365,7 +365,7 @@
                 }else{
                     drawbox((i*pixw)+marg,(11*pixw)+marg,cageoffs,i+1,[],"#ccc","#eee");
                 }
-                if(i>0){
+                if(i>1){
                     if(col==pastels[i]){
                         drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#fed",pastels[i]);
                     }else{
@@ -374,7 +374,8 @@
                 }else{
                     ctx.save();
                     ctx.translate((i*pixw)+marg+cageoffs+3,(12*pixw)+marg+cageoffs+2);
-                    floppy();
+                    if(i==0) floppy()
+                    else folder();
                     ctx.restore();
                 }
             }
