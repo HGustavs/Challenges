@@ -5,7 +5,6 @@
 				var ctx;
 			  var mx,my,mb=0;
         var cmx,cmy;
-        var smx,smy;
 
         const pixw=50;
         const marg=40;
@@ -14,10 +13,17 @@
         var currentguess=[1,6,8,3];
 			
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
+        // https://www.youtube.com/watch?v=gwyBemmdZJM
         // Sudoku App
+
+        // Cached drawing
+        // Proper circumfencing
 
         // Pastel Colors
         var pastels=["#eee","#eee","#fed","#def","#dfe","#ffd","#dff","#fdf","#dfc","#fcd"];
+
+        // History
+        var history=[];
 
         // Grid
         var numbers=[[],[],[],[],[],[],[],[],[]];
@@ -95,10 +101,11 @@
         // We check sudoku state 
 				function checkState(checksudoku,checkcages,checkortho)
 				{
-            // Clear all errors
+            // Clear all errors and selected elements
             for(var i=0;i<9;i++){
                 for(var j=0;j<9;j++){
                     numbers[i][j].err=false;
+                    numbers[i][j].selected=false;
                 }
             }
                 
@@ -160,33 +167,10 @@
             }else if(cmx==1&&cmy==12){
                 var jstr=localStorage.getItem("Numbers");
                 numbers=JSON.parse(jstr);
-            }else if(cmx>=0&&cmx<9&&cmy>=0&&cmy<9){
-                smx=cmx;
-                smy=cmy;
-            }else if(cmx>=0&&cmx<9&&cmy<13){
-                if(smx>=0&&smx<9&&smy>=0&&smy<9){
-                    if(cmy==10){
-                        // If number is the same clear, otherwise set
-                        if(numbers[smy][smx].val==(cmx+1)){
-                            numbers[smy][smx].val=0;
-                        }else{
-                            numbers[smy][smx].val=(cmx+1);
-                        }
-                    }else if(cmy==11){
-                        // Number was found in list then we clear
-                        if(numbers[smy][smx].guess.indexOf(cmx+1)!=-1){
-                            numbers[smy][smx].guess.splice(numbers[smy][smx].guess.indexOf(cmx+1),1);
-                        }else{
-                            numbers[smy][smx].guess.push(cmx+1);
-                        }
-                    }else if(cmy==12){
-                        if(numbers[smy][smx].backg==pastels[cmx]){
-                              numbers[smy][smx].backg="none";
-                          }else{
-                              numbers[smy][smx].backg=pastels[cmx];
-                          }
-                    }
-                }
+            }else if(cmx>=0&&cmx<9&&cmy>9&&cmy<13){
+                if(cmy==10) toggleVal(cmx+1,0);
+                if(cmy==11) toggleVal(cmx,1);
+                if(cmy==12) toggleVal(cmx,2);
                 checkState(true,true,true);            
             }				
         }
@@ -210,6 +194,27 @@
                 numbers[ty][tx].selected=false;
             }else{
                 numbers[ty][tx].selected=true;
+            }
+        }
+
+        function toggleVal(item,kind)
+        {
+            for(var i=0;i<9;i++){
+                  for(var j=0;j<9;j++){
+                      if(numbers[i][j].selected){
+                          if(kind==0){    // Kind 0 is set number
+                              numbers[i][j].val=((numbers[i][j].val==item) ? 0 : item); 
+                          }else if(kind==2){
+                              numbers[i][j].backg=((numbers[i][j].backg==pastels[item]) ? "none" : pastels[item]);
+                          }else if(kind==1){
+                              if(numbers[i][j].guess.indexOf(item+1)!=-1){
+                                  numbers[i][j].guess.splice(numbers[i][j].guess.indexOf(cmx+1),1);
+                              }else{
+                                  numbers[i][j].guess.push(cmx+1);
+                              }
+                          }                           
+                      }
+                  }
             }
         }
 			
@@ -347,7 +352,8 @@
                   ctx.moveTo((i*pixw)+marg,marg);
                   ctx.lineTo((i*pixw)+marg,(pixw*9)+marg);
                   ctx.stroke();
-            }            
+            }  
+            
 
             // Draw cages
             for(var i=0;i<cages.length;i++){
@@ -395,11 +401,22 @@
             var guess=[];
             var numb=-1;
             var col="#000";
-            if(smx>0&&smx<10&&smy>0&&smy<10){
-                guess=numbers[smy][smx].guess;
-                numb=numbers[smy][smx].val;
-                col=numbers[smy][smx].backg;
+
+            // Multi Selection of items
+            for(var i=0;i<9;i++){
+                for(var j=0;j<9;j++){
+                    if(numbers[i][j].selected){
+                        var tguess=numbers[i][j].guess;
+                        numb=numbers[i][j].val;
+                        for(var k=0;k<tguess.length;k++){
+                            if(guess.indexOf(tguess[k])==-1){
+                                guess.push(tguess[k]);
+                            }
+                        }
+                    }
+                }
             }
+
             for(var i=0;i<9;i++){
                 if(numb==(i+1)){
                   drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#e44","#fee");
