@@ -322,6 +322,41 @@
 
             return false;
         }
+
+        var paths=[];
+
+        function addpath(seg)
+        {
+            var found=-1;
+            for(var i=0;i<paths.length;i++){
+                var path=paths[i];
+                if(path[0].x==seg.x2&&path[0].y==seg.y2){
+                    path.unshift({x:seg.x1,y:seg.y1});
+                    found=i;
+                    break;
+                }else if(path[0].x==seg.x1&&path[0].y==seg.y1){
+                    path.unshift({x:seg.x2,y:seg.y2});
+                    found=i;
+                    break;
+                }else if(path[path.length-1].x==seg.x2&&path[path.length-1].y==seg.y2){
+                    path.push({x:seg.x1,y:seg.y1});
+                    found=i;
+                    break;
+                }else if(path[path.length-1].x==seg.x1&&path[path.length-1].y==seg.y1){
+                    path.push({x:seg.x2,y:seg.y2});
+                    found=i;
+                    break;
+                }
+            }
+
+            // Not found so we make new one and add both points
+            if(found==-1){
+                var path=[];
+                path.push({x:seg.x1,y:seg.y1});
+                path.push({x:seg.x2,y:seg.y2});
+                paths.push(path)
+            }
+        }
 			
 				function drawit()
 				{	
@@ -367,27 +402,39 @@
             }  
             
             // Draw selection using marching square-like algorithm
+            paths=[];
             var segs=[];
             for(var j=0;j<9;j++){
                   for(var i=0;i<9;i++){
                       var state=0;
                       if(numbers[i][j].selected){
-                        if(!numbers[i+1][j].selected) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+pixw+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+pixw+marg,col:"#f66"});
-                        if(!numbers[i-1][j].selected) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+marg,col:"#f66"});
-                        if(!numbers[i][j+1].selected) segs.push({x1:(j*pixw)+pixw+marg,y1:(i*pixw)+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+pixw+marg,col:"#f66"});
-                        if(!numbers[i][j-1].selected) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+marg,x2:(j*pixw)+marg,y2:(i*pixw)+pixw+marg,col:"#f66"});
+                        if(!numbers[i+1][j].selected) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+pixw+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+pixw+marg,col:"#f66",kind:0});
+                        if(!numbers[i-1][j].selected) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+marg,col:"#f66",kind:1});
+                        if(!numbers[i][j+1].selected) segs.push({x1:(j*pixw)+pixw+marg,y1:(i*pixw)+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+pixw+marg,col:"#f66",kind:2});
+                        if(!numbers[i][j-1].selected) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+marg,x2:(j*pixw)+marg,y2:(i*pixw)+pixw+marg,col:"#f66",kind:3});
                       }
                   }
             }
+
             for(var i=0;i<segs.length;i++){
-                  ctx.lineWidth=3;
-                  ctx.strokeStyle=segs[i].col;
-                  ctx.beginPath();
-                  ctx.moveTo(segs[i].x1,segs[i].y1);
-                  ctx.lineTo(segs[i].x2,segs[i].y2);
-                  ctx.stroke();
+                  addpath(segs[i]);
             }
-/*            
+
+            for(var i=0;i<paths.length;i++){
+                ctx.beginPath;
+                ctx.strokeStyle="#f66";
+                ctx.lineWidth=4;
+                for(var j=0;j<paths[i].length;j++){
+                    if(j==0){
+                        ctx.moveTo(paths[i][j].x,paths[i][j].y);
+                    }else{
+                        ctx.lineTo(paths[i][j].x,paths[i][j].y);
+                    }
+                }
+                ctx.fill();
+          }
+
+          /*            
             // Draw cages
             for(var i=0;i<cages.length;i++){
                   var cage=cages[i];
