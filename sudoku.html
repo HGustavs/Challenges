@@ -321,6 +321,14 @@
             return false;
         }
 
+        function cagestate(x,y,items)
+        {
+            for(var i=0;i<items.length;i++){
+                if(items[i].x==x&&items[i].y==y) return true;
+            }
+            return false;
+        }
+
         var paths=[];
 			
 				function drawit()
@@ -368,6 +376,7 @@
             
             // Draw selection using marching square-like algorithm
             var segs=[];
+            /*
             for(var j=0;j<9;j++){
                   for(var i=0;i<9;i++){
                       var state=0;
@@ -379,6 +388,16 @@
                       }
                   }
             }
+            */
+            var cage=cages[0];
+            for(var i=0;i<cage.items.length;i++){
+                var item=cage.items[i];
+                if(!cagestate(item.x,item.y+1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+pixw+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:"#f66",kind:0});
+                if(!cagestate(item.x,item.y-1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+marg,col:"#f66",kind:1});
+                if(!cagestate(item.x+1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+pixw+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:"#f66",kind:2});
+                if(!cagestate(item.x-1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+marg,y2:(item.y*pixw)+pixw+marg,col:"#f66",kind:3});
+            }
+
             paths=[];
             if(segs.length>2){
                 do{
@@ -415,7 +434,12 @@
             }
             for(var i=0;i<paths.length;i++){
                 ctx.beginPath();
-                ctx.strokeStyle="#f66";
+//                ctx.strokeStyle="#f66";
+
+                ctx.lineWidth=2;                      
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle="#888";
+
                 ctx.lineWidth=4;
                 for(var j=0;j<paths[i].length;j++){
                     if(j==0){
@@ -425,6 +449,7 @@
                     }
                 }
                 ctx.stroke();
+                ctx.setLineDash([]);
           }
 
           /*            
