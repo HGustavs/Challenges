@@ -84,17 +84,38 @@
             numbers[y2][x2].err=true;            
         }
 
-        function clearsel(err,sel)
+        function clearsel(err,sel,col)
         {
+            // Draw menu
+            var cguess=[];
+            var cnumb=[];
+            var ccol=[];
+
             // Clear all errors and selected elements
             for(var i=0;i<9;i++){
                 for(var j=0;j<9;j++){
+                    if(col&&numbers[i][j].selected){
+                        var tguess=numbers[i][j].guess;
+                        numb=numbers[i][j].val;
+                        for(var k=0;k<tguess.length;k++){
+                            if(cguess.indexOf(tguess[k])==-1){
+                                cguess.push(tguess[k]);
+                            }
+                        }
+                        if(ccol.indexOf(numbers[i][j].backg)) ccol.push(numbers[i][j].backg);
+                        if(cnumb.indexOf(numbers[i][j].val)) cnumb.push(numbers[i][j].val);
+                    }
                     if(err){
                         numbers[i][j].err=false;
-                    }else{
+                    }
+                    if(sel){
                         numbers[i][j].selected=false;
                     }
                 }
+            }
+
+            if(col){
+                return {guess:cguess,numb:cnumb,col:ccol};
             }
  
         }
@@ -102,7 +123,7 @@
         // We check sudoku state 
 				function checkState(checksudoku,checkcages,checkortho)
 				{
-            clearSel(false,true);
+            clearsel(false,true,false);
                 
             for(var i=0;i<9;i++){
                   for(var j=0;j<9;j++){
@@ -181,10 +202,9 @@
             }else{
                 cursel=false;
                 if(cmy==9||cmy==13||cmy<0||cmx<0||cmx>8){
-                    clearsel(false,true);
+                    clearsel(false,true,false);
                 }
             }
-      
             toggleSel(cmx,cmy);
  				}
 
@@ -452,18 +472,13 @@
             for(var i=0;i<paths.length;i++){
                 ctx.beginPath();
                 if(paths[i].length>0){
+                    ctx.strokeStyle="#234";
+                    ctx.lineWidth=2;
+                    ctx.setLineDash([3,3]);
                     if(paths[i][0].col==currentcage||paths[i][0].col==-1){
-                      if(paths[i][0].col==-1){
-                        ctx.strokeStyle="#e61";
-                      }else{
-                        ctx.strokeStyle="#d34";
-                      }
-                      ctx.lineWidth=4;
-                      ctx.setLineDash([]);
-                    }else{
-                      ctx.strokeStyle="#234";
-                      ctx.lineWidth=2;
-                      ctx.setLineDash([3,3]);
+                          ctx.strokeStyle=paths[i][0].col==-1 ? "#e61" : "#d34";
+                          ctx.lineWidth=4;
+                          ctx.setLineDash([]);
                     }
                 }
 
@@ -485,39 +500,21 @@
                 ctx.setLineDash([]);
           }
 
-            // Draw menu
-            var guess=[];
-            var numb=-1;
-            var col="#000";
-
-            // Multi Selection of items
-            for(var i=0;i<9;i++){
-                for(var j=0;j<9;j++){
-                    if(numbers[i][j].selected){
-                        var tguess=numbers[i][j].guess;
-                        numb=numbers[i][j].val;
-                        for(var k=0;k<tguess.length;k++){
-                            if(guess.indexOf(tguess[k])==-1){
-                                guess.push(tguess[k]);
-                            }
-                        }
-                    }
-                }
-            }
-
-            for(var i=0;i<9;i++){
-                if(numb==(i+1)){
+          // Collect data into state and then draw menu
+          var state=clearsel(false,false,true);
+          for(var i=0;i<9;i++){
+                if(state.numb.indexOf(i+1)==-1){
                   drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#e44","#fee");
                 }else{
                   drawbox((i*pixw)+marg,(10*pixw)+marg,cageoffs,i+1,[],"#ccc","#eee");
                 }
-                if(guess.indexOf(i+1)!=-1){
+                if(state.guess.indexOf(i+1)!=-1){
                     drawbox((i*pixw)+marg,(11*pixw)+marg,cageoffs,i+1,[],"#e44","#fed");
                 }else{
                     drawbox((i*pixw)+marg,(11*pixw)+marg,cageoffs,i+1,[],"#ccc","#eee");
                 }
                 if(i>1){
-                    if(col==pastels[i]){
+                    if(state.col.indexOf(pastels[i])==-1){
                         drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#fed",pastels[i]);
                     }else{
                         drawbox((i*pixw)+marg,(12*pixw)+marg,cageoffs,0,[],"#888",pastels[i]);
@@ -537,7 +534,6 @@
             if(redraw){
                 drawit();
                 redraw=false;
-                console.log("Redraw");
             }
             window.requestAnimationFrame(cachedDraw);
         }        
