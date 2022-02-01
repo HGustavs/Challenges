@@ -3,17 +3,13 @@
     <script src="helperFunction/icons.js"></script>
 		<script>
 				var ctx;
-			  var mx,my,mb=0;
-        var cmx,cmy;
+			  var mx,my,mb=0,cmx,cmy;
 
         const pixw=50;
         const marg=40;
         const cageoffs=5;
 
-        var currentguess=[1,6,8,3];
-        var cursel=false;
-
-        var redraw=true;
+        var currentguess=[],cursel=false,redraw=true;
 			
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
         // https://www.youtube.com/watch?v=gwyBemmdZJM
@@ -29,39 +25,19 @@
         var numbers=[[],[],[],[],[],[],[],[],[]];
 
         // Initial values
-        var init=[
-          {x:3,y:6,val:2}
-        ]
+        var init=[{x:3,y:6,val:2}]
 
         // Cages
         var cages=[
-            {
-                items:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:0,y:3},{x:1,y:3}]
-            },
-            {
-                items:[{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:3,y:5},{x:0,y:4},{x:1,y:4},{x:0,y:5}]
-            },
-            {
-                items:[{x:0,y:6},{x:1,y:6},{x:2,y:6},{x:3,y:6},{x:0,y:7},{x:2,y:7},{x:0,y:8},{x:2,y:8}]
-            },
-            {
-                items:[{x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:4,y:4},{x:4,y:0},{x:5,y:0},{x:5,y:1}]
-            },
-            {
-                items:[{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:5,y:3},{x:5,y:4},{x:6,y:4}]
-            },            
-            {
-                items:[{x:4,y:5},{x:4,y:6},{x:4,y:7},{x:3,y:8},{x:4,y:8},{x:5,y:6},{x:6,y:5},{x:6,y:6},{x:6,y:7}]
-            },  
-            {
-                items:[{x:6,y:0},{x:6,y:1},{x:6,y:2},{x:6,y:3},{x:5,y:2},{x:7,y:0},{x:8,y:0},{x:8,y:1}]
-            }, 
-            {
-                items:[{x:7,y:1},{x:7,y:2},{x:8,y:2},{x:8,y:3},{x:8,y:4},{x:8,y:5}]
-            }, 
-            {
-                items:[{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:6,y:8},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}]
-            }
+            {items:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:0,y:3},{x:1,y:3}]},
+            {items:[{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:3,y:5},{x:0,y:4},{x:1,y:4},{x:0,y:5}]},
+            {items:[{x:0,y:6},{x:1,y:6},{x:2,y:6},{x:3,y:6},{x:0,y:7},{x:2,y:7},{x:0,y:8},{x:2,y:8}]},
+            {items:[{x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:4,y:4},{x:4,y:0},{x:5,y:0},{x:5,y:1}]},
+            {items:[{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:5,y:3},{x:5,y:4},{x:6,y:4}]},            
+            {items:[{x:4,y:5},{x:4,y:6},{x:4,y:7},{x:3,y:8},{x:4,y:8},{x:5,y:6},{x:6,y:5},{x:6,y:6},{x:6,y:7}]},  
+            {items:[{x:6,y:0},{x:6,y:1},{x:6,y:2},{x:6,y:3},{x:5,y:2},{x:7,y:0},{x:8,y:0},{x:8,y:1}]}, 
+            {items:[{x:7,y:1},{x:7,y:2},{x:8,y:2},{x:8,y:3},{x:8,y:4},{x:8,y:5}]}, 
+            {items:[{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:6,y:8},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}]}
           ];
 
 				function setup()
@@ -88,16 +64,26 @@
             numbers[y1][x1].err=true;
             numbers[y2][x2].err=true;            
         }
+
+        function clearsel(err,sel)
+        {
+            // Clear all errors and selected elements
+            for(var i=0;i<9;i++){
+                for(var j=0;j<9;j++){
+                    if(err){
+                        numbers[i][j].err=false;
+                    }else{
+                        numbers[i][j].selected=false;
+                    }
+                }
+            }
+ 
+        }
 						
         // We check sudoku state 
 				function checkState(checksudoku,checkcages,checkortho)
 				{
-            // Clear all errors and selected elements
-            for(var i=0;i<9;i++){
-                for(var j=0;j<9;j++){
-                    numbers[i][j].err=false;
-                }
-            }
+            clearSel(false,true);
                 
             for(var i=0;i<9;i++){
                   for(var j=0;j<9;j++){
@@ -176,11 +162,7 @@
             }else{
                 cursel=false;
                 if(cmy==9||cmy==13||cmy<0||cmx<0||cmx>8){
-                    for(var i=0;i<9;i++){
-                        for(var j=0;j<9;j++){
-                              numbers[i][j].selected=false;
-                        }
-                    }
+                    clearsel(false,true);
                 }
             }
       
