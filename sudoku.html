@@ -41,7 +41,7 @@
             },
             {
                 lines:[{x:4,y:2},{x:5,y:2},{x:5,y:10},{x:7,y:10},{x:7,y:11},{x:4,y:11},{x:4,y:9},{x:1,y:9},{x:1,y:11},{x:0,y:11},{x:0,y:8},{x:4,y:8}],
-                items:[{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:3,y:5},{x:2,y:4},{x:1,y:4},{x:0,y:5}]
+                items:[{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:3,y:5},{x:0,y:4},{x:1,y:4},{x:0,y:5}]
             },
             {
                 lines:[{x:0,y:12},{x:7,y:12},{x:7,y:13},{x:5,y:13},{x:5,y:17},{x:4,y:17},{x:4,y:13},{x:1,y:13},{x:1,y:17},{x:0,y:17}],
@@ -355,6 +355,7 @@
             */
 
             // Draw squares
+            /*
             ctx.strokeStyle="#000";
             for(var i=0;i<10;i++){
                   if((i%3)==0){
@@ -372,7 +373,8 @@
                   ctx.moveTo((i*pixw)+marg,marg);
                   ctx.lineTo((i*pixw)+marg,(pixw*9)+marg);
                   ctx.stroke();
-            }  
+            } 
+            */ 
             
             // Draw selection using marching square-like algorithm
             var segs=[];
@@ -389,13 +391,18 @@
                   }
             }
             */
-            var cage=cages[0];
-            for(var i=0;i<cage.items.length;i++){
-                var item=cage.items[i];
-                if(!cagestate(item.x,item.y+1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+pixw+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:"#f66",kind:0});
-                if(!cagestate(item.x,item.y-1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+marg,col:"#f66",kind:1});
-                if(!cagestate(item.x+1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+pixw+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:"#f66",kind:2});
-                if(!cagestate(item.x-1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+marg,y2:(item.y*pixw)+pixw+marg,col:"#f66",kind:3});
+
+            var colz=["#d33","#3d3","#33d","#3dd","#d3d","#dd3"];
+
+            for(var j=0;j<cages.length;j++){
+                var cage=cages[j];
+                for(var i=0;i<cage.items.length;i++){
+                    var item=cage.items[i];
+                    if(!cagestate(item.x,item.y+1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+pixw+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j,kind:0});
+                    if(!cagestate(item.x,item.y-1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+marg,col:j,kind:1});
+                    if(!cagestate(item.x+1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+pixw+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j,kind:2});
+                    if(!cagestate(item.x-1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+marg,y2:(item.y*pixw)+pixw+marg,col:j,kind:3});
+                }
             }
 
             paths=[];
@@ -405,21 +412,21 @@
                     var path=[];
                     var seg=segs[0];
                     segs.splice(0,1);
-                    path.push({x:seg.x1,y:seg.y1});
-                    path.push({x:seg.x2,y:seg.y2});
+                    path.push({x:seg.x1,y:seg.y1,col:seg.col});
+                    path.push({x:seg.x2,y:seg.y2,col:seg.col});
                     do{
                         for(var i=0;i<segs.length;i++){
                             var seg=segs[i];
-                            if(path[0].x==seg.x2&&path[0].y==seg.y2){
-                                path.unshift({x:seg.x1,y:seg.y1});
+                            if(path[0].x==seg.x2&&path[0].y==seg.y2&&path[0].col==seg.col){
+                                path.unshift({x:seg.x1,y:seg.y1,col:seg.col});
                                 break;
-                            }else if(path[0].x==seg.x1&&path[0].y==seg.y1){
-                                path.unshift({x:seg.x2,y:seg.y2});
+                            }else if(path[0].x==seg.x1&&path[0].y==seg.y1&&path[0].col==seg.col){
+                                path.unshift({x:seg.x2,y:seg.y2,col:seg.col});
                                 break;
-                            }else if(path[path.length-1].x==seg.x2&&path[path.length-1].y==seg.y2){
+                            }else if(path[path.length-1].x==seg.x2&&path[path.length-1].y==seg.y2&&path[path.length-1].col==seg.col){
                                 path.push({x:seg.x1,y:seg.y1});
                                 break;
-                            }else if(path[path.length-1].x==seg.x1&&path[path.length-1].y==seg.y1){
+                            }else if(path[path.length-1].x==seg.x1&&path[path.length-1].y==seg.y1&&path[path.length-1].col==seg.col){
                                 path.push({x:seg.x2,y:seg.y2});
                                 break;
                             }                                   
@@ -441,6 +448,7 @@
                 ctx.strokeStyle="#888";
 
                 ctx.lineWidth=4;
+                ctx.strokeStyle=colz[paths[i][0].col%6];
                 for(var j=0;j<paths[i].length;j++){
                     if(j==0){
                         ctx.moveTo(paths[i][j].x,paths[i][j].y);
@@ -451,49 +459,6 @@
                 ctx.stroke();
                 ctx.setLineDash([]);
           }
-
-          /*            
-            // Draw cages
-            for(var i=0;i<cages.length;i++){
-                  var cage=cages[i];
-                  var lines=cage.lines;
-
-                  if(i==currentcage){
-                    ctx.lineWidth=3;                      
-                    ctx.setLineDash([]);
-                    ctx.strokeStyle="#f44";
-                  }else{
-                    ctx.lineWidth=2;                      
-                    ctx.setLineDash([5, 5]);
-                    ctx.strokeStyle="#888";
-                  }
-
-                  ctx.beginPath();
-                  for(var j=0;j<lines.length;j++){
-                      var item=lines[j];
-
-                      if((item.x%2)==1){
-                          var x1=marg+((Math.floor(item.x/2)*pixw)+pixw)-cageoffs;
-                      }else{
-                          var x1=marg+((Math.floor(item.x/2)*pixw))+cageoffs;
-                      }
-
-                      if((item.y%2)==1){
-                          var y1=marg+((Math.floor(item.y/2)*pixw)+pixw)-cageoffs;
-                      }else{
-                          var y1=marg+((Math.floor(item.y/2)*pixw))+cageoffs;
-                      }
-
-                      if(j==0){
-                        ctx.moveTo(x1,y1);
-                      }else{
-                        ctx.lineTo(x1,y1);
-                      }
-                 }
-                 ctx.closePath();
-                 ctx.stroke();
-                 ctx.setLineDash([]); 
-            }
 
             // Draw menu
             var guess=[];
@@ -540,8 +505,8 @@
                     ctx.restore();
                 }
             }
-*/
-						window.requestAnimationFrame(drawit);
+
+						//window.requestAnimationFrame(drawit);
 				} 			
 			
 		</script>
