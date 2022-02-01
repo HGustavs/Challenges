@@ -28,18 +28,37 @@
         var init=[{x:3,y:6,val:2}]
 
         // Cages
-        var cages=[
-            {items:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:0,y:3},{x:1,y:3}]},
-            {items:[{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:3,y:5},{x:0,y:4},{x:1,y:4},{x:0,y:5}]},
-            {items:[{x:0,y:6},{x:1,y:6},{x:2,y:6},{x:3,y:6},{x:0,y:7},{x:2,y:7},{x:0,y:8},{x:2,y:8}]},
-            {items:[{x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:4,y:4},{x:4,y:0},{x:5,y:0},{x:5,y:1}]},
-            {items:[{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:5,y:3},{x:5,y:4},{x:6,y:4}]},            
-            {items:[{x:4,y:5},{x:4,y:6},{x:4,y:7},{x:3,y:8},{x:4,y:8},{x:5,y:6},{x:6,y:5},{x:6,y:6},{x:6,y:7}]},  
-            {items:[{x:6,y:0},{x:6,y:1},{x:6,y:2},{x:6,y:3},{x:5,y:2},{x:7,y:0},{x:8,y:0},{x:8,y:1}]}, 
-            {items:[{x:7,y:1},{x:7,y:2},{x:8,y:2},{x:8,y:3},{x:8,y:4},{x:8,y:5}]}, 
-            {items:[{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:6,y:8},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}]}
-          ];
+        /*var cages=[
+            {items:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:0,y:3},{x:1,y:3}],sum:-1},
+            {items:[{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:3,y:5},{x:0,y:4},{x:1,y:4},{x:0,y:5}],sum:-1},
+            {items:[{x:0,y:6},{x:1,y:6},{x:2,y:6},{x:3,y:6},{x:0,y:7},{x:2,y:7},{x:0,y:8},{x:2,y:8}],sum:-1},
+            {items:[{x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:4,y:4},{x:4,y:0},{x:5,y:0},{x:5,y:1}],sum:-1},
+            {items:[{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:5,y:3},{x:5,y:4},{x:6,y:4}],sum:-1},
+            {items:[{x:4,y:5},{x:4,y:6},{x:4,y:7},{x:3,y:8},{x:4,y:8},{x:5,y:6},{x:6,y:5},{x:6,y:6},{x:6,y:7}],sum:-1},  
+            {items:[{x:6,y:0},{x:6,y:1},{x:6,y:2},{x:6,y:3},{x:5,y:2},{x:7,y:0},{x:8,y:0},{x:8,y:1}],sum:-1}, 
+            {items:[{x:7,y:1},{x:7,y:2},{x:8,y:2},{x:8,y:3},{x:8,y:4},{x:8,y:5}],sum:-1}, 
+            {items:[{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:6,y:8},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}],sum:-1}
+          ];*/
 
+          var cages=[
+            {items:[{x:0,y:0},{x:1,y:0}],sum:5},
+            {items:[{x:2,y:1},{x:2,y:2}],sum:10},
+            {items:[{x:0,y:2},{x:0,y:3}],sum:13},
+            {items:[{x:0,y:4},{x:1,y:4},{x:0,y:5},{x:1,y:5}],sum:12},
+            {items:[{x:5,y:0},{x:5,y:1},{x:6,y:0},{x:7,y:0}],sum:12},
+            {items:[{x:4,y:1},{x:4,y:2}],sum:9},
+            {items:[{x:0,y:6},{x:0,y:7},{x:1,y:7},{x:0,y:8},{x:1,y:8},{x:2,y:8}],sum:25},
+            {items:[{x:8,y:1},{x:8,y:2},{x:8,y:3},{x:7,y:3}],sum:12},
+            {items:[{x:6,y:4},{x:7,y:4}],sum:12},
+            {items:[{x:2,y:5},{x:2,y:6},{x:3,y:6}],sum:15},
+            {items:[{x:3,y:5},{x:4,y:5},{x:4,y:6}],sum:14},
+            {items:[{x:3,y:7},{x:4,y:7},{x:3,y:8},{x:4,y:8}],sum:12},
+            {items:[{x:6,y:8},{x:7,y:8},{x:7,y:7}],sum:19},
+            {items:[{x:8,y:7},{x:8,y:8}],sum:5},
+            {items:[{x:7,y:5},{x:8,y:5},{x:8,y:6}],sum:17},            
+            {items:[{x:2,y:3},{x:3,y:3},{x:4,y:3},{x:5,y:3},{x:5,y:2},{x:5,y:4},{x:5,y:5},{x:5,y:6},{x:6,y:3}],sum:-1},
+          ];
+          
 				function setup()
 				{
 						var cc = document.getElementById("myCanvas");
@@ -380,13 +399,19 @@
 
             for(var j=0;j<cages.length;j++){
                 var cage=cages[j];
+                var minx=10000;
+                var miny=10000;
                 for(var i=0;i<cage.items.length;i++){
                     var item=cage.items[i];
-                    if(!cagestate(item.x,item.y+1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+pixw+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j});
+                    if(minx<(item.x*pixw)+marg) minx=(item.x*pixw)+marg;
+                    if(miny<(item.y*pixw)+marg) miny=(item.y*pixw)+marg;
+                    if(!cagestate(item.x-1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+marg,y2:(item.y*pixw)+pixw+marg,col:j});
                     if(!cagestate(item.x,item.y-1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+marg,col:j});
                     if(!cagestate(item.x+1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+pixw+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j});
-                    if(!cagestate(item.x-1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+marg,y2:(item.y*pixw)+pixw+marg,col:j});
+                    if(!cagestate(item.x,item.y+1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+pixw+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j});
                 }
+                cage.minx=minx;
+                cage.miny=miny;
             }
 
             paths=[];
@@ -444,16 +469,16 @@
 
                 for(var j=0;j<paths[i].length;j++){
                     var cnt=paths[i].length;
-                    var dx=Math.sign(paths[i][modulo(j+1,cnt)].x-paths[i][modulo(j-1,cnt)].x)*6;
-                    var dy=Math.sign(paths[i][modulo(j+1,cnt)].y-paths[i][modulo(j-1,cnt)].y)*6;
+                    var dx=Math.sign(paths[i][modulo(j+1,cnt)].x-paths[i][modulo(j-1,cnt)].x)*cageoffs;
+                    var dy=Math.sign(paths[i][modulo(j+1,cnt)].y-paths[i][modulo(j-1,cnt)].y)*cageoffs;
                     if(paths[i][0].col==-1){
                         dx=0;
                         dy=0;
                     }
                     if(j==0){
-                        ctx.moveTo(paths[i][j].x-dy,paths[i][j].y+dx);
+                        ctx.moveTo(paths[i][j].x+dy,paths[i][j].y-dx);
                     }else{
-                        ctx.lineTo(paths[i][j].x-dy,paths[i][j].y+dx);
+                        ctx.lineTo(paths[i][j].x+dy,paths[i][j].y-dx);
                     }
                 }
                 ctx.stroke();
