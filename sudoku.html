@@ -302,6 +302,11 @@
                 }
             }
 
+            if(sel){
+              ctx.fillStyle="RGBA(255,180,20,0.3)";
+              ctx.fill();
+            }
+
         }
 
         // Wrapped select state retreival
@@ -334,21 +339,15 @@
             var currentcage=findcage(cmx,cmy);
 
             // Draw numbers / Fills
-            /*
             ctx.textAlign = "center"; 
             ctx.textBaseline = 'middle';
             for(var j=0;j<9;j++){
                   var item=numbers[j];
                   for(var i=0;i<9;i++){
                       var numb=numbers[j][i];
-                      if(numb.selected){
-                          drawbox((i*pixw)+marg,(j*pixw)+marg,4,numb.val,numb.guess,"#fc5",numb.backg,numb.err,true);
-                      }else{
-                          drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none",numb.backg,numb.err,false);
-                      }
+                      drawbox((i*pixw)+marg,(j*pixw)+marg,0,numb.val,numb.guess,"none",numb.backg,numb.err,numb.selected);
                   }
             }
-            */
 
             // Draw squares
             ctx.strokeStyle="#000";
@@ -383,8 +382,6 @@
                       }
                   }
             }
-
-            var colz=["#d33","#3d3","#33d","#3dd","#d3d","#dd3"];
 
             for(var j=0;j<cages.length;j++){
                 var cage=cages[j];
@@ -438,7 +435,7 @@
                 if(paths[i].length>0){
                     if(paths[i][0].col==currentcage||paths[i][0].col==-1){
                       if(paths[i][0].col==-1){
-                        ctx.strokeStyle="#ed4";
+                        ctx.strokeStyle="#e61";
                       }else{
                         ctx.strokeStyle="#d34";
                       }
