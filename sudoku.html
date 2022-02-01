@@ -11,6 +11,8 @@
         const cageoffs=5;
 
         var currentguess=[1,6,8,3];
+
+        var redraw=true;
 			
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
         // https://www.youtube.com/watch?v=gwyBemmdZJM
@@ -80,7 +82,7 @@
                   }
             }
 
-						drawit();
+						cachedDraw();
 				}
 
         // Set error state optimization.
@@ -151,6 +153,7 @@
 				function mouseUp(e)
 				{
             mb=0;
+            redraw=true;
             if(cmx==0&&cmy==12){
                 var jstr=JSON.stringify(numbers);
                 localStorage.setItem("Numbers",jstr);
@@ -168,6 +171,7 @@
 			
 				function mouseDown(e)
 				{
+            redraw=true;
 						mb=e.which;
             toggleSel(cmx,cmy);
  				}
@@ -218,6 +222,11 @@
             omy=cmy;
             cmx=Math.floor((mx-marg)/pixw);
             cmy=Math.floor((my-marg)/pixw);
+            
+            if(omx!=cmx||omy!=cmy){
+              redraw=true;
+            }
+
             if(mb){
                 if(cmx!=omx||cmy!=omy){
                     toggleSel(cmx,cmy);
@@ -511,9 +520,17 @@
                     ctx.restore();
                 }
             }
-
-						window.requestAnimationFrame(drawit);
-				} 			
+				}
+        
+        function cachedDraw()
+        {
+            if(redraw){
+                drawit();
+                redraw=false;
+                console.log("Redraw");
+            }
+            window.requestAnimationFrame(cachedDraw);
+        }        
 			
 		</script>
 </head>
