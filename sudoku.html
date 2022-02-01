@@ -51,16 +51,16 @@
                 items:[{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:5,y:3},{x:5,y:4},{x:6,y:4}]
             },            
             {
-                items:[{x:3,y:8},{x:4,y:5},{x:4,y:6},{x:4,y:7},{x:4,y:8},{x:5,y:6},{x:6,y:5},{x:6,y:6},{x:6,y:7}]
+                items:[{x:4,y:5},{x:4,y:6},{x:4,y:7},{x:3,y:8},{x:4,y:8},{x:5,y:6},{x:6,y:5},{x:6,y:6},{x:6,y:7}]
             },  
             {
-                items:[{x:5,y:2},{x:6,y:0},{x:6,y:1},{x:6,y:2},{x:6,y:3},{x:7,y:0},{x:8,y:0},{x:8,y:1}]
+                items:[{x:6,y:0},{x:6,y:1},{x:6,y:2},{x:6,y:3},{x:5,y:2},{x:7,y:0},{x:8,y:0},{x:8,y:1}]
             }, 
             {
                 items:[{x:7,y:1},{x:7,y:2},{x:8,y:2},{x:8,y:3},{x:8,y:4},{x:8,y:5}]
             }, 
             {
-                items:[{x:6,y:8},{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}]
+                items:[{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:6,y:8},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}]
             }
           ];
 
@@ -320,6 +320,11 @@
             return false;
         }
 
+        function modulo(a,n)
+        {
+            return ((a % n ) + n ) % n;
+        }
+
         var paths=[];
 			
 				function drawit()
@@ -346,7 +351,6 @@
             */
 
             // Draw squares
-            /*
             ctx.strokeStyle="#000";
             for(var i=0;i<10;i++){
                   if((i%3)==0){
@@ -365,23 +369,20 @@
                   ctx.lineTo((i*pixw)+marg,(pixw*9)+marg);
                   ctx.stroke();
             } 
-            */ 
-            
+
             // Draw selection using marching square-like algorithm
             var segs=[];
-            /*
             for(var j=0;j<9;j++){
                   for(var i=0;i<9;i++){
                       var state=0;
                       if(numbers[i][j].selected){
-                        if(!selstate(j,i+1)) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+pixw+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+pixw+marg,col:"#f66",kind:0});
-                        if(!selstate(j,i-1)) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+marg,col:"#f66",kind:1});
-                        if(!selstate(j+1,i)) segs.push({x1:(j*pixw)+pixw+marg,y1:(i*pixw)+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+pixw+marg,col:"#f66",kind:2});
-                        if(!selstate(j-1,i)) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+marg,x2:(j*pixw)+marg,y2:(i*pixw)+pixw+marg,col:"#f66",kind:3});
+                        if(!selstate(j,i+1)) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+pixw+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+pixw+marg,col:-1});
+                        if(!selstate(j,i-1)) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+marg,col:-1});
+                        if(!selstate(j+1,i)) segs.push({x1:(j*pixw)+pixw+marg,y1:(i*pixw)+marg,x2:(j*pixw)+pixw+marg,y2:(i*pixw)+pixw+marg,col:-1});
+                        if(!selstate(j-1,i)) segs.push({x1:(j*pixw)+marg,y1:(i*pixw)+marg,x2:(j*pixw)+marg,y2:(i*pixw)+pixw+marg,col:-1});
                       }
                   }
             }
-            */
 
             var colz=["#d33","#3d3","#33d","#3dd","#d3d","#dd3"];
 
@@ -389,10 +390,10 @@
                 var cage=cages[j];
                 for(var i=0;i<cage.items.length;i++){
                     var item=cage.items[i];
-                    if(!cagestate(item.x,item.y+1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+pixw+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j,kind:0});
-                    if(!cagestate(item.x,item.y-1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+marg,col:j,kind:1});
-                    if(!cagestate(item.x+1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+pixw+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j,kind:2});
-                    if(!cagestate(item.x-1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+marg,y2:(item.y*pixw)+pixw+marg,col:j,kind:3});
+                    if(!cagestate(item.x,item.y+1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+pixw+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j});
+                    if(!cagestate(item.x,item.y-1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+marg,col:j});
+                    if(!cagestate(item.x+1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+pixw+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j});
+                    if(!cagestate(item.x-1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+marg,y2:(item.y*pixw)+pixw+marg,col:j});
                 }
             }
 
@@ -403,22 +404,22 @@
                     var path=[];
                     var seg=segs[0];
                     segs.splice(0,1);
-                    path.push({x:seg.x1,y:seg.y1,col:seg.col,kind:seg.kind});
-                    path.push({x:seg.x2,y:seg.y2,col:seg.col,kind:seg.kind});
+                    path.push({x:seg.x1,y:seg.y1,col:seg.col});
+                    path.push({x:seg.x2,y:seg.y2,col:seg.col});
                     do{
                         for(var i=0;i<segs.length;i++){
                             var seg=segs[i];
                             if(path[0].x==seg.x2&&path[0].y==seg.y2&&path[0].col==seg.col){
-                                path.unshift({x:seg.x1,y:seg.y1,col:seg.col,kind:seg.kind});
+                                path.unshift({x:seg.x1,y:seg.y1,col:seg.col});
                                 break;
                             }else if(path[0].x==seg.x1&&path[0].y==seg.y1&&path[0].col==seg.col){
-                                path.unshift({x:seg.x2,y:seg.y2,col:seg.col,kind:seg.kind});
+                                path.unshift({x:seg.x2,y:seg.y2,col:seg.col});
                                 break;
                             }else if(path[path.length-1].x==seg.x2&&path[path.length-1].y==seg.y2&&path[path.length-1].col==seg.col){
-                                path.push({x:seg.x1,y:seg.y1,col:seg.col,kind:seg.kind});
+                                path.push({x:seg.x1,y:seg.y1,col:seg.col});
                                 break;
                             }else if(path[path.length-1].x==seg.x1&&path[path.length-1].y==seg.y1&&path[path.length-1].col==seg.col){
-                                path.push({x:seg.x2,y:seg.y2,col:seg.col,kind:seg.kind});
+                                path.push({x:seg.x2,y:seg.y2,col:seg.col});
                                 break;
                             }                                   
                         }
@@ -430,21 +431,38 @@
 
                 }while(segs.length>0)
             }
-            for(var i=0;i<2;i++){
+            for(var i=0;i<paths.length;i++){
+
                 ctx.beginPath();
-//                ctx.strokeStyle="#f66";
 
-                ctx.lineWidth=2;                      
-                ctx.setLineDash([5, 5]);
-                ctx.strokeStyle="#888";
-
-                ctx.lineWidth=4;
-                ctx.strokeStyle=colz[paths[i][0].col%6];
-                for(var j=0;j<paths[i].length;j++){
-                    if(j==0){
-                        ctx.moveTo(paths[i][j].x,paths[i][j].y);
+                if(paths[i].length>0){
+                    if(paths[i][0].col==currentcage||paths[i][0].col==-1){
+                      if(paths[i][0].col==-1){
+                        ctx.strokeStyle="#ed4";
+                      }else{
+                        ctx.strokeStyle="#d34";
+                      }
+                      ctx.lineWidth=4;
+                      ctx.setLineDash([]);
                     }else{
-                        ctx.lineTo(paths[i][j].x,paths[i][j].y);
+                      ctx.strokeStyle="#234";
+                      ctx.lineWidth=2;
+                      ctx.setLineDash([3,3]);
+                    }
+                }
+
+                for(var j=0;j<paths[i].length;j++){
+                    var cnt=paths[i].length;
+                    var dx=Math.sign(paths[i][modulo(j+1,cnt)].x-paths[i][modulo(j-1,cnt)].x)*6;
+                    var dy=Math.sign(paths[i][modulo(j+1,cnt)].y-paths[i][modulo(j-1,cnt)].y)*6;
+                    if(paths[i][0].col==-1){
+                        dx=0;
+                        dy=0;
+                    }
+                    if(j==0){
+                        ctx.moveTo(paths[i][j].x-dy,paths[i][j].y+dx);
+                    }else{
+                        ctx.lineTo(paths[i][j].x-dy,paths[i][j].y+dx);
                     }
                 }
                 ctx.stroke();
@@ -497,7 +515,7 @@
                 }
             }
 
-						//window.requestAnimationFrame(drawit);
+						window.requestAnimationFrame(drawit);
 				} 			
 			
 		</script>
