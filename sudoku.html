@@ -11,15 +11,13 @@
         const cageoffs=5;
 
         var currentguess=[1,6,8,3];
+        var cursel=false;
 
         var redraw=true;
 			
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
         // https://www.youtube.com/watch?v=gwyBemmdZJM
         // Sudoku App
-
-        // Cached drawing
-        // Proper circumfencing
 
         // Pastel Colors
         var pastels=["#eee","#eee","#fed","#def","#dfe","#ffd","#dff","#fdf","#dfc","#fcd"];
@@ -34,7 +32,7 @@
         var init=[
           {x:3,y:6,val:2}
         ]
-			
+
         // Cages
         var cages=[
             {
@@ -98,7 +96,6 @@
             for(var i=0;i<9;i++){
                 for(var j=0;j<9;j++){
                     numbers[i][j].err=false;
-                    numbers[i][j].selected=false;
                 }
             }
                 
@@ -173,6 +170,20 @@
 				{
             redraw=true;
 						mb=e.which;
+
+            if(cmx>=0&&cmx<=8&&cmy>=0&&cmy<=8){
+                cursel=!numbers[cmy][cmx].selected;
+            }else{
+                cursel=false;
+                if(cmy==9||cmy==13||cmy<0||cmx<0||cmx>8){
+                    for(var i=0;i<9;i++){
+                        for(var j=0;j<9;j++){
+                              numbers[i][j].selected=false;
+                        }
+                    }
+                }
+            }
+      
             toggleSel(cmx,cmy);
  				}
 
@@ -184,12 +195,7 @@
             for(i=0;i<init.length;i++){
                   if(tx==init[i].x&&ty==init[i].y) return false;
             }
-
-            if(numbers[ty][tx].selected){
-                numbers[ty][tx].selected=false;
-            }else{
-                numbers[ty][tx].selected=true;
-            }
+            numbers[ty][tx].selected=cursel;
         }
 
         function toggleVal(item,kind)
@@ -228,9 +234,7 @@
             }
 
             if(mb){
-                if(cmx!=omx||cmy!=omy){
-                    toggleSel(cmx,cmy);
-                }
+                toggleSel(cmx,cmy);
             }
         }
 
@@ -437,10 +441,9 @@
 
                 }while(segs.length>0)
             }
+            // Draw all paths
             for(var i=0;i<paths.length;i++){
-
                 ctx.beginPath();
-
                 if(paths[i].length>0){
                     if(paths[i][0].col==currentcage||paths[i][0].col==-1){
                       if(paths[i][0].col==-1){
