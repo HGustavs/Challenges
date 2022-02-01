@@ -36,39 +36,30 @@
         // Cages
         var cages=[
             {
-                lines:[{x:0,y:0},{x:5,y:0},{x:5,y:1},{x:1,y:1},{x:1,y:4},{x:3,y:4},{x:3,y:7},{x:0,y:7},{x:0,y:7}],
                 items:[{x:0,y:0},{x:1,y:0},{x:2,y:0},{x:0,y:1},{x:0,y:2},{x:1,y:2},{x:0,y:3},{x:1,y:3}]
             },
             {
-                lines:[{x:4,y:2},{x:5,y:2},{x:5,y:10},{x:7,y:10},{x:7,y:11},{x:4,y:11},{x:4,y:9},{x:1,y:9},{x:1,y:11},{x:0,y:11},{x:0,y:8},{x:4,y:8}],
                 items:[{x:2,y:1},{x:2,y:2},{x:2,y:3},{x:2,y:4},{x:2,y:5},{x:3,y:5},{x:0,y:4},{x:1,y:4},{x:0,y:5}]
             },
             {
-                lines:[{x:0,y:12},{x:7,y:12},{x:7,y:13},{x:5,y:13},{x:5,y:17},{x:4,y:17},{x:4,y:13},{x:1,y:13},{x:1,y:17},{x:0,y:17}],
                 items:[{x:0,y:6},{x:1,y:6},{x:2,y:6},{x:3,y:6},{x:0,y:7},{x:2,y:7},{x:0,y:8},{x:2,y:8}]
             },
             {
-                lines:[{x:6,y:0},{x:11,y:0},{x:11,y:3},{x:10,y:3},{x:10,y:1},{x:7,y:1},{x:7,y:8},{x:9,y:8},{x:9,y:9},{x:6,y:9}],
                 items:[{x:3,y:0},{x:3,y:1},{x:3,y:2},{x:3,y:3},{x:3,y:4},{x:4,y:4},{x:4,y:0},{x:5,y:0},{x:5,y:1}]
             },
             {
-                lines:[{x:8,y:2},{x:9,y:2},{x:9,y:6},{x:11,y:6},{x:11,y:8},{x:13,y:8},{x:13,y:9},{x:10,y:9},{x:10,y:9},{x:10,y:7},{x:8,y:7}],
                 items:[{x:4,y:1},{x:4,y:2},{x:4,y:3},{x:5,y:3},{x:5,y:4},{x:6,y:4}]
             },            
             {
-                lines:[{x:6,y:17},{x:6,y:16},{x:8,y:16},{x:8,y:10},{x:9,y:10},{x:9,y:12},{x:12,y:12},{x:12,y:10},{x:13,y:10},{x:13,y:15},{x:12,y:15},{x:12,y:13},{x:9,y:13},{x:9,y:17}],
                 items:[{x:3,y:8},{x:4,y:5},{x:4,y:6},{x:4,y:7},{x:4,y:8},{x:5,y:6},{x:6,y:5},{x:6,y:6},{x:6,y:7}]
             },  
             {
-                lines:[{x:12,y:0},{x:17,y:0},{x:17,y:3},{x:16,y:3},{x:16,y:1},{x:13,y:1},{x:13,y:7},{x:12,y:7},{x:12,y:6},{x:12,y:5},{x:10,y:5},{x:10,y:4},{x:12,y:4}],
                 items:[{x:5,y:2},{x:6,y:0},{x:6,y:1},{x:6,y:2},{x:6,y:3},{x:7,y:0},{x:8,y:0},{x:8,y:1}]
             }, 
             {
-                lines:[{x:14,y:2},{x:15,y:2},{x:15,y:4},{x:17,y:4},{x:17,y:11},{x:16,y:11},{x:16,y:5},{x:14,y:5}],
                 items:[{x:7,y:1},{x:7,y:2},{x:8,y:2},{x:8,y:3},{x:8,y:4},{x:8,y:5}]
             }, 
             {
-                lines:[{x:14,y:8},{x:15,y:8},{x:15,y:12},{x:17,y:12},{x:17,y:17},{x:12,y:17},{x:12,y:16},{x:14,y:16}],
                 items:[{x:6,y:8},{x:7,y:4},{x:7,y:5},{x:7,y:6},{x:7,y:7},{x:7,y:8},{x:8,y:6},{x:8,y:7},{x:8,y:8}]
             }
           ];
@@ -412,22 +403,22 @@
                     var path=[];
                     var seg=segs[0];
                     segs.splice(0,1);
-                    path.push({x:seg.x1,y:seg.y1,col:seg.col});
-                    path.push({x:seg.x2,y:seg.y2,col:seg.col});
+                    path.push({x:seg.x1,y:seg.y1,col:seg.col,kind:seg.kind});
+                    path.push({x:seg.x2,y:seg.y2,col:seg.col,kind:seg.kind});
                     do{
                         for(var i=0;i<segs.length;i++){
                             var seg=segs[i];
                             if(path[0].x==seg.x2&&path[0].y==seg.y2&&path[0].col==seg.col){
-                                path.unshift({x:seg.x1,y:seg.y1,col:seg.col});
+                                path.unshift({x:seg.x1,y:seg.y1,col:seg.col,kind:seg.kind});
                                 break;
                             }else if(path[0].x==seg.x1&&path[0].y==seg.y1&&path[0].col==seg.col){
-                                path.unshift({x:seg.x2,y:seg.y2,col:seg.col});
+                                path.unshift({x:seg.x2,y:seg.y2,col:seg.col,kind:seg.kind});
                                 break;
                             }else if(path[path.length-1].x==seg.x2&&path[path.length-1].y==seg.y2&&path[path.length-1].col==seg.col){
-                                path.push({x:seg.x1,y:seg.y1});
+                                path.push({x:seg.x1,y:seg.y1,col:seg.col,kind:seg.kind});
                                 break;
                             }else if(path[path.length-1].x==seg.x1&&path[path.length-1].y==seg.y1&&path[path.length-1].col==seg.col){
-                                path.push({x:seg.x2,y:seg.y2});
+                                path.push({x:seg.x2,y:seg.y2,col:seg.col,kind:seg.kind});
                                 break;
                             }                                   
                         }
@@ -439,7 +430,7 @@
 
                 }while(segs.length>0)
             }
-            for(var i=0;i<paths.length;i++){
+            for(var i=0;i<2;i++){
                 ctx.beginPath();
 //                ctx.strokeStyle="#f66";
 
