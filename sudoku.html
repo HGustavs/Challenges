@@ -1,5 +1,11 @@
+<!DOCTYPE html>
 <html>
-<head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Free Web tutorials">
+    <meta name="keywords" content="HTML, CSS, JavaScript">
+    <meta name="author" content="John Doe">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="helperFunction/icons.js"></script>
 		<script>
 				var ctx;
@@ -13,7 +19,7 @@
 			
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
         // https://www.youtube.com/watch?v=gwyBemmdZJM
-        // Sudoku App
+        // https://www.youtube.com/watch?v=gwyBemmdZJM
 
         // Pastel Colors
         var pastels=["#eee","#eee","#fed","#def","#dfe","#ffd","#dff","#fdf","#dfc","#fcd"];
@@ -25,7 +31,8 @@
         var numbers=[[],[],[],[],[],[],[],[],[]];
 
         // Initial values
-        var init=[{x:3,y:6,val:2}]
+/*        var init=[{x:3,y:6,val:2}] */
+        var init=[];
 
         // Cages
         /*var cages=[
@@ -123,7 +130,7 @@
         // We check sudoku state 
 				function checkState(checksudoku,checkcages,checkortho)
 				{
-            clearsel(false,true,false);
+            clearsel(true,false,false);
                 
             for(var i=0;i<9;i++){
                   for(var j=0;j<9;j++){
@@ -423,8 +430,14 @@
                 var miny=10000;
                 for(var i=0;i<cage.items.length;i++){
                     var item=cage.items[i];
-                    if(minx<(item.x*pixw)+marg) minx=(item.x*pixw)+marg;
-                    if(miny<(item.y*pixw)+marg) miny=(item.y*pixw)+marg;
+                    if(minx>(item.x*pixw)+marg){
+                        minx=(item.x*pixw)+marg;
+                        miny=(item.y*pixw)+marg;
+                    }
+                    if(miny>(item.y*pixw)+marg){
+                         miny=(item.y*pixw)+marg;
+                         minx=(item.x*pixw)+marg;
+                    }
                     if(!cagestate(item.x-1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+marg,y2:(item.y*pixw)+pixw+marg,col:j});
                     if(!cagestate(item.x,item.y-1,cage.items)) segs.push({x1:(item.x*pixw)+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+marg,col:j});
                     if(!cagestate(item.x+1,item.y,cage.items)) segs.push({x1:(item.x*pixw)+pixw+marg,y1:(item.y*pixw)+marg,x2:(item.x*pixw)+pixw+marg,y2:(item.y*pixw)+pixw+marg,col:j});
@@ -481,9 +494,8 @@
                           ctx.setLineDash([]);
                     }
                 }
-
-                for(var j=0;j<paths[i].length;j++){
-                    var cnt=paths[i].length;
+                for(var j=0;j<paths[i].length-1;j++){
+                    var cnt=paths[i].length-1;
                     var dx=Math.sign(paths[i][modulo(j+1,cnt)].x-paths[i][modulo(j-1,cnt)].x)*cageoffs;
                     var dy=Math.sign(paths[i][modulo(j+1,cnt)].y-paths[i][modulo(j-1,cnt)].y)*cageoffs;
                     if(paths[i][0].col==-1){
@@ -496,8 +508,21 @@
                         ctx.lineTo(paths[i][j].x+dy,paths[i][j].y-dx);
                     }
                 }
+                ctx.closePath();
                 ctx.stroke();
                 ctx.setLineDash([]);
+
+                if(paths[i][0].col>-1){
+                    ctx.font="14px Arial Narrow";
+                    ctx.fillStyle="#000";
+                    ctx.strokeStyle="#fff";
+                    ctx.lineWidth=3;
+                    var cage=cages[paths[i][0].col];
+                    if(cage.sum>-1){
+                        ctx.strokeText(cage.sum,cage.minx+cageoffs+5,cage.miny+cageoffs+5);
+                        ctx.fillText(cage.sum,cage.minx+cageoffs+5,cage.miny+cageoffs+5);
+                    }
+                }
           }
 
           // Collect data into state and then draw menu

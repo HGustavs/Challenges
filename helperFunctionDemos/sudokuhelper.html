@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Free Web tutorials">
+    <meta name="keywords" content="HTML, CSS, JavaScript">
+    <meta name="author" content="John Doe">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="helperFunction/icons.js"></script>
+		<script>
+
+        function repeatdigit(str)
+        {
+            if(str.indexOf("0")!=-1) return false;
+            for(var i=0;i<str.length;i++){
+                var char=str[i];
+                var pos=str.indexOf(char);
+                if(pos!=i) return false;
+            }
+            return true;
+        }
+
+        function process(sum,digits)
+        {
+            var num=Math.pow(10,digits);
+            var list=[];
+            for(var i=0;i<num;i++){
+                var str=i+"#";
+                while(str.length<(digits+1)){
+                  str="0"+str;
+                };
+                if(repeatdigit(str)){
+                    // We sort the digits and check if already in list
+                    var arr=[]
+                    for(var j=0;j<str.length-1;j++){
+                        arr.push(parseInt(str[j]));
+                    }
+                    arr.sort();
+                    var tot=0;
+                    for(var j=0;j<arr.length;j++){
+                        tot+=arr[j];
+                    }
+                    if(tot==sum){
+                        var final="";
+                        for(var j=0;j<arr.length;j++){
+                            final=final+(arr[j]);
+                        }
+                        if(list.indexOf(final)==-1){
+                            list.push(final);
+                        }
+                    }
+                }
+            }
+            for(var i=0;i<list.length;i++){
+                console.log(list[i]);
+            }
+        }
+    </script>
+  </head>
+  <body onload="process(19,3);">
+
+  </body>
+</html>
