@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Free Web tutorials">
+    <meta name="keywords" content="HTML, CSS, JavaScript">
+    <meta name="author" content="John Doe">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="helperFunction/wordlistfive.js"></script>
+		<script>
+				var ctx;
+			  var mx,my,mb=0,cmx,cmy;
+
+        const pixw=60;
+        const marg=40;
+        const cageoffs=2;
+
+        var currentguess=[],cursel=false,redraw=true;
+			
+        // https://www.youtube.com/watch?v=wO1G7GkIrWE
+        // https://www.youtube.com/watch?v=gwyBemmdZJM
+
+        // Pastel Colors
+        var pastels=["#eee","#eee","#fed","#def","#dfe","#ffd","#dff","#fdf","#dfc","#fcd"];
+
+        // History
+        var history=[];
+
+        // Grid
+        var numbers=[[],[],[],[],[],[],[],[],[]];
+
+        var init=[];
+          
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    ctx = cc.getContext("2d");
+					
+            // 7 Guesses
+            for(var j=0;j<7;j++){
+                  var item=numbers[j];
+                  for(var i=0;i<5;i++){
+                      var pos=Math.floor(Math.random()*24.0);
+                      var letter="D";
+                      if(i==3) letter="A";
+                      if(i==4) letter="Z";
+                      var status=0;
+                      numbers[j][i]={letter:letter,status:status};
+                  }
+            }
+
+						cachedDraw();
+				}
+
+				function mouseUp(e)
+				{
+            mb=0;
+            redraw=true;
+            if(cmx==0&&cmy==12){
+                var jstr=JSON.stringify(numbers);
+                localStorage.setItem("Numbers",jstr);
+                alert(jstr.length+" bytes saved" );
+            }else if(cmx==1&&cmy==12){
+                var jstr=localStorage.getItem("Numbers");
+                numbers=JSON.parse(jstr);
+            }else if(cmx>=0&&cmx<9&&cmy>9&&cmy<13){
+                if(cmy==10) toggleVal(cmx+1,0);
+                if(cmy==11) toggleVal(cmx,1);
+                if(cmy==12) toggleVal(cmx,2);
+                checkState(true,true,true);            
+            }				
+        }
+			
+				function mouseDown(e)
+				{
+            redraw=true;
+						mb=e.which;
+
+            if(cmx>=0&&cmx<=8&&cmy>=0&&cmy<=8){
+                cursel=!numbers[cmy][cmx].selected;
+            }else{
+                cursel=false;
+                if(cmy==9||cmy==13||cmy<0||cmx<0||cmx>8){
+                    // clearsel(false,true,false);
+                }
+            }
+            // toggleSel(cmx,cmy);
+ 				}
+			
+				function mouseMove(e,t)
+				{
+						var rect = e.target.getBoundingClientRect();
+            mx = e.clientX - rect.left; //x position within the element.
+            my = e.clientY - rect.top;  //y position within the element
+            omx=cmx;
+            omy=cmy;
+            cmx=Math.floor((mx-marg)/pixw);
+            cmy=Math.floor((my-marg)/pixw);
+            
+            if(omx!=cmx||omy!=cmy){
+              redraw=true;
+            }
+
+            if(mb){
+                toggleSel(cmx,cmy);
+            }
+        }
+
+        function modulo(a,n)
+        {
+            return ((a % n ) + n ) % n;
+        }
+			
+				function drawit()
+				{	
+						ctx.clearRect(0,0,900,900);
+
+            // Draw 5x6 Grid from guesses
+            var solution="DADDS";
+            var curr=
+
+            // Prepare status codes
+            ctx.textAlign = "center"; 
+            ctx.textBaseline = 'middle';
+            for(var j=0;j<7;j++){
+                  var item=numbers[j];
+                  var sol=solution.split('');
+                  for(var i=0;i<5;i++){
+                      var numb=numbers[j][i];
+                      if(numb.letter==sol[i]){
+                          numb.status=1;
+                          sol[i]="#";
+                      }else{
+                          numb.status=0;
+                      }
+                  }
+                  for(var i=0;i<5;i++){
+                      var numb=numbers[j][i];
+                      // If number is same in same position set green, if other position set brown
+                      if(sol.indexOf(numb.letter)>-1&&numb.status==0){
+                          numb.status=2;
+                          sol[sol.indexOf(numb.letter)]="#";
+                      }else{
+                          if(numb.status==0) numb.status=3;
+                      }
+                      console.log(numb.letter,sol[i]);
+                  }
+            }
+
+            // Draw numbers / Fills
+            ctx.textAlign = "center"; 
+            ctx.textBaseline = 'middle';
+            for(var j=0;j<7;j++){
+                  var item=numbers[j];
+                  var sol=solution.split(",");
+                  for(var i=0;i<5;i++){
+                      var numb=numbers[j][i];
+                      var stroke="#665";
+                      if(numb.status==0){
+                          ctx.fillStyle="#556";
+                          stroke="#DDB";
+                      }else if(numb.status==1){
+                        ctx.fillStyle="#5D6";
+                      }else if(numb.status==2){
+                        ctx.fillStyle="#DA6";    
+                      }else{
+                        ctx.fillStyle="#DDE";    
+                      }
+                      ctx.beginPath();
+                      var x=(i*pixw)+marg;
+                      var y=(j*pixw)+marg;
+                      ctx.moveTo(x+cageoffs,y+cageoffs);
+                      ctx.lineTo(x+pixw-cageoffs,y+cageoffs);
+                      ctx.lineTo(x+pixw-cageoffs,y+pixw-cageoffs);
+                      ctx.lineTo(x+cageoffs,y+pixw-cageoffs);
+                      ctx.closePath();
+                      ctx.fill();
+                      
+                      ctx.font="Normal Normal Bold 30px Arial Narrow";
+
+                      ctx.fillStyle=stroke;
+                      ctx.strokeStyle=stroke;
+                      if(numb.letter!="_") ctx.fillText(numb.letter,x+(pixw*0.5),y+(pixw*0.5));
+                      ctx.stroke();
+                }
+            }
+
+            var letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for(var i=0;i<chars.length;i++){
+                var j=i%8;
+                letters.substring(i,i+1);
+            }
+				}
+        
+        function cachedDraw()
+        {
+            if(redraw){
+                drawit();
+                redraw=false;
+            }
+            window.requestAnimationFrame(cachedDraw);
+        }        
+			
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

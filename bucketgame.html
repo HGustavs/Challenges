@@ -1,0 +1,139 @@
+<html>
+<head>
+		<script>
+				var ctx;
+			  var mx,my,mb=0;
+
+        // Bucket Head-Like  Game Engine
+
+        var boxes=[
+          {x1:100,y1:100,x2:120,y2:120,vy:1,vx:1.0},
+          {x1:140,y1:160,x2:160,y2:180,vy:1,vx:-1.0}
+
+        ];
+
+        var lextent=40;
+        var rextent=340;
+        var bextent=400;
+
+        function overlap(box)
+        {
+            // We first test against extents
+            var lamt=0;
+            var ramt=0;
+            var bamt=0;
+
+            if(box.x1<lextent) lamt=lextent-box.x1;
+            if(box.x2>rextent) ramt=rextent-box.x2;
+            if(box.y2>bextent) bamt=bextent-box.y2;
+
+            if(bamt!=0||ramt!=0||lamt!=0){
+                return {bamt:bamt,ramt:ramt,lamt:lamt};
+            }
+
+            return({bamt:0,ramt:0,lamt:0});
+        }
+			
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    ctx = cc.getContext("2d");
+					
+						setInterval(updatestate,20);
+
+            drawit();
+
+				}
+								
+				function updatestate()
+				{
+            // Update forces
+            for(var i=0;i<boxes.length;i++){
+                var box=boxes[i];
+                box.y1+=box.vy;
+                box.y2+=box.vy;
+                box.x1+=box.vx;
+                box.x2+=box.vx;
+            }
+
+            // Sort boxlist
+
+            // Check overlaps and resolve from bottom and upwards
+            for(var i=0;i<boxes.length;i++){
+                var olap=overlap(boxes[i]);
+                if(olap.bamt!=0){
+                    boxes[i].y1+=olap.bamt;
+                    boxes[i].y2+=olap.bamt;
+                }
+                if(olap.lamt!=0){
+                    boxes[i].x1+=olap.lamt;
+                    boxes[i].x2+=olap.lamt;
+                }
+                if(olap.ramt!=0){
+                    boxes[i].x1+=olap.ramt;
+                    boxes[i].x2+=olap.ramt;
+                }                
+            }
+				}
+			
+				function mouseUp(e)
+				{
+						mb=0;
+				}
+			
+				function mouseDown(e)
+				{
+						mb=e.which;
+				}
+			
+				function mouseMove(e,t)
+				{
+						var rect = e.target.getBoundingClientRect();
+            mx = e.clientX - rect.left; //x position within the element.
+            my = e.clientY - rect.top;  //y position within the element
+				}
+			
+				function drawit()
+				{	
+            ctx.clearRect(0,0,800,600);
+
+            ctx.beginPath();
+            ctx.strokeStyle="#A42";
+            ctx.moveTo(lextent,bextent);
+            ctx.lineTo(rextent,bextent);
+            ctx.moveTo(lextent,0);
+            ctx.lineTo(lextent,bextent);
+            ctx.moveTo(rextent,0);
+            ctx.lineTo(rextent,bextent);
+            ctx.stroke();
+            
+            // Draw Box
+            for(i=0;i<boxes.length;i++){
+                ctx.strokeStyle="#004";
+                var box=boxes[i];
+                ctx.beginPath();
+                ctx.moveTo(box.x1,box.y1);
+                ctx.lineTo(box.x2,box.y1);
+                ctx.lineTo(box.x2,box.y2);
+                ctx.lineTo(box.x1,box.y2);
+                ctx.closePath();
+                ctx.stroke();
+
+                ctx.strokeStyle="#24A";
+                ctx.beginPath();
+                ctx.moveTo(box.x1,box.y1);
+                ctx.lineTo(box.x2,box.y2);
+                ctx.moveTo(box.x2,box.y1);
+                ctx.lineTo(box.x1,box.y2);                
+                ctx.stroke();
+
+            }
+
+            window.requestAnimationFrame(drawit);    
+        }
+						
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>
