@@ -45,7 +45,7 @@
                       if(i==3) letter="A";
                       if(i==4) letter="Z";
                       var status=0;
-                      numbers[j][i]={letter:letter,status:status};
+                      numbers[j][i]={letter:letter,status:status,stroke:"#665"};
                   }
             }
 
@@ -95,7 +95,7 @@
             omx=cmx;
             omy=cmy;
             cmx=Math.floor((mx-marg)/pixw);
-            cmy=Math.floor((my-marg)/pixw);
+            cmy=Math.floor((my-rmarg)/pixw);
             
             if(omx!=cmx||omy!=cmy){
               redraw=true;
@@ -122,7 +122,7 @@
             // Prepare status codes
             ctx.textAlign = "center"; 
             ctx.textBaseline = 'middle';
-            for(var j=0;j<7;j++){
+            for(var j=0;j<4;j++){
                   var item=numbers[j];
                   var sol=solution.split('');
                   for(var i=0;i<5;i++){
@@ -130,8 +130,10 @@
                       if(numb.letter==sol[i]){
                           numb.status=1;
                           sol[i]="#";
+                          numb.fill="#5D6";
                       }else{
                           numb.status=0;
+                          numb.fill="#fff";
                       }
                   }
                   for(var i=0;i<5;i++){
@@ -140,56 +142,57 @@
                       if(sol.indexOf(numb.letter)>-1&&numb.status==0){
                           numb.status=2;
                           sol[sol.indexOf(numb.letter)]="#";
+                          numb.fill="#DA6";
                       }else{
-                          if(numb.status==0) numb.status=3;
+                          if(numb.status==0){
+                            numb.status=3;
+                            numb.fill="#DDE";
+                          }
                       }
-                      console.log(numb.letter,sol[i]);
                   }
             }
 
             // Draw numbers / Fills
             ctx.textAlign = "center"; 
             ctx.textBaseline = 'middle';
-            for(var j=0;j<7;j++){
-                  var item=numbers[j];
-                  var sol=solution.split(",");
-                  for(var i=0;i<5;i++){
-                      var numb=numbers[j][i];
-                      var stroke="#665";
-                      if(numb.status==0){
-                          ctx.fillStyle="#556";
-                          stroke="#DDB";
-                      }else if(numb.status==1){
-                        ctx.fillStyle="#5D6";
-                      }else if(numb.status==2){
-                        ctx.fillStyle="#DA6";    
-                      }else{
-                        ctx.fillStyle="#DDE";    
-                      }
-                      ctx.beginPath();
-                      var x=(i*pixw)+marg;
-                      var y=(j*pixw)+marg;
-                      ctx.moveTo(x+cageoffs,y+cageoffs);
-                      ctx.lineTo(x+pixw-cageoffs,y+cageoffs);
-                      ctx.lineTo(x+pixw-cageoffs,y+pixw-cageoffs);
-                      ctx.lineTo(x+cageoffs,y+pixw-cageoffs);
-                      ctx.closePath();
-                      ctx.fill();
-                      
-                      ctx.font="Normal Normal Bold 30px Arial Narrow";
+            var letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-                      ctx.fillStyle=stroke;
-                      ctx.strokeStyle=stroke;
-                      if(numb.letter!="_") ctx.fillText(numb.letter,x+(pixw*0.5),y+(pixw*0.5));
-                      ctx.stroke();
+            for(var j=0;j<11;j++){
+                  var item=numbers[j];
+                  for(var i=0;i<7;i++){
+
+                      if(j<7&&i>0&&i<6){
+                          var numb=numbers[j][i-1];
+                      }else{
+                          var offs=((j*7)+i+22)%26;
+                          var numb={letter:letters.substring(offs,offs+1),stroke:"#000",fill:"#f66"};
+                      }
+
+                      if((j>7)||(j<7&&i>0&&i<6)){
+                          ctx.strokeStyle=numb.stroke;
+                          ctx.fillStyle=numb.fill;
+                          ctx.beginPath();
+                          var x=(i*pixw)+marg;
+                          var y=(j*pixw)+marg;
+                          ctx.moveTo(x+cageoffs,y+cageoffs);
+                          ctx.lineTo(x+pixw-cageoffs,y+cageoffs);
+                          ctx.lineTo(x+pixw-cageoffs,y+pixw-cageoffs);
+                          ctx.lineTo(x+cageoffs,y+pixw-cageoffs);
+                          ctx.closePath();
+                          ctx.fill();
+                          
+                          ctx.font="Normal Normal Bold 30px Arial Narrow";
+
+                          ctx.strokeStyle=numb.stroke;
+                          ctx.fillStyle=numb.stroke;
+                          
+                          if(numb.letter!="_") ctx.fillText(numb.letter,x+(pixw*0.5),y+(pixw*0.5));
+                          ctx.stroke();
+
+                      }
                 }
             }
 
-            var letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            for(var i=0;i<chars.length;i++){
-                var j=i%8;
-                letters.substring(i,i+1);
-            }
 				}
         
         function cachedDraw()
