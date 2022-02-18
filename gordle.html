@@ -44,8 +44,9 @@
                       var letter="D";
                       if(i==3) letter="A";
                       if(i==4) letter="Z";
+                      if(j>1) letter="_";
                       var status=0;
-                      numbers[j][i]={letter:letter,status:status,stroke:"#665"};
+                      numbers[j][i]={letter:letter,status:status,stroke:"#665",fill:"#fff"};
                   }
             }
 
@@ -117,12 +118,13 @@
 
             // Draw 5x6 Grid from guesses
             var solution="DADDS";
-            var curr=
+            var curr=2;
+            var caret=2;
 
             // Prepare status codes
             ctx.textAlign = "center"; 
             ctx.textBaseline = 'middle';
-            for(var j=0;j<4;j++){
+            for(var j=0;j<curr;j++){
                   var item=numbers[j];
                   var sol=solution.split('');
                   for(var i=0;i<5;i++){
@@ -185,10 +187,9 @@
 
                           ctx.strokeStyle=numb.stroke;
                           ctx.fillStyle=numb.stroke;
-                          
+
                           if(numb.letter!="_") ctx.fillText(numb.letter,x+(pixw*0.5),y+(pixw*0.5));
                           ctx.stroke();
-
                       }
                 }
             }
