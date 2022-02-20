@@ -10,12 +10,16 @@
 		<script>
 				var ctx;
 			  var mx,my,mb=0,cmx,cmy;
+        var curr=1;
+        var char=1;
 
         const pixw=60;
         const marg=40;
         const cageoffs=2;
 
         var currentguess=[],cursel=false,redraw=true;
+
+        var letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";        
 			
         // https://www.youtube.com/watch?v=wO1G7GkIrWE
         // https://www.youtube.com/watch?v=gwyBemmdZJM
@@ -57,18 +61,15 @@
 				{
             mb=0;
             redraw=true;
-            if(cmx==0&&cmy==12){
-                var jstr=JSON.stringify(numbers);
-                localStorage.setItem("Numbers",jstr);
-                alert(jstr.length+" bytes saved" );
-            }else if(cmx==1&&cmy==12){
-                var jstr=localStorage.getItem("Numbers");
-                numbers=JSON.parse(jstr);
-            }else if(cmx>=0&&cmx<9&&cmy>9&&cmy<13){
-                if(cmy==10) toggleVal(cmx+1,0);
-                if(cmy==11) toggleVal(cmx,1);
-                if(cmy==12) toggleVal(cmx,2);
-                checkState(true,true,true);            
+            if(cmx>=0&&cmx<=6&&cmy>=8){
+                var chr=((cmy-8)*7)+cmx;
+
+                numbers[curr][char].letter=letters.substring(chr,chr+1);
+                if(char<4){
+                    char++;
+                }else{
+                    char=0;
+                }
             }				
         }
 			
@@ -77,15 +78,6 @@
             redraw=true;
 						mb=e.which;
 
-            if(cmx>=0&&cmx<=8&&cmy>=0&&cmy<=8){
-                cursel=!numbers[cmy][cmx].selected;
-            }else{
-                cursel=false;
-                if(cmy==9||cmy==13||cmy<0||cmx<0||cmx>8){
-                    // clearsel(false,true,false);
-                }
-            }
-            // toggleSel(cmx,cmy);
  				}
 			
 				function mouseMove(e,t)
@@ -96,15 +88,13 @@
             omx=cmx;
             omy=cmy;
             cmx=Math.floor((mx-marg)/pixw);
-            cmy=Math.floor((my-rmarg)/pixw);
+            cmy=Math.floor((my-marg)/pixw);
             
             if(omx!=cmx||omy!=cmy){
               redraw=true;
             }
 
-            if(mb){
-                toggleSel(cmx,cmy);
-            }
+            //console.log(cmx,cmy);
         }
 
         function modulo(a,n)
@@ -118,7 +108,6 @@
 
             // Draw 5x6 Grid from guesses
             var solution="DADDS";
-            var curr=2;
             var caret=2;
 
             // Prepare status codes
@@ -157,7 +146,6 @@
             // Draw numbers / Fills
             ctx.textAlign = "center"; 
             ctx.textBaseline = 'middle';
-            var letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
             for(var j=0;j<11;j++){
                   var item=numbers[j];
@@ -168,6 +156,17 @@
                       }else{
                           var offs=((j*7)+i+22)%26;
                           var numb={letter:letters.substring(offs,offs+1),stroke:"#000",fill:"#f66"};
+                      }
+
+                      if(curr<7){
+                          ctx.strokeStyle="#ffe610";
+                          ctx.beginPath();
+                          ctx.moveTo(marg+(pixw*1),marg+(curr*pixw));
+                          ctx.lineTo(marg+(pixw*6),marg+(curr*pixw));
+                          ctx.lineTo(marg+(pixw*6),marg+((curr+1)*pixw));
+                          ctx.lineTo(marg+(pixw*1),marg+((curr+1)*pixw));
+                          ctx.closePath();
+                          ctx.stroke();
                       }
 
                       if((j>7)||(j<7&&i>0&&i<6)){
@@ -181,14 +180,18 @@
                           ctx.lineTo(x+pixw-cageoffs,y+pixw-cageoffs);
                           ctx.lineTo(x+cageoffs,y+pixw-cageoffs);
                           ctx.closePath();
+
+                          if(j==curr&&char==(i-1)){
+                              ctx.fillStyle="#ffe610";
+                          }
                           ctx.fill();
                           
                           ctx.font="Normal Normal Bold 30px Arial Narrow";
 
                           ctx.strokeStyle=numb.stroke;
                           ctx.fillStyle=numb.stroke;
-
                           if(numb.letter!="_") ctx.fillText(numb.letter,x+(pixw*0.5),y+(pixw*0.5));
+
                           ctx.stroke();
                       }
                 }
