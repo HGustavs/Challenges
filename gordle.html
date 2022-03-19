@@ -10,7 +10,7 @@
 		<script>
 				var ctx;
 			  var mx,my,mb=0,cmx,cmy;
-        var curr=1;
+        var curr=2;
         var char=1;
 
         const pixw=60;
@@ -147,15 +147,21 @@
             ctx.textAlign = "center"; 
             ctx.textBaseline = 'middle';
 
-            for(var j=0;j<11;j++){
+            var itemstr="";
+            for(var j=0;j<12;j++){
                   var item=numbers[j];
                   for(var i=0;i<7;i++){
+                      if(j<curr&&i<5){
+                          if(itemstr.indexOf(item[i].letter)==-1&&item[i].fill=="#DDE"){
+                              itemstr+=item[i].letter;
+                          }                         
+                      }
 
                       if(j<7&&i>0&&i<6){
                           var numb=numbers[j][i-1];
                       }else{
                           var offs=((j*7)+i+22)%26;
-                          var numb={letter:letters.substring(offs,offs+1),stroke:"#000",fill:"#f66"};
+                          var numb={letter:letters.substring(offs,offs+1),stroke:"#000",fill:"#c33"};
                       }
 
                       if(curr<7){
@@ -170,6 +176,7 @@
                       }
 
                       if((j>7)||(j<7&&i>0&&i<6)){
+                          if(itemstr.indexOf(numb.letter)==-1&&j>7) numb.fill="#f66";
                           ctx.strokeStyle=numb.stroke;
                           ctx.fillStyle=numb.fill;
                           ctx.beginPath();
