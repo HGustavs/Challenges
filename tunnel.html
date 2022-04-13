@@ -35,119 +35,34 @@ function setupSlides()
 	  // tunnel(600,400,80,1.5,10,7,0);
 		peak(600,400,80,1.5,13,9,0);
 }
-
-
-function tunnel(cx,cy,start,fact,segs,no,spin)
-{
-		r=start;
-		rd=12;
-		oldr=90;
-	
-		segarr=[];
-		oldsegarr=[];
-	
-		c.strokeStyle=colarr[2];
-	
-		for(var ant=0;ant<no;ant++){
-				oldr=r;
-				r+=rd;
-				rd*=fact;
-			
-				// Copy
-				for(var cnt=0;cnt<segs;cnt++){
-						oldsegarr[cnt]=segarr[cnt];
-				}
-			
-				// Make New
-				for(var cnt=0;cnt<segs;cnt++){
-						ang=6.28*(cnt/segs);
-						x=cx+(Math.cos(ang+(spin*ant))*r);
-						y=cy+(Math.sin(ang+(spin*ant))*r);
-						segarr[cnt]={x:x,y:y};
-				}
-				
-				// Draw
-				if(ant>0){
-						for(var cnt=0;cnt<segs;cnt++){
-								if((ant%2)==0){
-										if((cnt%2)==0){
-												c.fillStyle=colars[1];
-										}else{
-												c.fillStyle=colars[3];
-										}
-								}else{
-										if((cnt%2)==0){
-												c.fillStyle=colars[3];
-										}else{
-											c.fillStyle=colars[1];
-										}
-								}
-							
-								c.beginPath();
-								if(cnt<segs-1){
-										c.moveTo(segarr[cnt].x,segarr[cnt].y);
-										c.lineTo(segarr[cnt+1].x,segarr[cnt+1].y);
-										c.lineTo(oldsegarr[cnt+1].x,oldsegarr[cnt+1].y);
-										c.lineTo(oldsegarr[cnt].x,oldsegarr[cnt].y);
-										c.moveTo(segarr[cnt].x,segarr[cnt].y);									
-								}else{
-										c.moveTo(segarr[cnt].x,segarr[cnt].y);
-										c.lineTo(segarr[0].x,segarr[0].y);
-										c.lineTo(oldsegarr[0].x,oldsegarr[0].y);
-										c.lineTo(oldsegarr[cnt].x,oldsegarr[cnt].y);
-										c.moveTo(segarr[cnt].x,segarr[cnt].y);									
-								}
-								c.fill();
-						}
-				}
-		}
-}
-	
 function colrgbaimp(colnoa,colnob,mix)
 {
-    dr=colarr[colnob][0]-colarr[colnoa][0];
-    dg=colarr[colnob][1]-colarr[colnoa][1];
-    db=colarr[colnob][2]-colarr[colnoa][2];
+    var cola=retcol(colnoa);
+    var colb=retcol(colnob);
+    
+    var dr=colb.r-cola.r;
+    var dg=colb.g-cola.g;
+    var db=colb.b-cola.b;
 
-    r=colarr[colnoa][0];
-    g=colarr[colnoa][1];
-    b=colarr[colnoa][2];
-
-		return "RGB("+Math.round(r+(dr*mix))+","+Math.round(g+(dg*mix))+","+Math.round(b+(db*mix))+")";
+		return "RGB("+Math.round(cola.r+(dr*mix))+","+Math.round(cola.g+(dg*mix))+","+Math.round(cola.b+(db*mix))+")";
 }
 
 function colrgba(colnoa)
 {
-    r=colarr[colnoa][0];
-    g=colarr[colnoa][1];
-    b=colarr[colnoa][2];
+    var col=retcol(colnoa);
 
-		return "RGB("+Math.round(r)+","+Math.round(g)+","+Math.round(b)+")";
+		return "RGB("+Math.round(col.r)+","+Math.round(col.g)+","+Math.round(col.b)+")";
 }
 
-
-function triangle(tx1,ty1,tx2,ty2,tx3,ty3,tcolindex,tmix)
+function retcol(index)
 {
-//		c.fillStyle=colars[0];
-//		c.strokeStyle=colars[3];
-		
-    // c.fillStyle=colars[colindex];
-		// c.strokeStyle=colars[colindex+1];	
-    
-    c.fillStyle=colrgba(1);
-//		c.strokeStyle=colrgba(colindex+1,0,mix);	
-    console.log("TRI",tx1,ty1,tx2,ty2,tx3,ty3);
+    if(index>colarr.length-1) index=colarr.length-1;
+    if(index<0) index=0;
 
-    c.beginPath();
-    c.moveTo(tx1,ty1);
-    c.lineTo(tx2,ty2);
-    c.lineTo(tx3,ty3);
-    c.closePath();
-    c.stroke();
-
+    return {r:colarr[index][0],g:colarr[index][1],b:colarr[index][2]};
 }
 
-function triangleimp(x1,y1,x2,y2,x3,y3,colindex,mix)
+function triangleimp(x1,y1,x2,y2,x3,y3,colindex)
 {
     var cnt=8;
     var dxa=(x1-x2)/cnt;
@@ -158,8 +73,9 @@ function triangleimp(x1,y1,x2,y2,x3,y3,colindex,mix)
     var nya=y2;
     var nxb=x3;
     var nyb=y3;
+
     for(var i=0;i<cnt;i++){
-      c.fillStyle=colrgba(colindex,colindex+2,i/cnt);
+      c.fillStyle=colrgbaimp(colindex,colindex+1,i/cnt);
       c.beginPath();
       c.moveTo(nxa,nya);
 		  c.lineTo(nxb,nyb);
@@ -167,11 +83,20 @@ function triangleimp(x1,y1,x2,y2,x3,y3,colindex,mix)
       nya+=dya;
       nxb+=dxb;
       nyb+=dyb; 
-		  c.lineTo(nxb,nyb);
-      c.lineTo(nxa,nya);
+		  c.lineTo(nxb+(dxb/5),nyb+(dyb/5));
+      c.lineTo(nxa+(dxa/5),nya+(dya/5));
       c.closePath();
       c.fill();
     }
+
+    c.strokeStyle=colrgba(colindex+1);
+    c.beginPath();
+    c.moveTo(x1,y1);
+    c.lineTo(x2,y2);
+    c.lineTo(x3,y3);
+    c.closePath();
+    c.stroke();        
+
 }
 
 function checker(xk,yk)
@@ -179,151 +104,32 @@ function checker(xk,yk)
   var col=-1;
   if((xk%2)==0){
     	if((yk%2)==0){
-        col=1;
+        return 1;
       }else{
-        col=3;
+        return 2;
       }
 	}else{
     if((yk%2)==0){
-        col=3;
+        return 2;
       }else{
-        col=1;
+        return 1;
       }
   }
-  console.log(xk,yk,col);
   return col;
 }
 
-function branches(cx,cy,start,fact,segs,no,spin)
+function triangle(tx1,ty1,tx2,ty2,tx3,ty3,col,mix)
 {
-		r=start;
-		rd=12;
-		oldr=90;
-		
-		for(var ant=0;ant<no;ant++){
+    c.fillStyle=colrgba(col);
+    c.strokeStyle=colrgba(col+1);
 
-        r=start*Math.pow(fact,ant);
-        nr=start*Math.pow(fact,ant+1);
-        sr=nr;
-
-				for(var cnt=0;cnt<segs;cnt++){
-            ang=6.28*(cnt/segs);
-						nang=6.28*((cnt+1)/segs);
-						hang=6.28*((cnt+0.5)/segs);
-
-            x1=cx+(Math.cos(ang+(spin*ant))*r);
-			      y1=cy+(Math.sin(ang+(spin*ant))*r);
-            x2=cx+(Math.cos(nang+(spin*ant))*r);
-			      y2=cy+(Math.sin(nang+(spin*ant))*r);
-            x3=cx+(Math.cos(nang+(spin*ant))*nr);
-			      y3=cy+(Math.sin(nang+(spin*ant))*nr);
-            x4=cx+(Math.cos(ang+(spin*ant))*nr);
-			      y4=cy+(Math.sin(ang+(spin*ant))*nr);
-            x5=cx+(Math.cos(hang+(spin*ant))*sr);
-			      y5=cy+(Math.sin(hang+(spin*ant))*sr);
-
-            c.beginPath();
-            c.moveTo(x1,y1);
-            c.lineTo(x3,y3);
-            c.lineTo(x5,y5);
-            c.stroke();
-
-        }
-            
-		}
-}	
-
-function opeaks(cx,cy,start,fact,segs,no,spin)
-{
-		r=start;
-		rd=12;
-		oldr=90;
-	
-		segarr=[];
-		segcarr=[];
-		oldsegarr=[];
-	
-		c.strokeStyle=colarr[2];
-	
-		for(var ant=0;ant<no;ant++){
-				oldr=r;
-				r+=rd;
-				rd*=fact;
-			
-				// Copy 
-        if(ant>0){
-            for(var cnt=0;cnt<segs;cnt++){
-  						  oldsegarr[cnt]={x:segarr[cnt].x,y:segarr[cnt].y,dx:segarr[cnt].dx,dy:segarr[cnt].dy};
-    				}
-        }
-			
-				// Make New
-				/*
-        for(var cnt=0;cnt<segs;cnt++){
-						ang=6.28*(cnt/segs);
-						anh=6.28*((cnt+0.5)/segs)
-						x=cx+(Math.cos(ang)*r);
-						y=cy+(Math.sin(ang)*r);
-					
-						dx=cx+(Math.cos(anh)*(r-(rd*0.9)));
-						dy=cy+(Math.sin(anh)*(r-(rd*0.9)));					
-						segarr[cnt]={x:x,y:y,dx:dx,dy:dy};
-				}*/
-				
-				// Make New
-				for(var cnt=0;cnt<segs;cnt++){
-						ang=6.28*(cnt/segs);
-						x=cx+(Math.cos(ang+(spin*ant))*r);
-						y=cy+(Math.sin(ang+(spin*ant))*r);
-						segarr[cnt]={x:x,y:y};
-				}
-
-        if(ant>2&&ant<5){
-            for(var cnt=0;cnt<segs-1;cnt++){
-                var col=checker(cnt,ant);
-                c.fillStyle=colrgba(col);
-                //triangle(segarr[cnt].x,segarr[cnt].y,segarr[cnt+1].x,segarr[cnt+1].y,segarr[cnt].dx,segarr[cnt].dy,col,0.5);
-                c.beginPath();
-                c.moveTo(segarr[cnt].x,segarr[cnt].y);
-                c.lineTo(oldsegarr[cnt].x,oldsegarr[cnt].y);
-                c.lineTo(oldsegarr[cnt+1].x,oldsegarr[cnt+1].y);
-                c.lineTo(segarr[cnt+1].x,segarr[cnt+1].y);
-                c.fill();
-            }
-        }
-
-				// Draw
-        /*
-        if(ant>0){
-						for(var cnt=0;cnt<segs;cnt++){
-                var col=checker(ant,cnt);
-
-              var light=ant/no;
-              
-							if(cnt<segs-1){
-										// triangle(segarr[cnt].x,segarr[cnt].y,segarr[cnt+1].x,segarr[cnt+1].y,segarr[cnt].dx,segarr[cnt].dy,col,light);
-										// triangle(segarr[cnt].x,segarr[cnt].y,oldsegarr[cnt].x,oldsegarr[cnt].y,segarr[cnt].dx,segarr[cnt].dy,col-1,light);
-										// triangle(segarr[cnt+1].x,segarr[cnt+1].y,oldsegarr[cnt+1].x,oldsegarr[cnt+1].y,segarr[cnt].dx,segarr[cnt].dy,col+1,light);	
-								}else{
-										triangle(segarr[cnt].x,segarr[cnt].y,oldsegarr[cnt].x,oldsegarr[cnt].y,segarr[cnt].dx,segarr[cnt].dy,col-1,light);	
-										//triangle(segarr[0].x,segarr[0].y,oldsegarr[0].x,oldsegarr[0].y,segarr[cnt].dx,segarr[cnt].dy,col+1,light);									
-										//triangle(segarr[0].x,segarr[0].y,segarr[cnt].x,segarr[cnt].y,segarr[cnt].dx,segarr[cnt].dy,col,light);									
-                }
-
-						}
-				}
-        */
-		}
-}	
-
-function lefunc(tx1,ty1,tx2,ty2,tx3,ty3)
-{
-            c.beginPath();
-            c.moveTo(tx1,ty1);
-            c.lineTo(tx2,ty2);
-            c.lineTo(tx3,ty3);
-            c.closePath();
-            c.stroke();    
+    c.beginPath();
+    c.moveTo(tx1,ty1);
+    c.lineTo(tx2,ty2);
+    c.lineTo(tx3,ty3);
+    c.closePath();
+    c.fill();
+    c.stroke();
 }
 
 function peak(cx,cy,start,fact,segs,no,spin)
@@ -332,11 +138,11 @@ function peak(cx,cy,start,fact,segs,no,spin)
 		rd=12;
 		oldr=90;
 		
-		for(var ant=0;ant<5;ant++){
+		for(var ant=0;ant<no;ant++){
 
         r=start*Math.pow(fact,ant);
         nr=start*Math.pow(fact,ant+1);
-        sr=(nr+r)/2;
+        sr=(nr+r)/3;
 
 				for(var cnt=0;cnt<segs;cnt++){
             ang=6.28*(cnt/segs);
@@ -354,14 +160,11 @@ function peak(cx,cy,start,fact,segs,no,spin)
             var x5=cx+(Math.cos(hang+(spin*ant))*sr);
 			      var y5=cy+(Math.sin(hang+(spin*ant))*sr);
 
-            c.beginPath();
-            c.moveTo(x1,y1);
-            c.lineTo(x4,y4);
-            c.lineTo(x5,y5);
-            c.closePath();
-            c.stroke();
-
-            triangleimp(x1,y1,x4,y4,x5,y5,3,4);
+            var tcol=checker(ant,cnt);
+            triangleimp(x5,y5,x1,y1,x4,y4,tcol-1);
+            triangleimp(x5,y5,x2,y2,x3,y3,tcol);
+            //triangle(x5,y5,x1,y1,x2,y2,tcol+1); 
+            triangleimp(x5,y5,x3,y3,x4,y4,tcol+1);                                    
         }
 		}
 }	
