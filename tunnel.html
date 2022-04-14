@@ -27,14 +27,6 @@ var ymax=780;
 // setupSlides - Initialize Slide Dispatcher and setup for Canvas
 //----------------------------------------------------------------------------------
 	
-function setupSlides()
-{
-		canvas = document.getElementById("mycanvas");
-		c = canvas.getContext("2d");
-
-	  // tunnel(600,400,80,1.5,10,7,0);
-		peak(600,400,80,1.5,13,9,0);
-}
 function colrgbaimp(colnoa,colnob,mix)
 {
     var cola=retcol(colnoa);
@@ -62,20 +54,22 @@ function retcol(index)
     return {r:colarr[index][0],g:colarr[index][1],b:colarr[index][2]};
 }
 
-function triangleimp(x1,y1,x2,y2,x3,y3,colindex)
+function quadimp(x1,y1,x2,y2,x3,y3,x4,y4,colindex,other,mix)
 {
-    var cnt=8;
+    var cnt=7;
     var dxa=(x1-x2)/cnt;
     var dya=(y1-y2)/cnt;
-    var dxb=(x1-x3)/cnt;
-    var dyb=(y1-y3)/cnt;
+    var dxb=(x4-x3)/cnt;
+    var dyb=(y4-y3)/cnt;
     var nxa=x2;
     var nya=y2;
     var nxb=x3;
     var nyb=y3;
 
-    for(var i=0;i<cnt;i++){
-      c.fillStyle=colrgbaimp(colindex,colindex+1,i/cnt);
+    var ind=Math.round(colindex+((other-colindex)*mix));
+
+    for(var i=0;i<cnt-1;i++){
+      c.fillStyle=colrgbaimp(ind,ind+1,i/cnt);
       c.beginPath();
       c.moveTo(nxa,nya);
 		  c.lineTo(nxb,nyb);
@@ -89,14 +83,71 @@ function triangleimp(x1,y1,x2,y2,x3,y3,colindex)
       c.fill();
     }
 
-    c.strokeStyle=colrgba(colindex+1);
+    c.fillStyle=colrgbaimp(ind,ind+1,i/cnt);
+    c.beginPath();
+    c.moveTo(nxa,nya);
+		c.lineTo(nxb,nyb);
+		c.lineTo(x4,y4);
+		c.lineTo(x1,y1);    
+    c.fill();
+
+    c.lineWidth=2;
+    c.strokeStyle=colrgba(ind+1);
+    c.beginPath();
+    c.moveTo(x1,y1);
+    c.lineTo(x2,y2);
+    c.lineTo(x3,y3);
+    c.lineTo(x4,y4);    
+    c.closePath();
+    c.stroke();        
+    c.lineWidth=1;
+}
+
+function triangleimp(x1,y1,x2,y2,x3,y3,colindex,other,mix)
+{
+    var cnt=7;
+    var dxa=(x1-x2)/cnt;
+    var dya=(y1-y2)/cnt;
+    var dxb=(x1-x3)/cnt;
+    var dyb=(y1-y3)/cnt;
+    var nxa=x2;
+    var nya=y2;
+    var nxb=x3;
+    var nyb=y3;
+
+    var ind=Math.round(colindex+((other-colindex)*mix));
+
+    for(var i=0;i<cnt-1;i++){
+      c.fillStyle=colrgbaimp(ind,ind+1,i/cnt);
+      c.beginPath();
+      c.moveTo(nxa,nya);
+		  c.lineTo(nxb,nyb);
+      nxa+=dxa;
+      nya+=dya;
+      nxb+=dxb;
+      nyb+=dyb; 
+		  c.lineTo(nxb+(dxb/5),nyb+(dyb/5));
+      c.lineTo(nxa+(dxa/5),nya+(dya/5));
+      c.closePath();
+      c.fill();
+    }
+
+    c.fillStyle=colrgbaimp(ind,ind+1,i/cnt);
+    c.beginPath();
+    c.moveTo(nxa,nya);
+		c.lineTo(nxb,nyb);
+		c.lineTo(x1,y1);
+    c.fill();
+
+    c.lineWidth=2;
+    c.strokeStyle=colrgba(ind+1);
     c.beginPath();
     c.moveTo(x1,y1);
     c.lineTo(x2,y2);
     c.lineTo(x3,y3);
     c.closePath();
     c.stroke();        
-
+    c.lineWidth=1;
 }
 
 function checker(xk,yk)
@@ -132,18 +183,24 @@ function triangle(tx1,ty1,tx2,ty2,tx3,ty3,col,mix)
     c.stroke();
 }
 
-function peak(cx,cy,start,fact,segs,no,spin)
+function peak(cx,cy,start,fact,segs,no,spin,offs)
 {
 		r=start;
 		rd=12;
 		oldr=90;
+
+    // Background fill
+    c.fillStyle=colrgba(0);
+    c.fillRect(cx-80,cy-80,160,160);
 		
+    // Number of segments
 		for(var ant=0;ant<no;ant++){
 
         r=start*Math.pow(fact,ant);
         nr=start*Math.pow(fact,ant+1);
-        sr=(nr+r)/3;
+        sr=(nr+r)/2.7;
 
+        // Points in each tile
 				for(var cnt=0;cnt<segs;cnt++){
             ang=6.28*(cnt/segs);
 						nang=6.28*((cnt+1)/segs);
@@ -153,21 +210,31 @@ function peak(cx,cy,start,fact,segs,no,spin)
 			      var y1=cy+(Math.sin(ang+(spin*ant))*r);
             var x2=cx+(Math.cos(nang+(spin*ant))*r);
 			      var y2=cy+(Math.sin(nang+(spin*ant))*r);
-            var x3=cx+(Math.cos(nang+(spin*ant))*nr);
-			      var y3=cy+(Math.sin(nang+(spin*ant))*nr);
-            var x4=cx+(Math.cos(ang+(spin*ant))*nr);
-			      var y4=cy+(Math.sin(ang+(spin*ant))*nr);
-            var x5=cx+(Math.cos(hang+(spin*ant))*sr);
-			      var y5=cy+(Math.sin(hang+(spin*ant))*sr);
+            var x3=cx+(Math.cos(nang+(spin*(ant+1)))*nr);
+			      var y3=cy+(Math.sin(nang+(spin*(ant+1)))*nr);
+            var x4=cx+(Math.cos(ang+(spin*(ant+1)))*nr);
+			      var y4=cy+(Math.sin(ang+(spin*(ant+1)))*nr);
+            var x5=cx+(Math.cos(hang+(spin*(ant+0.5)))*sr);
+			      var y5=cy+(Math.sin(hang+(spin*(ant+0.5)))*sr);
 
             var tcol=checker(ant,cnt);
-            triangleimp(x5,y5,x1,y1,x4,y4,tcol-1);
-            triangleimp(x5,y5,x2,y2,x3,y3,tcol);
-            //triangle(x5,y5,x1,y1,x2,y2,tcol+1); 
-            triangleimp(x5,y5,x3,y3,x4,y4,tcol+1);                                    
+            mixval=offs-(ant/no);
+            quadimp(x4,y4,x1,y1,x2,y2,x3,y3,tcol,tcol-4,mixval);
+            //triangleimp(x5,y5,x1,y1,x4,y4,tcol-1,tcol-4,mixval);
+            //triangleimp(x5,y5,x2,y2,x3,y3,tcol,tcol-3,mixval);
+            //triangleimp(x5,y5,x3,y3,x4,y4,tcol+1,tcol-2,mixval);                                    
         }
 		}
 }	
+
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+
+	  // tunnel(600,400,80,1.5,10,7,0);
+		peak(600,400,80,1.5,14,9,0.2,0.6);
+}
 
 </script>	
 </head>
