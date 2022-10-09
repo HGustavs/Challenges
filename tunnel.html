@@ -103,7 +103,7 @@ function quadimp(x1,y1,x2,y2,x3,y3,x4,y4,colindex,other,mix)
     c.lineWidth=1;
 }
 
-function triangleimp(x1,y1,x2,y2,x3,y3,colindex,other,mix)
+function triangleimp(x1,y1,x2,y2,x3,y3,colindex,other,mix,halftone)
 {
     var cnt=7;
     var dxa=(x1-x2)/cnt;
@@ -131,7 +131,6 @@ function triangleimp(x1,y1,x2,y2,x3,y3,colindex,other,mix)
       c.closePath();
       c.fill();
     }
-
     c.fillStyle=colrgbaimp(ind,ind+1,i/cnt);
     c.beginPath();
     c.moveTo(nxa,nya);
@@ -148,6 +147,45 @@ function triangleimp(x1,y1,x2,y2,x3,y3,colindex,other,mix)
     c.closePath();
     c.stroke();        
     c.lineWidth=1;
+
+    if(halftone>0){
+        // Raster fill implementation - for which y coordinate between which X-coordinates do we run
+        // Then between these spans, checker pattern fill with half radius offset (we assume like sided triangle for now)
+        var dya=y1-y2;
+        var dxa=x1-x2;
+        var ka=dxa/dya;
+        var ma=x1-(ka*y1);
+
+        var dyb=y1-y3;
+        var dxb=x1-x3;
+        var kb=dxb/dyb;
+        var mb=x1-(kb*y1);
+
+        c.strokeStyle="#000";
+        for(var i=y1;i<y2;i+=halftone){
+            var xka=(ka*i)+ma;
+            var xkb=(kb*i)+mb;
+            
+            xka=Math.floor(xka/halftone)*halftone;
+            xkb=halftone+(Math.ceil(xkb/halftone)*halftone);
+
+            if((Math.floor(i/halftone)%2)==0) xkb+=(halftone*0.5);
+
+            var mix=(y1-i)/(y1-y2);
+            console.log(mix);
+
+            c.fillStyle="#000";
+            for(var j=xkb;j<xka;j+=halftone){
+                c.beginPath();
+                //c.arc(j,i,halftone*mix*0.5,0,6.28);            
+                c.arc(j,i,halftone*mix*0.5,0,6.28);            
+                c.fill();
+            }
+
+        }
+
+        
+    }
 }
 
 function checker(xk,yk)
@@ -233,7 +271,8 @@ function setupSlides()
 		c = canvas.getContext("2d");
 
 	  // tunnel(600,400,80,1.5,10,7,0);
-		peak(600,400,80,1.5,14,9,0.2,0.6);
+		peak(600,400,80,1.4,14,9,0.2,0.6);
+    //triangleimp(240,50,320,250,20,250,2,4,0.5,8.0);
 }
 
 </script>	

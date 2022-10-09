@@ -1,0 +1,135 @@
+<html>
+	<head>
+	<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+		
+// Challenge: Make most natural fractal tree with smallest amount of code
+
+var c;
+var arrpnt=[];
+var delay=30;		
+
+var xmax=1430;
+var ymax=780;
+
+var mx,my,mb;
+
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+
+		// setTimeout(drawHead,delay);
+		drawHead();
+}
+
+// ------------========#### Matrix point multiplication ####========------------
+// * Uses a 16 point matrix for the sake of simplicity
+// * Generates a minimum of new data and utilizes matrix components directly
+// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Matrix_math_for_the_web
+//----------------------------------------------------------------------------------
+
+function multiplyMatrixAndPoint(matrix, point, resultpoint) {
+  // Multiply the point against each part of the n-th column, then add together
+  resultpoint[0] = (point[0] * matrix[ 0]) + (point[1] * matrix[ 4]) + (point[2] * matrix[ 8]) + (w * matrix[12]);
+  resultpoint[1] = (point[0] * matrix[ 1]) + (point[1] * matrix[ 5]) + (point[2] * matrix[ 9]) + (w * matrix[13]);
+  resultpoint[2] = (point[0] * matrix[ 2]) + (point[1] * matrix[ 6]) + (point[3] * matrix[10]) + (w * matrix[14]);
+  resultpoint[3] = (point[0] * matrix[ 3]) + (point[1] * matrix[ 7]) + (point[4] * matrix[11]) + (w * matrix[15]);
+}
+
+//----------------------------------------------------------------------------------
+// drawHead - Clear screen and keep drawing
+//----------------------------------------------------------------------------------
+		
+function drawHead()
+{
+    var point=[100,200,300,0];
+    var unitymatrix=
+    [1, 0, 0, 0,
+     0, 1, 0, 0,
+     0, 0, 1, 0,
+     0, 0, 0, 1]
+
+    c.globalAlpha=1.0;
+		c.clearRect(0,0,xmax,ymax);
+	
+		c.fillStyle = "RGB(0,59,85)";	
+		c.strokeStyle="#bbb";
+
+		var polygons=[];
+		var vertices=[];
+	
+		// Generate first set of vertices
+    for(var v=0;v<6.28;v+=(6.28/8)){
+        vertices.push({x:Math.sin(v)*100,y:Math.cos(v)*100});
+    }
+    for(var v=(6.28/16);v<6.28+((6.28/16));v+=(6.28/8)){
+        vertices.push({x:Math.sin(v)*120,y:Math.cos(v)*120});
+    }
+    for(var v=0;v<6.28;v+=(6.28/16)){
+        vertices.push({x:Math.sin(v)*150,y:Math.cos(v)*150});
+    }
+    // Generate Octagons
+    polygons.push({edges:[0,1,2,3,4,5,6,7]});
+    
+    // Generate Triangles
+    for(var i=0;i<8;i++){
+        polygons.push({edges:[i,(i+1)%8,i+8]});
+    }
+    for(var i=0;i<16;i++){
+        polygons.push({edges:[i+16,((i+17)%16)+16,Math.floor((i+16)/2)]});
+    }    
+    // Generate Quads
+    for(var i=1;i<8;i++){
+        polygons.push({edges:[i,(i+7),((i+8)*2),i+8]});
+    }
+    polygons.push({edges:[0,15,16,8]});
+   
+
+    c.font = "18px Arial Narrow";
+    c.textBaseline = 'middle';
+    for(var i=0;i<vertices.length;i++){
+        var vert=vertices[i];
+        c.beginPath();
+        c.arc(400+vert.x, 400+vert.y, 5, 0, 2 * Math.PI);
+        c.fill();
+
+        c.fillText(i, 400+vert.x+8, 400+vert.y);     
+
+    }
+
+    // Draw polygons
+    for(var i=0;i<polygons.length;i++){
+      edges=polygons[i].edges;
+      if(edges.length>0){
+        c.beginPath();
+        for(var j=0;j<edges.length;j++){
+            if(j==0){
+              c.moveTo(400+vertices[edges[edges.length-1]].x,400+vertices[edges[edges.length-1]].y);
+            }
+            c.lineTo(400+vertices[edges[j]].x,400+vertices[edges[j]].y);
+        }
+        c.fill();
+        c.stroke();
+      }
+    }
+
+}
+		
+function mousemove(e)
+{
+		var rect = e.target.getBoundingClientRect();
+		mx = e.clientX - rect.left; //x position within the element.
+		my = e.clientY - rect.top;  //y position within the element.				
+}
+
+	</script>
+	</head>
+	<body onload="setupSlides();">
+	<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	</body>
+
+</html>
