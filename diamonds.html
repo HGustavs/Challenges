@@ -91,9 +91,9 @@ function perspectiveM =  (fOVInRad, aspectRatio, near, far)
 
 function LookAtMat(eye, target, up )
 {
-    let zaxis = normal(eye - target);    
-    let xaxis = normal(cross(up, zaxis));
-    let yaxis = cross(zaxis, xaxis);     
+    let zaxis = normalizeV(subV(eye,target));    
+    let xaxis = normalizeV(crossV(up, zaxis));
+    let yaxis = crossV(zaxis, xaxis);     
 
     // Create a 4x4 view matrix from the right, up, forward and eye position vectors
     let viewMatrix = [
@@ -224,7 +224,6 @@ function drawHead()
         c.fill();
 
         c.fillText(i, 400+vert.x+8, 400+vert.y);     
-
     }
 
     // Draw polygons
