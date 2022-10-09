@@ -41,7 +41,8 @@ function setupSlides()
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Matrix_math_for_the_web
 //----------------------------------------------------------------------------------
 
-function mulMP(matrix, point, resultpoint) {
+function mulMP(matrix, point, resultpoint)
+{
     // Multiply the point against each part of the n-th column, then add together
     resultpoint[0] = (point[0] * matrix[ 0]) + (point[1] * matrix[ 4]) + (point[2] * matrix[ 8]) + (point[3] * matrix[12]);
     resultpoint[1] = (point[0] * matrix[ 1]) + (point[1] * matrix[ 5]) + (point[2] * matrix[ 9]) + (point[3] * matrix[13]);
@@ -55,7 +56,8 @@ function mulMP(matrix, point, resultpoint) {
 // https://stackoverflow.com/questions/9298558/how-to-multiply-two-4x4-matrices-written-as-two-16-element-arrays
 //------------------------------------------------------------------------------
 
-function mulMM(matrixA, matrixB, resultmatrix) {
+function mulMM(matrixA, matrixB, resultmatrix)
+{
     for(var row=0; row<16; row+=4){
       for(var col=0; col<4; col++){
           resultingArray[row+col] = 0;
@@ -64,6 +66,74 @@ function mulMM(matrixA, matrixB, resultmatrix) {
           }
       }
     }
+}
+
+// ------------========#### Perspective Matrix Generation ####========------------
+// * Generates 4x4  Matrix
+//----------------------------------------------------------------------
+
+function perspectiveM =  (fOVInRad, aspectRatio, near, far) 
+{
+    const f = 1.0 / Math.tan(fOVInRad / 2);
+    const rangeInv = 1 / (near - far);
+
+    return [
+      f / aspectRatio, 0,                          0,   0,
+      0,               f,                          0,   0,
+      0,               0,    (near + far) * rangeInv,  -1,
+      0,               0,  near * far * rangeInv * 2,   0
+    ];
+}
+
+// ------------========#### Camera Matrix Generation ####========------------
+// * Generates 4x4  Matrix
+//----------------------------------------------------------------------
+
+function LookAtMat(eye, target, up )
+{
+    let zaxis = normal(eye - target);    
+    let xaxis = normal(cross(up, zaxis));
+    let yaxis = cross(zaxis, xaxis);     
+
+    // Create a 4x4 view matrix from the right, up, forward and eye position vectors
+    let viewMatrix = [
+        xaxis[0],  yaxis[0], zaxis[0], 0,
+        xaxis[1],  yaxis[1], zaxis[1], 0,
+        xaxis[2],  yaxis[2], zaxis[2], 0,
+        -dot( xaxis, eye ), -dot( yaxis, eye ), -dot( zaxis, eye ), 1
+    ];
+    
+    return viewMatrix;
+}
+
+// ------------========#### 3Vector Normalize ####========------------
+// * Uses 3 elements from vectors 
+//----------------------------------------------------------------------
+
+function normalizeV(vecA)
+{
+  var norm=[0,0,0,0];
+  var len=Math.sqrt((vecA[0]*vecA[0])+(vecA[1]*vecA[1])+(vecA[2]*vecA[2]));
+
+  norm[0]=vecA[0]/len;
+  norm[1]=vecA[1]/len;
+  norm[2]=vecA[2]/len;
+
+  return norm;
+}
+
+// ------------========#### 3Vector Subtract ####========------------
+// * Uses 3 elements from vectors 
+//----------------------------------------------------------------------
+
+function subV(vecA,vecB)
+{
+  var sub=[0,0,0,0];
+
+  sub[0]=vecA[0]-vecB[0];
+  sub[1]=vecA[1]-vecB[1];
+  sub[2]=vecA[2]-vecB[2];
+  return sub;
 }
 
 // ------------========#### 3Vector Dot Product ####========------------
