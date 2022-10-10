@@ -41,13 +41,16 @@ function setupSlides()
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Matrix_math_for_the_web
 //----------------------------------------------------------------------------------
 
-function mulMP(matrix, point, resultpoint)
+function mulMP(matrix, point)
 {
     // Multiply the point against each part of the n-th column, then add together
+    let resultpoint=[0,0,0,0];
     resultpoint[0] = (point[0] * matrix[ 0]) + (point[1] * matrix[ 4]) + (point[2] * matrix[ 8]) + (point[3] * matrix[12]);
     resultpoint[1] = (point[0] * matrix[ 1]) + (point[1] * matrix[ 5]) + (point[2] * matrix[ 9]) + (point[3] * matrix[13]);
     resultpoint[2] = (point[0] * matrix[ 2]) + (point[1] * matrix[ 6]) + (point[2] * matrix[10]) + (point[3] * matrix[14]);
     resultpoint[3] = (point[0] * matrix[ 3]) + (point[1] * matrix[ 7]) + (point[2] * matrix[11]) + (point[3] * matrix[15]);
+    
+    return resultpoint;
 }
 
 // ------------========#### Matrix point multiplication ####========------------
@@ -60,9 +63,9 @@ function mulMM(matrixA, matrixB, resultmatrix)
 {
     for(var row=0; row<16; row+=4){
       for(var col=0; col<4; col++){
-          resultingArray[row+col] = 0;
+          resultmatrix[row+col] = 0;
           for (var j=0, bCount=0; j<4; j++, bCount+=4){
-              result[row+col] += matrixA[row+col%4] * matrixB[bCount+col%4];
+              resultmatrix[row+col] += matrixA[row+col%4] * matrixB[bCount+col%4];
           }
       }
     }
@@ -72,7 +75,7 @@ function mulMM(matrixA, matrixB, resultmatrix)
 // * Generates 4x4  Matrix
 //----------------------------------------------------------------------
 
-function perspectiveM =  (fOVInRad, aspectRatio, near, far) 
+function perspectiveM(fOVInRad, aspectRatio, near, far) 
 {
     const f = 1.0 / Math.tan(fOVInRad / 2);
     const rangeInv = 1 / (near - far);
@@ -100,7 +103,7 @@ function LookAtMat(eye, target, up )
         xaxis[0],  yaxis[0], zaxis[0], 0,
         xaxis[1],  yaxis[1], zaxis[1], 0,
         xaxis[2],  yaxis[2], zaxis[2], 0,
-        -dot( xaxis, eye ), -dot( yaxis, eye ), -dot( zaxis, eye ), 1
+        -dotV( xaxis, eye ), -dotV( yaxis, eye ), -dotV( zaxis, eye ), 1
     ];
     
     return viewMatrix;
@@ -165,19 +168,13 @@ function crossV(vecA,vecB)
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
-		
+
+var camerap=0;
+
 function drawHead()
 {
-    var point=[100,200,300,0];
-    var unitymatrix=
-    [1, 0, 0, 0,
-     0, 1, 0, 0,
-     0, 0, 1, 0,
-     0, 0, 0, 1]
-    var output=[0,0,0,0];
-
-    multiplyMatrixAndPoint(unitymatrix,point,output);
-    console.log(output);
+    console.clear();
+    camerap=camerap+2;
 
     c.globalAlpha=1.0;
 		c.clearRect(0,0,xmax,ymax);
@@ -187,7 +184,56 @@ function drawHead()
 
 		var polygons=[];
 		var vertices=[];
-	
+
+		// Generate first set of vertices
+    for(var v=0;v<6.28;v+=(6.28/8)){
+        vertices.push([Math.sin(v)*80,-50,Math.cos(v)*80,1.0]);
+    }
+    for(var v=(6.28/16);v<6.28+((6.28/16));v+=(6.28/8)){
+        vertices.push([Math.sin(v)*120,-30,Math.cos(v)*120,1.0]);
+    }
+    for(var v=0;v<6.28;v+=(6.28/16)){
+        vertices.push([Math.sin(v)*150,-20,Math.cos(v)*150,1.0]);
+    }
+
+    let identityMatrix = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 0
+    ];
+
+    // temp matrix
+    var vpMatrix=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+
+    // Generate view matrix for a camera at 0,0,-200 looking at 0,0,0 with an up-vector poinint up in Y
+    var viewMatrix=LookAtMat([0,0,camerap],[0,0,0],[0,1,0]);
+
+    // fov of 30 degrees, aspect of 1, near 20 and far 500
+    var perspMatrix=perspectiveM(0.9, 1, 20, 500);     
+
+    // Multiply viewMatrix and perspMatrix store in vpMatrix
+    mulMM(perspMatrix,viewMatrix,vpMatrix);
+
+    // Convert each vertex
+
+    for(var i=0;i<vertices.length;i++){
+        var resP=[0,0,0,0];
+        
+        resP=mulMP(viewMatrix,vertices[i]); 
+
+        c.beginPath();
+        c.arc(400+resP[0], 400+resP[1], 5, 0, 2 * Math.PI);
+        c.fill();        
+    }
+    //console.log(vertices);
+
+    console.log(camerap);
+
+    setTimeout(drawHead,100);
+
+
+/*    
 		// Generate first set of vertices
     for(var v=0;v<6.28;v+=(6.28/8)){
         vertices.push({x:Math.sin(v)*100,y:Math.cos(v)*100});
@@ -241,7 +287,7 @@ function drawHead()
         c.stroke();
       }
     }
-
+*/
 }
 		
 function mousemove(e)
