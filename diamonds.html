@@ -165,6 +165,38 @@ function crossV(vecA,vecB)
   return cross;
 }
 
+// ------------========#### Triangle Surface Normal ####========------------
+// * Uses 3 arbitrary points
+//----------------------------------------------------------------------
+// https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+/*
+Begin Function CalculateSurfaceNormal (Input Triangle) Returns Vector
+
+	Set Vector U to (Triangle.p2 minus Triangle.p1)
+	Set Vector V to (Triangle.p3 minus Triangle.p1)
+
+	Set Normal.x to (multiply U.y by V.z) minus (multiply U.z by V.y)
+	Set Normal.y to (multiply U.z by V.x) minus (multiply U.x by V.z)
+	Set Normal.z to (multiply U.x by V.y) minus (multiply U.y by V.x)
+
+	Returning Normal
+
+End Function
+*/
+
+/*
+          // Culling
+					// Compute normal for backface culling
+					normal=((p3x - p1x)*(p3y - p2y)) - ((p3y - p1y)* (p3x - p2x));
+					
+					if(normal<0){
+							light=(-normal/16000);
+					}else{
+							light=0;
+					}
+
+*/
+
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
@@ -227,10 +259,6 @@ function drawHead()
         vertices[i][0]=resQ[0]/resQ[3];
         vertices[i][1]=resQ[1]/resQ[3];
         vertices[i][2]=resQ[2]/resQ[3];
-
-        if(i<10){
-            // console.log(resQ);
-        }
 
         if(resQ[3]>0){
             c.fillStyle="#f00";
