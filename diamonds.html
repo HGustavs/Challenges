@@ -77,15 +77,15 @@ function mulMM(matrixA, matrixB, resultmatrix)
 
 function perspectiveM(fOVInRad, aspectRatio, near, far) 
 {
-    const f = 1.0 / Math.tan(fOVInRad / 2);
+    const f = 1.0 / Math.tan(fOVInRad/2);
     const rangeInv = 1 / (near - far);
 
-    return [
-      f / aspectRatio, 0,                          0,   0,
-      0,               f,                          0,   0,
-      0,               0,    (near + far) * rangeInv,  -1,
-      0,               0,  near * far * rangeInv * 2,   0
-    ];
+  return [
+    f / aspectRatio, 0,                          0,   0,
+    0,               f,                          0,   0,
+    0,               0,    (near + far) * rangeInv,  -1,
+    0,               0,  near * far * rangeInv * 2,   0
+  ];    
 }
 
 // ------------========#### Camera Matrix Generation ####========------------
@@ -169,12 +169,14 @@ function crossV(vecA,vecB)
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
 
-var camerap=100;
+var camerap=0;
+var objp=0;
 
 function drawHead()
 {
     console.clear();
-    camerap=camerap+2;
+    camerap=camerap-6;
+    objp-=0;
 
     c.globalAlpha=1.0;
 		c.clearRect(0,0,xmax,ymax);
@@ -187,13 +189,13 @@ function drawHead()
 
 		// Generate first set of vertices
     for(var v=0;v<6.28;v+=(6.28/8)){
-        vertices.push([Math.sin(v)*80,-50,Math.cos(v)*80,0.0]);
+        vertices.push([Math.sin(v)*80,-80,objp+(Math.cos(v)*80),1.0]);
     }
     for(var v=(6.28/16);v<6.28+((6.28/16));v+=(6.28/8)){
-        vertices.push([Math.sin(v)*120,-30,Math.cos(v)*120,0.0]);
+        vertices.push([Math.sin(v)*120,-70,objp+(Math.cos(v)*120),1.0]);
     }
     for(var v=0;v<6.28;v+=(6.28/16)){
-        vertices.push([Math.sin(v)*150,-20,Math.cos(v)*150,0.0]);
+        vertices.push([Math.sin(v)*150,-30,objp+(Math.cos(v)*150),1.0]);
     }
 
     let identityMatrix = [
@@ -207,44 +209,46 @@ function drawHead()
     var vpMatrix=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
     // Generate view matrix for a camera at 0,0,-200 looking at 0,0,0 with an up-vector poinint up in Y
-    var viewMatrix=LookAtMat([0,0,camerap],[0,0,0],[0,1,0]);
+    var viewMatrix=LookAtMat([0,camerap/2,camerap],[0,0,0],[0,1,0]);
 
     // fov of 30 degrees, aspect of 1, near 20 and far 500
-    var perspMatrix=perspectiveM(0.8, 1, 70, 500);     
+    var perspMatrix=perspectiveM(0.7, 1, 20, 500);     
 
     // Multiply viewMatrix and perspMatrix store in vpMatrix
     mulMM(viewMatrix,perspMatrix,vpMatrix);
+
+    c.fillStyle="#55f";
  
     for(var i=0;i<vertices.length;i++){
-        var resP=mulMP(viewMatrix,vertices[i]); 
+        var resP=mulMP(viewMatrix,vertices[i]);
+        var resQ=mulMP(perspMatrix,resP);
 
-        if(i==0){
-            console.log(resP);
+        // Perspective division (https://www.mathematik.uni-marburg.de/~thormae/lectures/graphics1/graphics_6_1_eng_web.html#1)
+        vertices[i][0]=resQ[0]/resQ[3];
+        vertices[i][1]=resQ[1]/resQ[3];
+        vertices[i][2]=resQ[2]/resQ[3];
+
+        if(i<10){
+            // console.log(resQ);
         }
 
-        c.beginPath();
-        c.arc(400+(resP[0]), 400+(resP[1]), 5, 0, 2 * Math.PI);
-        c.fill();        
+        if(resQ[3]>0){
+            c.fillStyle="#f00";
+            c.beginPath();
+            c.arc(400+(resQ[0]*100), 400+(resQ[1]*100), 5, 0, 2 * Math.PI);
+            c.fill();        
+
+        }
     }
+
+    c.strokeStyle="#080";
+
+    c.beginPath();
+    c.rect(300,300,200,200);
+    c.stroke();
     //console.log(vertices);
 
-    console.log(camerap);
-
-    setTimeout(drawHead,100);
-
-
-/*    
-		// Generate first set of vertices
-    for(var v=0;v<6.28;v+=(6.28/8)){
-        vertices.push({x:Math.sin(v)*100,y:Math.cos(v)*100});
-    }
-    for(var v=(6.28/16);v<6.28+((6.28/16));v+=(6.28/8)){
-        vertices.push({x:Math.sin(v)*120,y:Math.cos(v)*120});
-    }
-    for(var v=0;v<6.28;v+=(6.28/16)){
-        vertices.push({x:Math.sin(v)*150,y:Math.cos(v)*150});
-    }
-    // Generate Octagons
+	  // Generate Octagons
     polygons.push({edges:[0,1,2,3,4,5,6,7]});
     
     // Generate Triangles
@@ -279,15 +283,17 @@ function drawHead()
         c.beginPath();
         for(var j=0;j<edges.length;j++){
             if(j==0){
-              c.moveTo(400+vertices[edges[edges.length-1]].x,400+vertices[edges[edges.length-1]].y);
+              c.moveTo(400+(vertices[edges[edges.length-1]][0]*100),400+(vertices[edges[edges.length-1]][1]*100));
             }
-            c.lineTo(400+vertices[edges[j]].x,400+vertices[edges[j]].y);
+            c.lineTo(400+(vertices[edges[j]][0]*100),400+(vertices[edges[j]][1]*100));
         }
-        c.fill();
+        //c.fill();
         c.stroke();
       }
     }
-*/
+
+    setTimeout(drawHead,100);
+
 }
 		
 function mousemove(e)
