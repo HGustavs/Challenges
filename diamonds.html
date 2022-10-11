@@ -169,7 +169,7 @@ function crossV(vecA,vecB)
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
 
-var camerap=0;
+var camerap=100;
 
 function drawHead()
 {
@@ -187,13 +187,13 @@ function drawHead()
 
 		// Generate first set of vertices
     for(var v=0;v<6.28;v+=(6.28/8)){
-        vertices.push([Math.sin(v)*80,-50,Math.cos(v)*80,1.0]);
+        vertices.push([Math.sin(v)*80,-50,Math.cos(v)*80,0.0]);
     }
     for(var v=(6.28/16);v<6.28+((6.28/16));v+=(6.28/8)){
-        vertices.push([Math.sin(v)*120,-30,Math.cos(v)*120,1.0]);
+        vertices.push([Math.sin(v)*120,-30,Math.cos(v)*120,0.0]);
     }
     for(var v=0;v<6.28;v+=(6.28/16)){
-        vertices.push([Math.sin(v)*150,-20,Math.cos(v)*150,1.0]);
+        vertices.push([Math.sin(v)*150,-20,Math.cos(v)*150,0.0]);
     }
 
     let identityMatrix = [
@@ -210,20 +210,20 @@ function drawHead()
     var viewMatrix=LookAtMat([0,0,camerap],[0,0,0],[0,1,0]);
 
     // fov of 30 degrees, aspect of 1, near 20 and far 500
-    var perspMatrix=perspectiveM(0.9, 1, 20, 500);     
+    var perspMatrix=perspectiveM(0.8, 1, 70, 500);     
 
     // Multiply viewMatrix and perspMatrix store in vpMatrix
-    mulMM(perspMatrix,viewMatrix,vpMatrix);
-
-    // Convert each vertex
-
+    mulMM(viewMatrix,perspMatrix,vpMatrix);
+ 
     for(var i=0;i<vertices.length;i++){
-        var resP=[0,0,0,0];
-        
-        resP=mulMP(viewMatrix,vertices[i]); 
+        var resP=mulMP(viewMatrix,vertices[i]); 
+
+        if(i==0){
+            console.log(resP);
+        }
 
         c.beginPath();
-        c.arc(400+resP[0], 400+resP[1], 5, 0, 2 * Math.PI);
+        c.arc(400+(resP[0]), 400+(resP[1]), 5, 0, 2 * Math.PI);
         c.fill();        
     }
     //console.log(vertices);
