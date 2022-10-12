@@ -206,6 +206,8 @@ var objp=0;
 
 function drawHead()
 {
+    vx=(mx/1600)*2*6.28;
+
     console.clear();
     camerap=camerap-6;
     objp-=0;
@@ -241,7 +243,7 @@ function drawHead()
     var vpMatrix=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
     // Generate view matrix for a camera at 0,0,-200 looking at 0,0,0 with an up-vector poinint up in Y
-    var viewMatrix=LookAtMat([0,camerap/2,camerap],[0,0,0],[0,1,0]);
+    var viewMatrix=LookAtMat([400*Math.sin(vx),50,400*Math.cos(vx)],[0,0,0],[0,1,0]);
 
     // fov of 30 degrees, aspect of 1, near 20 and far 500
     var perspMatrix=perspectiveM(0.7, 1, 20, 500);     
@@ -281,17 +283,20 @@ function drawHead()
     
     // Generate Triangles
     for(var i=0;i<8;i++){
-        polygons.push({edges:[i,(i+1)%8,i+8]});
+        polygons.push({edges:[(i+1)%8,i,i+8]});
     }
     for(var i=0;i<16;i++){
         polygons.push({edges:[i+16,((i+17)%16)+16,Math.floor((i+16)/2)]});
     }    
     // Generate Quads
     for(var i=1;i<8;i++){
-        polygons.push({edges:[i,(i+7),((i+8)*2),i+8]});
+        // polygons.push({edges:[i,(i+7),((i+8)*2),i+8]});
+        polygons.push({edges:[i,(i+7),i+8]});
+        polygons.push({edges:[i+8,(i+7),((i+8)*2)]});        
     }
-    polygons.push({edges:[0,15,16,8]});
-   
+    //polygons.push({edges:[0,15,16,8]});
+    polygons.push({edges:[0,15,8]});
+    polygons.push({edges:[8,15,16]});
 
     c.font = "18px Arial Narrow";
     c.textBaseline = 'middle';
@@ -307,16 +312,21 @@ function drawHead()
     // Draw polygons
     for(var i=0;i<polygons.length;i++){
       edges=polygons[i].edges;
-      if(edges.length>0){
-        c.beginPath();
-        for(var j=0;j<edges.length;j++){
-            if(j==0){
-              c.moveTo(400+(vertices[edges[edges.length-1]][0]*100),400+(vertices[edges[edges.length-1]][1]*100));
+      if(edges.length>=3){
+        // normal=((p3x - p1x)*(p3y - p2y)) - ((p3y - p1y)* (p3x - p2x));
+        var normal=((vertices[edges[2]][0]-vertices[edges[0]][0])*(vertices[edges[2]][1]-vertices[edges[1]][1]))-
+                   ((vertices[edges[2]][1]-vertices[edges[0]][1])*(vertices[edges[2]][0]-vertices[edges[1]][0]));
+        if(normal>0){
+            c.beginPath();
+            for(var j=0;j<edges.length;j++){
+                if(j==0){
+                  c.moveTo(400+(vertices[edges[edges.length-1]][0]*100),400+(vertices[edges[edges.length-1]][1]*100));
+                }
+                c.lineTo(400+(vertices[edges[j]][0]*100),400+(vertices[edges[j]][1]*100));
             }
-            c.lineTo(400+(vertices[edges[j]][0]*100),400+(vertices[edges[j]][1]*100));
+            c.fill();
+            c.stroke();
         }
-        //c.fill();
-        c.stroke();
       }
     }
 
@@ -328,13 +338,14 @@ function mousemove(e)
 {
 		var rect = e.target.getBoundingClientRect();
 		mx = e.clientX - rect.left; //x position within the element.
-		my = e.clientY - rect.top;  //y position within the element.				
+		my = e.clientY - rect.top;  //y position within the element.	
+    
 }
 
 	</script>
 	</head>
 	<body onload="setupSlides();">
-	<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+	<canvas id='mycanvas' width=1600 height=800 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
 	</body>
 
 </html>
