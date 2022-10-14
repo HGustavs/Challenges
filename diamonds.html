@@ -24,7 +24,7 @@ var delay=30;
 var xmax=1430;
 var ymax=780;
 
-var mx,my,mb;
+var mx=0,my=0,mb=0;
 
 function setupSlides()
 {
@@ -55,21 +55,54 @@ function mulMP(matrix, point)
 
 // ------------========#### Matrix point multiplication ####========------------
 // * Uses a 16 point matrix for the sake of simplicity
+// * static inline void Matrix4x4MultiplyBy4x4
 // * Generates a minimum of new data and utilizes matrix components directly
 // https://stackoverflow.com/questions/9298558/how-to-multiply-two-4x4-matrices-written-as-two-16-element-arrays
+// https://stackoverflow.com/questions/1674005/fast-4x4-matrix-multiplication-in-c
 //------------------------------------------------------------------------------
 
-function mulMM(matrixA, matrixB, resultmatrix)
+/*
+function mulMM(src1, src2, dest)
 {
-    for(var row=0; row<16; row+=4){
-      for(var col=0; col<4; col++){
-          resultmatrix[row+col] = 0;
-          for (var j=0, bCount=0; j<4; j++, bCount+=4){
-              resultmatrix[row+col] += matrixA[row+col%4] * matrixB[bCount+col%4];
-          }
-      }
-    }
+dest[0+0] = src1[0+0] * src2[0+0] + src1[0+4] * src2[1+0] + src1[0+8] * src2[2+0] + src1[0+12] * src2[3+0]; 
+dest[0+4] = src1[0+0] * src2[0+4] + src1[0+4] * src2[1+4] + src1[0+8] * src2[2+4] + src1[0+12] * src2[3+4]; 
+dest[0+8] = src1[0+0] * src2[0+8] + src1[0+4] * src2[1+8] + src1[0+8] * src2[2+8] + src1[0+12] * src2[3+9]; 
+dest[0+12] = src1[0+0] * src2[0+12] + src1[0+4] * src2[1+12] + src1[0+8] * src2[2+12] + src1[0+12] * src2[3+12]; 
+dest[1+0] = src1[1+0] * src2[0+0] + src1[1+4] * src2[1+0] + src1[1+8] * src2[2+0] + src1[1+12] * src2[3+0]; 
+dest[1+4] = src1[1+0] * src2[0+4] + src1[1+4] * src2[1+4] + src1[1+8] * src2[2+4] + src1[1+12] * src2[3+4]; 
+dest[1+8] = src1[1+0] * src2[0+8] + src1[1+4] * src2[1+8] + src1[1+8] * src2[2+8] + src1[1+12] * src2[3+8]; 
+dest[1+12] = src1[1+0] * src2[0+12] + src1[1+4] * src2[1+12] + src1[1+8] * src2[2+12] + src1[1+12] * src2[3+12]; 
+dest[2+0] = src1[2+0] * src2[0+0] + src1[2+4] * src2[1+0] + src1[2+8] * src2[2+0] + src1[2+12] * src2[3+0]; 
+dest[2+4] = src1[2+0] * src2[0+4] + src1[2+4] * src2[1+4] + src1[2+8] * src2[2+4] + src1[2+12] * src2[3+4]; 
+dest[2+8] = src1[2+0] * src2[0+8] + src1[2+4] * src2[1+8] + src1[2+8] * src2[2+8] + src1[2+12] * src2[3+8]; 
+dest[2+12] = src1[2+0] * src2[0+12] + src1[2+4] * src2[1+12] + src1[2+8] * src2[2+12] + src1[2+12] * src2[3+12]; 
+dest[3+0] = src1[3+0] * src2[0+0] + src1[3+4] * src2[1+0] + src1[3+8] * src2[2+0] + src1[3+12] * src2[3+0]; 
+dest[3+4] = src1[3+0] * src2[0+4] + src1[3+4] * src2[1+4] + src1[3+8] * src2[2+4] + src1[3+12] * src2[3+4]; 
+dest[3+8] = src1[3+0] * src2[0+8] + src1[3+4] * src2[1+8] + src1[3+8] * src2[2+8] + src1[3+12] * src2[3+8]; 
+dest[3+12] = src1[3+0] * src2[0+12] + src1[3+4] * src2[1+12] + src1[3+8] * src2[2+12] + src1[3+12] * src2[3+12]; 
+};
+*/
+
+function mulMM(src1, src2, dest)
+{
+    dest[0+0] = src1[0+0] * src2[0+0] + src1[0+1] * src2[4+0] + src1[0+2] * src2[8+0] + src1[0+3] * src2[12+0]; 
+    dest[0+1] = src1[0+0] * src2[0+1] + src1[0+1] * src2[4+1] + src1[0+2] * src2[8+1] + src1[0+3] * src2[12+1]; 
+    dest[0+2] = src1[0+0] * src2[0+2] + src1[0+1] * src2[4+2] + src1[0+2] * src2[8+2] + src1[0+3] * src2[12+2]; 
+    dest[0+3] = src1[0+0] * src2[0+3] + src1[0+1] * src2[4+3] + src1[0+2] * src2[8+3] + src1[0+3] * src2[12+3]; 
+    dest[4+0] = src1[4+0] * src2[0+0] + src1[4+1] * src2[4+0] + src1[4+2] * src2[8+0] + src1[4+3] * src2[12+0]; 
+    dest[4+1] = src1[4+0] * src2[0+1] + src1[4+1] * src2[4+1] + src1[4+2] * src2[8+1] + src1[4+3] * src2[12+1]; 
+    dest[4+2] = src1[4+0] * src2[0+2] + src1[4+1] * src2[4+2] + src1[4+2] * src2[8+2] + src1[4+3] * src2[12+2]; 
+    dest[4+3] = src1[4+0] * src2[0+3] + src1[4+1] * src2[4+3] + src1[4+2] * src2[8+3] + src1[4+3] * src2[12+3]; 
+    dest[8+0] = src1[8+0] * src2[0+0] + src1[8+1] * src2[4+0] + src1[8+2] * src2[8+0] + src1[8+3] * src2[12+0]; 
+    dest[8+1] = src1[8+0] * src2[0+1] + src1[8+1] * src2[4+1] + src1[8+2] * src2[8+1] + src1[8+3] * src2[12+1]; 
+    dest[8+2] = src1[8+0] * src2[0+2] + src1[8+1] * src2[4+2] + src1[8+2] * src2[8+2] + src1[8+3] * src2[12+2]; 
+    dest[8+3] = src1[8+0] * src2[0+3] + src1[8+1] * src2[4+3] + src1[8+2] * src2[8+3] + src1[8+3] * src2[12+3]; 
+    dest[12+0] = src1[12+0] * src2[0+0] + src1[12+1] * src2[4+0] + src1[12+2] * src2[8+0] + src1[12+3] * src2[12+0]; 
+    dest[12+1] = src1[12+0] * src2[0+1] + src1[12+1] * src2[4+1] + src1[12+2] * src2[8+1] + src1[12+3] * src2[12+1]; 
+    dest[12+2] = src1[12+0] * src2[0+2] + src1[12+1] * src2[4+2] + src1[12+2] * src2[8+2] + src1[12+3] * src2[12+2]; 
+    dest[12+3] = src1[12+0] * src2[0+3] + src1[12+1] * src2[4+3] + src1[12+2] * src2[8+3] + src1[12+3] * src2[12+3]; 
 }
+
 
 // ------------========#### Perspective Matrix Generation ####========------------
 // * Generates 4x4  Matrix
@@ -252,10 +285,12 @@ function drawHead()
     mulMM(viewMatrix,perspMatrix,vpMatrix);
 
     c.fillStyle="#55f";
- 
+
     for(var i=0;i<vertices.length;i++){
-        var resP=mulMP(viewMatrix,vertices[i]);
-        var resQ=mulMP(perspMatrix,resP);
+        // Multi-step matrix multiplication
+        // var resP=mulMP(viewMatrix,vertices[i]);
+        // var resQ=mulMP(perspMatrix,resP);
+        var resQ=mulMP(vpMatrix,vertices[i]);
 
         // Perspective division (https://www.mathematik.uni-marburg.de/~thormae/lectures/graphics1/graphics_6_1_eng_web.html#1)
         vertices[i][0]=resQ[0]/resQ[3];
@@ -276,7 +311,6 @@ function drawHead()
     c.beginPath();
     c.rect(300,300,200,200);
     c.stroke();
-    //console.log(vertices);
 
 	  // Generate Octagons
     polygons.push({edges:[0,1,2,3,4,5,6,7]});
