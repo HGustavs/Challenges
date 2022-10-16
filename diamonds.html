@@ -82,7 +82,6 @@ function mulMM(src1, src2, dest)
     return dest;
 }
 
-
 // ------------========#### Perspective Matrix Generation ####========------------
 // * Generates 4x4  Matrix
 //----------------------------------------------------------------------
@@ -243,49 +242,27 @@ function drawHead()
     for(var v=0;v<6.28;v+=(6.28/16)){
         vertices.push([Math.sin(v)*150,-30,objp+(Math.cos(v)*150),1.0]);
     }
+    for(var v=(6.28/16);v<6.28+(6.28/16);v+=(6.28/8)){
+        vertices.push([Math.sin(v)*100,20,objp+(Math.cos(v)*100),1.0]);
+    }    
 
-    let identityMatrix = [
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 0
-    ];
+    c.fillStyle="#55f"; 
+    c.strokeStyle="#080";       
+    c.font = "18px Arial Narrow";
+    c.textBaseline = 'middle';
 
-    // Generate view matrix for a camera at 0,0,-200 looking at 0,0,0 with an up-vector poinint up in Y
-    var viewMatrix=LookAtMat([400*Math.sin(vx),50,400*Math.cos(vx)],[0,0,0],[0,1,0]);
+    for(var i=16;i<vertices.length;i++){
+        var vert=vertices[i];
 
-    // fov of 30 degrees, aspect of 1, near 20 and far 500
-    var perspMatrix=perspectiveM(0.7, 1, 20, 500);     
+        c.beginPath();
+        c.arc(800+vert[0], 200+vert[2], 5, 0, 2 * Math.PI);
+        c.fill();
 
-    // Multiply viewMatrix and perspMatrix store in vpMatrix
-    var vpMatrix=mulMM(viewMatrix,perspMatrix);
-
-    c.fillStyle="#55f";
-
-    for(var i=0;i<vertices.length;i++){
-        // Multi-step matrix multiplication
-        // var resP=mulMP(viewMatrix,vertices[i]);
-        // var resQ=mulMP(perspMatrix,resP);
-        var resQ=mulMP(vpMatrix,vertices[i]);
-
-        // Perspective division (https://www.mathematik.uni-marburg.de/~thormae/lectures/graphics1/graphics_6_1_eng_web.html#1)
-        vertices[i][0]=resQ[0]/resQ[3];
-        vertices[i][1]=resQ[1]/resQ[3];
-        vertices[i][2]=resQ[2]/resQ[3];
-
-        if(resQ[3]>0){
-            c.fillStyle="#f00";
-            c.beginPath();
-            c.arc(400+(resQ[0]*100), 400+(resQ[1]*100), 5, 0, 2 * Math.PI);
-            c.fill();        
-
-        }
+        c.fillText(i, 800+vert[0]+8, 200+vert[2]);     
     }
 
-    c.strokeStyle="#080";
-
     c.beginPath();
-    c.rect(300,300,200,200);
+   // c.rect(300,300,200,200);
     c.stroke();
 
 	  // Generate Octagons
@@ -308,16 +285,62 @@ function drawHead()
     polygons.push({edges:[0,15,8]});
     polygons.push({edges:[8,15,16]});
 
-    c.font = "18px Arial Narrow";
-    c.textBaseline = 'middle';
-    for(var i=0;i<vertices.length;i++){
-        var vert=vertices[i];
-        c.beginPath();
-        c.arc(400+vert.x, 400+vert.y, 5, 0, 2 * Math.PI);
-        c.fill();
+    // Bottom triangles
+    for(var i=0;i<16;i++){
+        polygons.push({edges:[16+((i+1)%16),i+16,32+Math.floor((i/2))]});
+    } 
 
-        c.fillText(i, 400+vert.x+8, 400+vert.y);     
+    // Show flat polygons
+    for(var i=0;i<polygons.length;i++){
+        edges=polygons[i].edges;
+        c.beginPath();
+        for(var j=0;j<edges.length;j++){
+            if(j==0){
+              c.moveTo(800+(vertices[edges[edges.length-1]][0]),200+(vertices[edges[edges.length-1]][2]));
+            }
+            c.lineTo(800+(vertices[edges[j]][0]),200+(vertices[edges[j]][2]));
+        }
+        // c.fill();
+        c.stroke();
+        c.beginPath();
+        for(var j=0;j<edges.length;j++){
+            if(j==0){
+              c.moveTo(800+(vertices[edges[edges.length-1]][1]),600+(vertices[edges[edges.length-1]][2]));
+            }
+            c.lineTo(800+(vertices[edges[j]][1]),600+(vertices[edges[j]][2]));
+        }
+        // c.fill();
+        c.stroke();        
     }
+  
+    // Generate view matrix for a camera at 0,0,-200 looking at 0,0,0 with an up-vector poinint up in Y
+    var viewMatrix=LookAtMat([400*Math.sin(vx),50,400*Math.cos(vx)],[0,0,0],[0,1,0]);
+
+    // fov of 30 degrees, aspect of 1, near 20 and far 500
+    var perspMatrix=perspectiveM(0.7, 1, 20, 500);     
+
+    // Multiply viewMatrix and perspMatrix store in vpMatrix
+    var vpMatrix=mulMM(viewMatrix,perspMatrix);
+
+    for(var i=0;i<vertices.length;i++){
+        // Multi-step matrix multiplication
+        // var resP=mulMP(viewMatrix,vertices[i]);
+        // var resQ=mulMP(perspMatrix,resP);
+        var resQ=mulMP(vpMatrix,vertices[i]);
+
+        // Perspective division (https://www.mathematik.uni-marburg.de/~thormae/lectures/graphics1/graphics_6_1_eng_web.html#1)
+        vertices[i][0]=resQ[0]/resQ[3];
+        vertices[i][1]=resQ[1]/resQ[3];
+        vertices[i][2]=resQ[2]/resQ[3];
+
+        if(resQ[3]>0){
+            c.fillStyle="#f00";
+            c.beginPath();
+            c.arc(400+(resQ[0]*100), 400+(resQ[1]*100), 5, 0, 2 * Math.PI);
+            c.fill();        
+
+        }
+    }    
 
     // Draw polygons
     for(var i=0;i<polygons.length;i++){
