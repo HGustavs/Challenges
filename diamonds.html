@@ -244,7 +244,8 @@ function drawHead()
     }
     for(var v=(6.28/16);v<6.28+(6.28/16);v+=(6.28/8)){
         vertices.push([Math.sin(v)*100,20,objp+(Math.cos(v)*100),1.0]);
-    }    
+    }
+    vertices.push([0,100,0,1.0]);    
 
     c.fillStyle="#55f"; 
     c.strokeStyle="#080";       
@@ -275,6 +276,9 @@ function drawHead()
     for(var i=0;i<16;i++){
         polygons.push({edges:[i+16,((i+17)%16)+16,Math.floor((i+16)/2)]});
     }    
+    for(var i=0;i<16;i++){
+        polygons.push({edges:[16+((i+1)%16),i+16,32+Math.floor((i/2))]});
+    } 
     // Generate Quads
     for(var i=1;i<8;i++){
         // polygons.push({edges:[i,(i+7),((i+8)*2),i+8]});
@@ -286,9 +290,10 @@ function drawHead()
     polygons.push({edges:[8,15,16]});
 
     // Bottom triangles
-    for(var i=0;i<16;i++){
-        polygons.push({edges:[16+((i+1)%16),i+16,32+Math.floor((i/2))]});
-    } 
+    for(var i=0;i<8;i++){
+        polygons.push({edges:[i+32,32+((i+1)%8),16+(((i+1)*2)%16)]});
+        polygons.push({edges:[32+((i+1)%8),i+32,40]});
+    }
 
     // Show flat polygons
     for(var i=0;i<polygons.length;i++){
@@ -353,7 +358,8 @@ function drawHead()
       }
     }
 
-    setTimeout(drawHead,100);
+    window.requestAnimationFrame(drawHead);
+//    setTimeout(drawHead,100);
 
 }
 		
