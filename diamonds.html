@@ -271,27 +271,18 @@ function drawHead()
     
     // Generate Triangles
     for(var i=0;i<8;i++){
-        polygons.push({edges:[(i+1)%8,i,i+8],faces:[[[(i+1)%8,i,i+8]]]});
+        // polygons.push({edges:[(i+1)%8,i,i+8],faces:[[[(i+1)%8,i,i+8]]]});
     }
     for(var i=0;i<16;i++){
-        polygons.push({edges:[i+16,((i+17)%16)+16,Math.floor((i+16)/2)],faces:[[i+16,((i+17)%16)+16,Math.floor((i+16)/2)]]});
-        polygons.push({edges:[16+((i+1)%16),i+16,32+Math.floor((i/2))],faces:[16+((i+1)%16),i+16,32+Math.floor((i/2))]});
+        // polygons.push({edges:[i+16,((i+17)%16)+16,Math.floor((i+16)/2)],faces:[[i+16,((i+17)%16)+16,Math.floor((i+16)/2)]]});
+        // polygons.push({edges:[16+((i+1)%16),i+16,32+Math.floor((i/2))],faces:[16+((i+1)%16),i+16,32+Math.floor((i/2))]});
     }
-        
-    // Generate Quads
-    for(var i=1;i<8;i++){
-        // polygons.push({edges:[i,(i+7),((i+8)*2),i+8]});
-        polygons.push({edges:[i,(i+7),i+8]});
-        polygons.push({edges:[i+8,(i+7),((i+8)*2)]});        
-    }
-    //polygons.push({edges:[0,15,16,8]});
-    polygons.push({edges:[0,15,8]});
-    polygons.push({edges:[8,15,16]});
 
-    // Bottom Quads
+    // Generate Quads
     for(var i=0;i<8;i++){
-        polygons.push({edges:[i+32,32+((i+1)%8),16+(((i+1)*2)%16)]});
-        polygons.push({edges:[32+((i+1)%8),i+32,40]});
+        polygons.push({edges:[(i+1)%16,(i+8),(((16+(i+1)*2)%32)),i+9],faces:[[i,(i+7),i+8],[i+8,(i+7),((i+8)*2)]]});   
+        // polygons.push({edges:[i+32,32+((i+1)%8),16+(((i+1)*2)%16)]});
+        // polygons.push({edges:[32+((i+1)%8),i+32,40]});
     }
 
     // Show flat polygons
@@ -358,7 +349,7 @@ function drawHead()
     }
 
     window.requestAnimationFrame(drawHead);
-//    setTimeout(drawHead,100);
+    //setTimeout(drawHead,100);
 
 }
 		
