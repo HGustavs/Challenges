@@ -94,7 +94,7 @@ function perspectiveM(fOVInRad, aspectRatio, near, far)
   return [
     f / aspectRatio, 0,                          0,   0,
     0,               f,                          0,   0,
-    0,               0,    (near + far) * rangeInv,  -1,
+    0,               0, (near + far) * rangeInv   ,  -1,
     0,               0,  near * far * rangeInv * 2,   0
   ];    
 }
@@ -225,34 +225,79 @@ function drawHead()
 
     c.globalAlpha=1.0;
 		c.clearRect(0,0,xmax,ymax);
-	
-		c.fillStyle = "RGB(0,59,85)";	
-		c.strokeStyle="#bbb";
 
 		var polygons=[];
 		var vertices=[];
+    var sides=5;
 
-		// Generate first set of vertices
-    for(var v=0;v<6.28;v+=(6.28/8)){
-        vertices.push([Math.sin(v)*80,-80,objp+(Math.cos(v)*80),1.0]);
-    }
-    for(var v=(6.28/16);v<6.28+((6.28/16));v+=(6.28/8)){
-        vertices.push([Math.sin(v)*120,-70,objp+(Math.cos(v)*120),1.0]);
-    }
-    for(var v=0;v<6.28;v+=(6.28/16)){
-        vertices.push([Math.sin(v)*150,-30,objp+(Math.cos(v)*150),1.0]);
-    }
-    for(var v=(6.28/16);v<6.28+(6.28/16);v+=(6.28/8)){
-        vertices.push([Math.sin(v)*100,20,objp+(Math.cos(v)*100),1.0]);
-    }
-    vertices.push([0,100,0,1.0]);    
+    if(sides==5){
+        for(var v=0;v<6.28;v+=(6.28/5)){
+            vertices.push([Math.sin(v)*80,-100,objp+(Math.cos(v)*80),1.0]);
+        }      
+        for(var v=0;v<6.28;v+=(6.28/5)){
+            vertices.push([Math.sin(v+(6.28/10))*110,-80,objp+(Math.cos(v+(6.28/10))*110),1.0]);
+        }      
+        for(var v=0;v<6.28;v+=(6.28/10)){
+            vertices.push([Math.sin(v+(6.28/20))*140,-60,objp+(Math.cos(v+(6.28/20))*140),1.0]);
+        }   
 
+        // Generate Pentagon
+        polygons.push({edges:[0,1,2,3,4],faces:[[3,1,2],[3,4,1],[4,0,1]]});
+
+        for(var i=0;i<5;i++){
+            polygons.push({edges:[(i+1)%5,i,i+5],faces:[[(i+1)%5,i,i+5]]});
+            polygons.push({edges:[i+5,i,10+(i*2)],faces:[[i+5,i,10+(i*2)]]});
+            polygons.push({edges:[(i+1)%5,i+5,11+(i*2)],faces:[[(i+1)%5,i+5,11+(i*2)]]});
+            polygons.push({edges:[(i*2)+10,(i*2)+11,i+5],faces:[[(i*2)+10,(i*2)+11,i+5]]});
+            polygons.push({edges:[(i*2)+11,10+(((i*2)+2)%10),(i+1)%5],faces:[[(i*2)+11,10+(((i*2)+2)%10),(i+1)%5]]});
+
+            //console.log();
+        }
+        // 11,1,12
+        // 13,2,14
+
+
+    }else if(sides==8){
+    		// Generate first set of vertices
+        for(var v=0;v<6.28;v+=(6.28/8)){
+            vertices.push([Math.sin(v)*80,-80,objp+(Math.cos(v)*80),1.0]);
+        }
+        for(var v=(6.28/16);v<6.28+((6.28/16));v+=(6.28/8)){
+            vertices.push([Math.sin(v)*120,-70,objp+(Math.cos(v)*120),1.0]);
+        }
+        for(var v=0;v<6.28;v+=(6.28/16)){
+            vertices.push([Math.sin(v)*150,-30,objp+(Math.cos(v)*150),1.0]);
+        }
+        for(var v=(6.28/16);v<6.28+(6.28/16);v+=(6.28/8)){
+            vertices.push([Math.sin(v)*100,20,objp+(Math.cos(v)*100),1.0]);
+        }
+        vertices.push([0,100,0,1.0]);    
+
+    	  // Generate Octagons
+        // polygons.push({edges:[0,1,2,3,4,5,6,7]});
+        
+        // Generate Triangles
+        for(var i=0;i<8;i++){
+            polygons.push({edges:[(i+1)%8,i,i+8],faces:[[(i+1)%8,i,i+8]]});
+        }
+        for(var i=0;i<16;i++){
+            polygons.push({edges:[i+16,((i+17)%16)+16,Math.floor((i+16)/2)],faces:[[i+16,((i+17)%16)+16,Math.floor((i+16)/2)]]});
+            polygons.push({edges:[16+((i+1)%16),i+16,32+Math.floor((i/2))],faces:[[16+((i+1)%16),i+16,32+Math.floor((i/2))]]});
+        }
+
+        // Generate Quads
+        for(var i=0;i<8;i++){
+            polygons.push({edges:[(i+8),16+(((i+1)*2)%16),8+((i+1)%8),(i+1)%8],faces:[[(i+8),16+(((i+1)*2)%16),8+((i+1)%8)],[(i+1)%8,(i+8),8+((i+1)%8)]]});       
+            polygons.push({edges:[i+32,40,32+((i+1)%8),16+(((i+1)*2)%16)],faces:[[i+32,32+((i+1)%8),16+(((i+1)*2)%16)],[i+32,40,32+((i+1)%8)]]});
+        }
+    }
+    
     c.fillStyle="#55f"; 
     c.strokeStyle="#080";       
     c.font = "18px Arial Narrow";
     c.textBaseline = 'middle';
 
-    for(var i=16;i<vertices.length;i++){
+    for(var i=0;i<vertices.length;i++){
         var vert=vertices[i];
 
         c.beginPath();
@@ -262,39 +307,18 @@ function drawHead()
         c.fillText(i, 800+vert[0]+8, 200+vert[2]);     
     }
 
-    c.beginPath();
-   // c.rect(300,300,200,200);
-    c.stroke();
-
-	  // Generate Octagons
-    polygons.push({edges:[0,1,2,3,4,5,6,7]});
-    
-    // Generate Triangles
-    for(var i=0;i<8;i++){
-        // polygons.push({edges:[(i+1)%8,i,i+8],faces:[[[(i+1)%8,i,i+8]]]});
-    }
-    for(var i=0;i<16;i++){
-        // polygons.push({edges:[i+16,((i+17)%16)+16,Math.floor((i+16)/2)],faces:[[i+16,((i+17)%16)+16,Math.floor((i+16)/2)]]});
-        // polygons.push({edges:[16+((i+1)%16),i+16,32+Math.floor((i/2))],faces:[16+((i+1)%16),i+16,32+Math.floor((i/2))]});
-    }
-
-    // Generate Quads
-    for(var i=0;i<8;i++){
-        polygons.push({edges:[(i+1)%16,(i+8),(((16+(i+1)*2)%32)),i+9],faces:[[i,(i+7),i+8],[i+8,(i+7),((i+8)*2)]]});   
-        // polygons.push({edges:[i+32,32+((i+1)%8),16+(((i+1)*2)%16)]});
-        // polygons.push({edges:[32+((i+1)%8),i+32,40]});
-    }
-
     // Show flat polygons
     for(var i=0;i<polygons.length;i++){
-        edges=polygons[i].edges;
-        for(var j=0;j<edges.length;j++){
-            c.beginPath();
-            c.moveTo(800+(vertices[edges[j]][0]),200+(vertices[edges[j]][2]));
-            c.lineTo(800+(vertices[edges[(j+1)%edges.length]][0]),200+(vertices[edges[(j+1)%edges.length]][2]));
-            c.moveTo(800+(vertices[edges[j]][0]),600+(vertices[edges[j]][1]));
-            c.lineTo(800+(vertices[edges[(j+1)%edges.length]][0]),600+(vertices[edges[(j+1)%edges.length]][1]));
-            c.stroke();
+        for(k=0;k<polygons[i].faces.length;k++){
+            var edges=polygons[i].faces[k];
+            for(var j=0;j<edges.length;j++){
+                c.beginPath();
+                c.moveTo(800+(vertices[edges[j]][0]),200+(vertices[edges[j]][2]));
+                c.lineTo(800+(vertices[edges[(j+1)%edges.length]][0]),200+(vertices[edges[(j+1)%edges.length]][2]));
+                c.moveTo(800+(vertices[edges[j]][0]),600+(vertices[edges[j]][1]));
+                c.lineTo(800+(vertices[edges[(j+1)%edges.length]][0]),600+(vertices[edges[(j+1)%edges.length]][1]));
+                c.stroke();
+            }
         }
     }
   
@@ -329,27 +353,26 @@ function drawHead()
 
     // Draw polygons
     for(var i=0;i<polygons.length;i++){
-      edges=polygons[i].edges;
-      if(edges.length>=3){
-        // normal=((p3x - p1x)*(p3y - p2y)) - ((p3y - p1y)* (p3x - p2x));
-        var normal=((vertices[edges[2]][0]-vertices[edges[0]][0])*(vertices[edges[2]][1]-vertices[edges[1]][1]))-
-                   ((vertices[edges[2]][1]-vertices[edges[0]][1])*(vertices[edges[2]][0]-vertices[edges[1]][0]));
-        if(normal>0){
-            c.beginPath();
-            for(var j=0;j<edges.length;j++){
-                if(j==0){
-                  c.moveTo(400+(vertices[edges[edges.length-1]][0]*100),400+(vertices[edges[edges.length-1]][1]*100));
-                }
-                c.lineTo(400+(vertices[edges[j]][0]*100),400+(vertices[edges[j]][1]*100));
+        var edges=polygons[i].edges;
+        if(polygons[i].faces.length>0){
+            var face=polygons[i].faces[0]; 
+            var normal=((vertices[face[2]][0]-vertices[face[0]][0])*(vertices[face[2]][1]-vertices[face[1]][1]))-
+                           ((vertices[face[2]][1]-vertices[face[0]][1])*(vertices[face[2]][0]-vertices[face[1]][0]));
+            if(edges.length>=3&&normal>0){
+                    c.beginPath();
+                    for(var j=0;j<edges.length;j++){
+                        if(j==0){
+                          c.moveTo(400+(vertices[edges[edges.length-1]][0]*100),400+(vertices[edges[edges.length-1]][1]*100));
+                        }
+                        c.lineTo(400+(vertices[edges[j]][0]*100),400+(vertices[edges[j]][1]*100));
+                    }
+                    c.fill();
+                    c.stroke();
             }
-            c.fill();
-            c.stroke();
         }
-      }
     }
 
     window.requestAnimationFrame(drawHead);
-    //setTimeout(drawHead,100);
 
 }
 		
