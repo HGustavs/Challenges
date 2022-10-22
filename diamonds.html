@@ -183,33 +183,19 @@ function crossV(vecA,vecB)
 // * Uses 3 arbitrary points
 //----------------------------------------------------------------------
 // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-/*
-Begin Function CalculateSurfaceNormal (Input Triangle) Returns Vector
+function calculateNormal(p1,p2,p3)
+{
+    var U=[p2[0]-p1[0],p2[1]-p1[1],p2[2]-p1[2]];
+    var V=[p3[0]-p1[0],p3[1]-p1[1],p3[2]-p1[2]];
 
-	Set Vector U to (Triangle.p2 minus Triangle.p1)
-	Set Vector V to (Triangle.p3 minus Triangle.p1)
+    var Normal=[0,0,0];
+    Normal[0]=(U[1]*V[2])-(U[2]*V[1]); //(Uy*Vz)-(Uz*Vy)
+    Normal[1]=(U[2]*V[0])-(U[0]*V[2]); //(Uz*Vx)-(Ux*Vz)
+    Normal[2]=(U[0]*V[1])-(U[1]*V[0]); //(Ux*Vy)-(Uy*Vx)
 
-	Set Normal.x to (multiply U.y by V.z) minus (multiply U.z by V.y)
-	Set Normal.y to (multiply U.z by V.x) minus (multiply U.x by V.z)
-	Set Normal.z to (multiply U.x by V.y) minus (multiply U.y by V.x)
-
-	Returning Normal
-
-End Function
-*/
-
-/*
-          // Culling
-					// Compute normal for backface culling
-					normal=((p3x - p1x)*(p3y - p2y)) - ((p3y - p1y)* (p3x - p2x));
-					
-					if(normal<0){
-							light=(-normal/16000);
-					}else{
-							light=0;
-					}
-
-*/
+    Normal=normalizeV(Normal);
+    return Normal;
+}
 
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
@@ -234,6 +220,11 @@ function drawHead()
     var sides=5;
 
     generate(vertices,polygons);
+    
+    for(var i=0;i<polygons.length;i++){
+        var face=polygons[i].faces[0];
+        polygons[i].normal=calculateNormal(vertices[face[0]],vertices[face[1]],vertices[face[2]]);
+    }
     
     c.fillStyle="#55f"; 
     c.strokeStyle="#080";       
@@ -270,7 +261,7 @@ function drawHead()
             }
         }
     }
-  
+
     // Generate view matrix for a camera at 0,0,-200 looking at 0,0,0 with an up-vector poinint up in Y
     var viewMatrix=LookAtMat([400*Math.sin(vx),50,400*Math.cos(vx)],[0,0,0],[0,1,0]);
 
@@ -281,9 +272,6 @@ function drawHead()
     var vpMatrix=mulMM(viewMatrix,perspMatrix);
 
     for(var i=0;i<vertices.length;i++){
-        // Multi-step matrix multiplication
-        // var resP=mulMP(viewMatrix,vertices[i]);
-        // var resQ=mulMP(perspMatrix,resP);
         var resQ=mulMP(vpMatrix,vertices[i]);
 
         // Perspective division (https://www.mathematik.uni-marburg.de/~thormae/lectures/graphics1/graphics_6_1_eng_web.html#1)
@@ -296,7 +284,6 @@ function drawHead()
             c.beginPath();
             c.arc(400+(resQ[0]*100), 400+(resQ[1]*100), 5, 0, 2 * Math.PI);
             c.fill();        
-
         }
     }    
 
@@ -307,6 +294,13 @@ function drawHead()
             var face=polygons[i].faces[0]; 
             var normal=((vertices[face[2]][0]-vertices[face[0]][0])*(vertices[face[2]][1]-vertices[face[1]][1]))-
                            ((vertices[face[2]][1]-vertices[face[0]][1])*(vertices[face[2]][0]-vertices[face[1]][0]));
+            
+            var R=Math.floor(Math.max(polygons[i].normal[0],0)*255);
+            var G=Math.floor(Math.max(polygons[i].normal[1],0)*255);
+            var B=Math.floor(Math.max(polygons[i].normal[2],0)*255);
+
+            c.fillStyle="RGB("+R+","+G+","+B+")";
+
             if(edges.length>=3&&normal>0){
                     c.beginPath();
                     for(var j=0;j<edges.length;j++){
@@ -316,7 +310,7 @@ function drawHead()
                         c.lineTo(400+(vertices[edges[j]][0]*100),400+(vertices[edges[j]][1]*100));
                     }
                     c.fill();
-                    c.stroke();
+                    // c.stroke();
             }
         }
     }
