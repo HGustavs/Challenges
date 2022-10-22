@@ -1,5 +1,6 @@
 <html>
 	<head>
+  <script src="proc3d/diamond5a.js"></script>
 	<script>
 
 //------------------------------------=======############==========----------------------------------------
@@ -16,7 +17,9 @@
 // Construct view matrix / projection matrix
 // https://www.3dgep.com/understanding-the-view-matrix/
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_model_view_projection#perspective_projection_matrix
-
+// Orthogonal matrices
+// https://www.gamedev.net/forums/topic/711336-create-an-isometric-view-with-opengl-and-c/
+// https://blog.demofox.org/2017/03/31/orthogonal-projection-matrix-plainly-explained/
 var c;
 var arrpnt=[];
 var delay=30;		
@@ -230,81 +233,27 @@ function drawHead()
 		var vertices=[];
     var sides=5;
 
-    if(sides==5){
-        for(var v=0;v<6.28;v+=(6.28/5)){
-            vertices.push([Math.sin(v)*80,-100,objp+(Math.cos(v)*80),1.0]);
-        }      
-        for(var v=0;v<6.28;v+=(6.28/5)){
-            vertices.push([Math.sin(v+(6.28/10))*110,-80,objp+(Math.cos(v+(6.28/10))*110),1.0]);
-        }      
-        for(var v=0;v<6.28;v+=(6.28/10)){
-            vertices.push([Math.sin(v+(6.28/20))*140,-60,objp+(Math.cos(v+(6.28/20))*140),1.0]);
-        }   
-
-        // Generate Pentagon
-        polygons.push({edges:[0,1,2,3,4],faces:[[3,1,2],[3,4,1],[4,0,1]]});
-
-        for(var i=0;i<5;i++){
-            polygons.push({edges:[(i+1)%5,i,i+5],faces:[[(i+1)%5,i,i+5]]});
-            polygons.push({edges:[i+5,i,10+(i*2)],faces:[[i+5,i,10+(i*2)]]});
-            polygons.push({edges:[(i+1)%5,i+5,11+(i*2)],faces:[[(i+1)%5,i+5,11+(i*2)]]});
-            polygons.push({edges:[(i*2)+10,(i*2)+11,i+5],faces:[[(i*2)+10,(i*2)+11,i+5]]});
-            polygons.push({edges:[(i*2)+11,10+(((i*2)+2)%10),(i+1)%5],faces:[[(i*2)+11,10+(((i*2)+2)%10),(i+1)%5]]});
-
-            //console.log();
-        }
-        // 11,1,12
-        // 13,2,14
-
-
-    }else if(sides==8){
-    		// Generate first set of vertices
-        for(var v=0;v<6.28;v+=(6.28/8)){
-            vertices.push([Math.sin(v)*80,-80,objp+(Math.cos(v)*80),1.0]);
-        }
-        for(var v=(6.28/16);v<6.28+((6.28/16));v+=(6.28/8)){
-            vertices.push([Math.sin(v)*120,-70,objp+(Math.cos(v)*120),1.0]);
-        }
-        for(var v=0;v<6.28;v+=(6.28/16)){
-            vertices.push([Math.sin(v)*150,-30,objp+(Math.cos(v)*150),1.0]);
-        }
-        for(var v=(6.28/16);v<6.28+(6.28/16);v+=(6.28/8)){
-            vertices.push([Math.sin(v)*100,20,objp+(Math.cos(v)*100),1.0]);
-        }
-        vertices.push([0,100,0,1.0]);    
-
-    	  // Generate Octagons
-        // polygons.push({edges:[0,1,2,3,4,5,6,7]});
-        
-        // Generate Triangles
-        for(var i=0;i<8;i++){
-            polygons.push({edges:[(i+1)%8,i,i+8],faces:[[(i+1)%8,i,i+8]]});
-        }
-        for(var i=0;i<16;i++){
-            polygons.push({edges:[i+16,((i+17)%16)+16,Math.floor((i+16)/2)],faces:[[i+16,((i+17)%16)+16,Math.floor((i+16)/2)]]});
-            polygons.push({edges:[16+((i+1)%16),i+16,32+Math.floor((i/2))],faces:[[16+((i+1)%16),i+16,32+Math.floor((i/2))]]});
-        }
-
-        // Generate Quads
-        for(var i=0;i<8;i++){
-            polygons.push({edges:[(i+8),16+(((i+1)*2)%16),8+((i+1)%8),(i+1)%8],faces:[[(i+8),16+(((i+1)*2)%16),8+((i+1)%8)],[(i+1)%8,(i+8),8+((i+1)%8)]]});       
-            polygons.push({edges:[i+32,40,32+((i+1)%8),16+(((i+1)*2)%16)],faces:[[i+32,32+((i+1)%8),16+(((i+1)*2)%16)],[i+32,40,32+((i+1)%8)]]});
-        }
-    }
+    generate(vertices,polygons);
     
     c.fillStyle="#55f"; 
     c.strokeStyle="#080";       
     c.font = "18px Arial Narrow";
     c.textBaseline = 'middle';
 
-    for(var i=0;i<vertices.length;i++){
+    for(var i=10;i<vertices.length;i++){
         var vert=vertices[i];
 
         c.beginPath();
         c.arc(800+vert[0], 200+vert[2], 5, 0, 2 * Math.PI);
         c.fill();
-
-        c.fillText(i, 800+vert[0]+8, 200+vert[2]);     
+        c.fillText(i, 800+vert[0]+8, 200+vert[2]);
+        
+        if(vert[2]>0){
+            c.beginPath();
+            c.arc(800+vert[0], 600+vert[1], 5, 0, 2 * Math.PI);
+            c.fill();
+            c.fillText(i, 800+vert[0]+8, 600+vert[1]);     
+        }
     }
 
     // Show flat polygons
