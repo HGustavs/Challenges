@@ -15,11 +15,11 @@ function generate(vertices,polygons)
     vertices.push([0,90,0,1.0]);
 
     // Generate Pentagon
-    polygons.push({faces:[[3,1,2],[3,4,1],[4,0,1]],edges:[[0,1,1],[1,0,0],[1,1,0]]});
+    polygons.push({faces:[[3,1,2],[3,4,1],[4,0,1]],edges:[[0,1,1],[1,0,0],[1,1,0]],poly:[0,1,2,3,4]});
 
     // Generate Quads
     for(var i=0;i<10;i++){
-      polygons.push({faces:[[((i+1)%10)+20,((i+1)%10)+10,i+20],[((i+1)%10)+20,i+20,30]],edges:[[1,1,0],[0,1,1]]});
+      polygons.push({faces:[[((i+1)%10)+20,((i+1)%10)+10,i+20],[((i+1)%10)+20,i+20,30]],edges:[[1,1,0],[0,1,1]],poly:[((i+1)%10)+20,((i+1)%10)+10,i+20,30]});
     }    
   
     // Generate triangles

@@ -197,14 +197,18 @@ function calculateNormal(p1,p2,p3)
     return Normal;
 }
 
-function drawTriangle(cx,cy,p1x,p1y,p2x,p2y,p3x,p3y,color,edgelist)
+function drawTriangle(cx,cy,p1x,p1y,p2x,p2y,p3x,p3y,fillstate)
 {
     c.beginPath();
     c.moveTo(cx+p1x,cy+p1y);
     c.lineTo(cx+p2x,cy+p2y);
     c.lineTo(cx+p3x,cy+p3y);
-    c.closePath();      
-    c.stroke();
+    c.closePath();
+    if(fillstate){
+        c.fill();
+    }else{
+        c.stroke();
+    }     
 }
 
 //----------------------------------------------------------------------------------
@@ -262,8 +266,8 @@ function drawHead()
     for(var i=0;i<polygons.length;i++){
         for(k=0;k<polygons[i].faces.length;k++){
             var face=polygons[i].faces[k];
-            drawTriangle(800,600,vertices[face[0]][0],vertices[face[0]][1],vertices[face[1]][0],vertices[face[1]][1],vertices[face[2]][0],vertices[face[2]][1],"#000",[1,1,1]);
-            drawTriangle(800,200,vertices[face[0]][0],vertices[face[0]][2],vertices[face[1]][0],vertices[face[1]][2],vertices[face[2]][0],vertices[face[2]][2],"#000",[1,1,1]);
+            drawTriangle(800,600,vertices[face[0]][0],vertices[face[0]][1],vertices[face[1]][0],vertices[face[1]][1],vertices[face[2]][0],vertices[face[2]][1],0);
+            drawTriangle(800,200,vertices[face[0]][0],vertices[face[0]][2],vertices[face[1]][0],vertices[face[1]][2],vertices[face[2]][0],vertices[face[2]][2],0);
         }
     }
 
@@ -308,24 +312,12 @@ function drawHead()
 
                 c.fillStyle="RGB("+R+","+G+","+B+")";
 
-                var p1x=400+(vertices[face[0]][0]*100);
-                var p1y=400+(vertices[face[0]][1]*100);
-                var p2x=400+(vertices[face[1]][0]*100);
-                var p2y=400+(vertices[face[1]][1]*100);
-                var p3x=400+(vertices[face[2]][0]*100);
-                var p3y=400+(vertices[face[2]][1]*100);
-
-                c.beginPath();
-                c.moveTo(p1x,p1y);
-                c.lineTo(p2x,p2y);
-                c.lineTo(p3x,p3y);
-                c.closePath();
-                c.fill();
+                drawTriangle(400,400,vertices[face[0]][0]*100,vertices[face[0]][1]*100,vertices[face[1]][0]*100,vertices[face[1]][1]*100,vertices[face[2]][0]*100,vertices[face[2]][1]*100,1);
 
                 // Make polygon edges
-                if(edges[0]) strokes.push([p1x,p1y,p2x,p2y]);
-                if(edges[1]) strokes.push([p2x,p2y,p3x,p3y]);
-                if(edges[2]) strokes.push([p3x,p3y,p1x,p1y]);
+                if(edges[0]) strokes.push([vertices[face[0]][0]*100,vertices[face[0]][1]*100,vertices[face[1]][0]*100,vertices[face[1]][1]*100],0);
+                if(edges[1]) strokes.push([vertices[face[1]][0]*100,vertices[face[1]][1]*100,vertices[face[2]][0]*100,vertices[face[2]][1]*100],0);
+                if(edges[2]) strokes.push([vertices[face[2]][0]*100,vertices[face[2]][1]*100,vertices[face[0]][0]*100,vertices[face[0]][1]*100],0);
 
             }
         }
