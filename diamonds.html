@@ -197,6 +197,16 @@ function calculateNormal(p1,p2,p3)
     return Normal;
 }
 
+function drawTriangle(cx,cy,p1x,p1y,p2x,p2y,p3x,p3y,color,edgelist)
+{
+    c.beginPath();
+    c.moveTo(cx+p1x,cy+p1y);
+    c.lineTo(cx+p2x,cy+p2y);
+    c.lineTo(cx+p3x,cy+p3y);
+    c.closePath();      
+    c.stroke();
+}
+
 //----------------------------------------------------------------------------------
 // drawHead - Clear screen and keep drawing
 //----------------------------------------------------------------------------------
@@ -252,19 +262,9 @@ function drawHead()
     for(var i=0;i<polygons.length;i++){
         for(k=0;k<polygons[i].faces.length;k++){
             var face=polygons[i].faces[k];
-                c.beginPath();
-                c.moveTo(800+(vertices[face[0]][0]),600+(vertices[face[0]][1]));
-                c.lineTo(800+(vertices[face[1]][0]),600+(vertices[face[1]][1]));
-                c.lineTo(800+(vertices[face[2]][0]),600+(vertices[face[2]][1]));
-                c.closePath();
-
-                c.moveTo(800+(vertices[face[0]][0]),200+(vertices[face[0]][2]));
-                c.lineTo(800+(vertices[face[1]][0]),200+(vertices[face[1]][2]));
-                c.lineTo(800+(vertices[face[2]][0]),200+(vertices[face[2]][2]));
-                c.stroke();
-                c.closePath();
-
-              }
+            drawTriangle(800,600,vertices[face[0]][0],vertices[face[0]][1],vertices[face[1]][0],vertices[face[1]][1],vertices[face[2]][0],vertices[face[2]][1],"#000",[1,1,1]);
+            drawTriangle(800,200,vertices[face[0]][0],vertices[face[0]][2],vertices[face[1]][0],vertices[face[1]][2],vertices[face[2]][0],vertices[face[2]][2],"#000",[1,1,1]);
+        }
     }
 
     // Generate view matrix for a camera at 0,0,-200 looking at 0,0,0 with an up-vector poinint up in Y
