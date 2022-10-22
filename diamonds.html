@@ -197,6 +197,17 @@ function calculateNormal(p1,p2,p3)
     return Normal;
 }
 
+// ------------========#### Triangle Surface Normal ####========------------
+// * Uses 2 points - point of light and polygon vertex
+//----------------------------------------------------------------------
+
+function calculateEye(vert,light)
+{
+    var eye=subV(vert,light);
+    eye=normalizeV(eye);
+    return eye;
+}
+
 function drawTriangle(cx,cy,p1x,p1y,p2x,p2y,p3x,p3y,fillstate)
 {
     c.beginPath();
@@ -235,10 +246,14 @@ function drawHead()
     var sides=5;
 
     generate(vertices,polygons);
+
+    // For example a rotation goes here!
     
     for(var i=0;i<polygons.length;i++){
         var face=polygons[i].faces[0];
         polygons[i].normal=calculateNormal(vertices[face[0]],vertices[face[1]],vertices[face[2]]);
+        polygons[i].eyevec=calculateEye(vertices[face[0]],[400*Math.sin(vx+1.5),50,400*Math.cos(vx+1.5)]);
+        polygons[i].light=dotV(polygons[i].normal,polygons[i].eyevec);
     }
     
     c.fillStyle="#55f"; 
@@ -306,10 +321,9 @@ function drawHead()
             var cull=((vertices[face[2]][0]-vertices[face[0]][0])*(vertices[face[2]][1]-vertices[face[1]][1]))-
                            ((vertices[face[2]][1]-vertices[face[0]][1])*(vertices[face[2]][0]-vertices[face[1]][0]));
             if(cull>0){
-                var R=Math.floor(Math.max(polygons[i].normal[0],0)*255);
-                var G=Math.floor(Math.max(polygons[i].normal[1],0)*255);
-                var B=Math.floor(Math.max(polygons[i].normal[2],0)*255);
-
+                var R=Math.floor(Math.max(-polygons[i].light,0)*255);
+                var G=Math.floor(Math.max(-polygons[i].light,0)*255);
+                var B=Math.floor(Math.max(-polygons[i].light,0)*255);
                 c.fillStyle="RGB("+R+","+G+","+B+")";
 
                 drawTriangle(400,400,vertices[face[0]][0]*100,vertices[face[0]][1]*100,vertices[face[1]][0]*100,vertices[face[1]][1]*100,vertices[face[2]][0]*100,vertices[face[2]][1]*100,1);
@@ -330,9 +344,9 @@ function drawHead()
     for(var i=0;i<strokes.length;i++){
         var stroke=strokes[i];
         c.beginPath();
-        c.moveTo(stroke[0],stroke[1]);
-        c.lineTo(stroke[2],stroke[3]);
-        //c.stroke();
+        c.moveTo(400+stroke[0],400+stroke[1]);
+        c.lineTo(400+stroke[2],400+stroke[3]);
+        c.stroke();
     }
     c.globalAlpha=1.0;
 
@@ -344,8 +358,7 @@ function mousemove(e)
 {
 		var rect = e.target.getBoundingClientRect();
 		mx = e.clientX - rect.left; //x position within the element.
-		my = e.clientY - rect.top;  //y position within the element.	
-    
+		my = e.clientY - rect.top;  //y position within the element.	   
 }
 
 	</script>
