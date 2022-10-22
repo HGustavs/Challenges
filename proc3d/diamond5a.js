@@ -15,22 +15,23 @@ function generate(vertices,polygons)
     vertices.push([0,90,0,1.0]);
 
     // Generate Pentagon
-    polygons.push({edges:[0,1,2,3,4],faces:[[3,1,2],[3,4,1],[4,0,1]]});
+    polygons.push({faces:[[3,1,2],[3,4,1],[4,0,1]],edges:[[0,1,1],[1,0,0],[1,1,0]]});
 
+    // Generate Quads
+    for(var i=0;i<10;i++){
+      polygons.push({faces:[[((i+1)%10)+20,((i+1)%10)+10,i+20],[((i+1)%10)+20,i+20,30]],edges:[[1,1,0],[0,1,1]]});
+    }    
+  
+    // Generate triangles
     for(var i=0;i<5;i++){
-      polygons.push({edges:[(i+1)%5,i,i+5],faces:[[(i+1)%5,i,i+5]]});
-      polygons.push({edges:[i+5,i,10+(i*2)],faces:[[i+5,i,10+(i*2)]]});
-      polygons.push({edges:[(i+1)%5,i+5,11+(i*2)],faces:[[(i+1)%5,i+5,11+(i*2)]]});
-      polygons.push({edges:[(i*2)+10,(i*2)+11,i+5],faces:[[(i*2)+10,(i*2)+11,i+5]]});
-      polygons.push({edges:[(i*2)+11,10+(((i*2)+2)%10),(i+1)%5],faces:[[(i*2)+11,10+(((i*2)+2)%10),(i+1)%5]]});
+      polygons.push({faces:[[(i+1)%5,i,i+5]],edges:[[1,1,1]]});
+      polygons.push({faces:[[i+5,i,10+(i*2)]],edges:[[1,1,1]]});
+      polygons.push({faces:[[(i+1)%5,i+5,11+(i*2)]],edges:[[1,1,1]]});
+      polygons.push({faces:[[(i*2)+10,(i*2)+11,i+5]],edges:[[1,1,1]]});
+      polygons.push({faces:[[(i*2)+11,10+(((i*2)+2)%10),(i+1)%5]],edges:[[1,1,1]]});
     }
-
     for(var i=0;i<10;i++){
-      polygons.push({edges:[((i+1)%10)+10,i+10,i+20],faces:[[((i+1)%10)+10,i+10,i+20]]});
-    }
-
-    for(var i=0;i<10;i++){
-      polygons.push({edges:[((i+1)%10)+20,((i+1)%10)+10,i+20,30],faces:[[((i+1)%10)+20,((i+1)%10)+10,i+20],[((i+1)%10)+20,i+20,30]]});
+      polygons.push({faces:[[((i+1)%10)+10,i+10,i+20]],edges:[[1,1,1]]});
     }
 
 }

@@ -217,6 +217,7 @@ function drawHead()
 
 		var polygons=[];
 		var vertices=[];
+    var strokes=[];
     var sides=5;
 
     generate(vertices,polygons);
@@ -248,6 +249,7 @@ function drawHead()
     }
 
     // Show flat polygons
+    /*
     for(var i=0;i<polygons.length;i++){
         for(k=0;k<polygons[i].faces.length;k++){
             var edges=polygons[i].faces[k];
@@ -261,6 +263,7 @@ function drawHead()
             }
         }
     }
+    */
 
     // Generate view matrix for a camera at 0,0,-200 looking at 0,0,0 with an up-vector poinint up in Y
     var viewMatrix=LookAtMat([400*Math.sin(vx),50,400*Math.cos(vx)],[0,0,0],[0,1,0]);
@@ -289,33 +292,56 @@ function drawHead()
 
     // Draw polygons
     for(var i=0;i<polygons.length;i++){
-        var edges=polygons[i].edges;
-        if(polygons[i].faces.length>0){
-            var face=polygons[i].faces[0]; 
-            var normal=((vertices[face[2]][0]-vertices[face[0]][0])*(vertices[face[2]][1]-vertices[face[1]][1]))-
-                           ((vertices[face[2]][1]-vertices[face[0]][1])*(vertices[face[2]][0]-vertices[face[1]][0]));
+        for(var j=0;j<polygons[i].faces.length;j++){
+            var face=polygons[i].faces[j];
+            var edges=polygons[i].edges[j];
             
-            var R=Math.floor(Math.max(polygons[i].normal[0],0)*255);
-            var G=Math.floor(Math.max(polygons[i].normal[1],0)*255);
-            var B=Math.floor(Math.max(polygons[i].normal[2],0)*255);
+            // Clockwise culling of camera facing triangles
+            var cull=((vertices[face[2]][0]-vertices[face[0]][0])*(vertices[face[2]][1]-vertices[face[1]][1]))-
+                           ((vertices[face[2]][1]-vertices[face[0]][1])*(vertices[face[2]][0]-vertices[face[1]][0]));
+            if(cull>0){
+                var R=Math.floor(Math.max(polygons[i].normal[0],0)*255);
+                var G=Math.floor(Math.max(polygons[i].normal[1],0)*255);
+                var B=Math.floor(Math.max(polygons[i].normal[2],0)*255);
 
-            c.fillStyle="RGB("+R+","+G+","+B+")";
+                c.fillStyle="RGB("+R+","+G+","+B+")";
 
-            if(edges.length>=3&&normal>0){
-                    c.beginPath();
-                    for(var j=0;j<edges.length;j++){
-                        if(j==0){
-                          c.moveTo(400+(vertices[edges[edges.length-1]][0]*100),400+(vertices[edges[edges.length-1]][1]*100));
-                        }
-                        c.lineTo(400+(vertices[edges[j]][0]*100),400+(vertices[edges[j]][1]*100));
-                    }
-                    c.fill();
-                    // c.stroke();
+                var p1x=400+(vertices[face[0]][0]*100);
+                var p1y=400+(vertices[face[0]][1]*100);
+                var p2x=400+(vertices[face[1]][0]*100);
+                var p2y=400+(vertices[face[1]][1]*100);
+                var p3x=400+(vertices[face[2]][0]*100);
+                var p3y=400+(vertices[face[2]][1]*100);
+
+                c.moveTo(p1x,p1y);
+                c.lineTo(p2x,p2y);
+                c.lineTo(p3x,p3y);
+                c.closePath();
+                c.fill();
+
+                console.log(edges);
+
+                // Make polygon edges
+                if(edges[0]) strokes.push([p1x,p1y,p2x,p2y]);
+                if(edges[1]) strokes.push([p2x,p2y,p3x,p3y]);
+                if(edges[2]) strokes.push([p3x,p3y,p1x,p1y]);
+
             }
         }
     }
 
-    window.requestAnimationFrame(drawHead);
+    // Draw strokes
+    c.lineWidth=3;
+    c.strokeStyle="#000";
+    for(var i=0;i<strokes.length;i++){
+        var stroke=strokes[i];
+        c.beginPath();
+        c.moveTo(stroke[0],stroke[1]);
+        c.lineTo(stroke[2],stroke[3]);
+        c.stroke();
+    }
+
+    // window.requestAnimationFrame(drawHead);
 
 }
 		
