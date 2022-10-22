@@ -313,13 +313,12 @@ function drawHead()
                 var p3x=400+(vertices[face[2]][0]*100);
                 var p3y=400+(vertices[face[2]][1]*100);
 
+                c.beginPath();
                 c.moveTo(p1x,p1y);
                 c.lineTo(p2x,p2y);
                 c.lineTo(p3x,p3y);
                 c.closePath();
                 c.fill();
-
-                console.log(edges);
 
                 // Make polygon edges
                 if(edges[0]) strokes.push([p1x,p1y,p2x,p2y]);
@@ -331,7 +330,8 @@ function drawHead()
     }
 
     // Draw strokes
-    c.lineWidth=3;
+    c.globalAlpha=0.5;
+    c.lineWidth=1.5;
     c.strokeStyle="#000";
     for(var i=0;i<strokes.length;i++){
         var stroke=strokes[i];
@@ -340,8 +340,9 @@ function drawHead()
         c.lineTo(stroke[2],stroke[3]);
         c.stroke();
     }
+    c.globalAlpha=1.0;
 
-    // window.requestAnimationFrame(drawHead);
+    window.requestAnimationFrame(drawHead);
 
 }
 		
