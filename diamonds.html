@@ -1,6 +1,6 @@
 <html>
 	<head>
-  <script src="proc3d/diamond5a.js"></script>
+  <script src="proc3d/ball.js"></script>
 	<script>
 
 //------------------------------------=======############==========----------------------------------------
@@ -252,7 +252,7 @@ function drawHead()
     for(var i=0;i<polygons.length;i++){
         var face=polygons[i].faces[0];
         polygons[i].normal=calculateNormal(vertices[face[0]],vertices[face[1]],vertices[face[2]]);
-        polygons[i].eyevec=calculateEye(vertices[face[0]],[400*Math.sin(vx+1.5),50,400*Math.cos(vx+1.5)]);
+        polygons[i].eyevec=calculateEye(vertices[face[0]],[400*Math.sin(vx+2.8),-70,400*Math.cos(vx+2.8)]);
         polygons[i].light=dotV(polygons[i].normal,polygons[i].eyevec);
     }
     
@@ -261,7 +261,7 @@ function drawHead()
     c.font = "18px Arial Narrow";
     c.textBaseline = 'middle';
 
-    for(var i=10;i<vertices.length;i++){
+    for(var i=0;i<vertices.length;i++){
         var vert=vertices[i];
 
         c.beginPath();
@@ -269,12 +269,12 @@ function drawHead()
         c.fill();
         c.fillText(i, 800+vert[0]+8, 200+vert[2]);
         
-        if(vert[2]>0){
+        // if(vert[2]>=0){
             c.beginPath();
             c.arc(800+vert[0], 600+vert[1], 5, 0, 2 * Math.PI);
             c.fill();
             c.fillText(i, 800+vert[0]+8, 600+vert[1]);     
-        }
+        // }
     }
 
     // Show flat polygons
@@ -311,6 +311,7 @@ function drawHead()
         }
     }    
 
+    // console.log(polygons);
     // Draw polygons
     for(var i=0;i<polygons.length;i++){
         for(var j=0;j<polygons[i].faces.length;j++){
@@ -320,10 +321,11 @@ function drawHead()
             // Clockwise culling of camera facing triangles
             var cull=((vertices[face[2]][0]-vertices[face[0]][0])*(vertices[face[2]][1]-vertices[face[1]][1]))-
                            ((vertices[face[2]][1]-vertices[face[0]][1])*(vertices[face[2]][0]-vertices[face[1]][0]));
+
             if(cull>0){
-                var R=Math.floor(Math.max(-polygons[i].light,0)*255);
-                var G=Math.floor(Math.max(-polygons[i].light,0)*255);
-                var B=Math.floor(Math.max(-polygons[i].light,0)*255);
+                var R=20+Math.floor(Math.max(polygons[i].normal[0],0)*255);
+                var G=10+Math.floor(Math.max(polygons[i].normal[1],0)*255);
+                var B=5+Math.floor(Math.max(polygons[i].normal[2],0)*255);
                 c.fillStyle="RGB("+R+","+G+","+B+")";
 
                 drawTriangle(400,400,vertices[face[0]][0]*100,vertices[face[0]][1]*100,vertices[face[1]][0]*100,vertices[face[1]][1]*100,vertices[face[2]][0]*100,vertices[face[2]][1]*100,1);
@@ -338,7 +340,7 @@ function drawHead()
     }
 
     // Draw strokes
-    c.globalAlpha=0.5;
+    c.globalAlpha=0.3;
     c.lineWidth=1.5;
     c.strokeStyle="#000";
     for(var i=0;i<strokes.length;i++){

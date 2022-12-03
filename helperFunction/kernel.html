@@ -1,0 +1,144 @@
+<html>
+    <head>
+        <script>
+        // Conways game of life. Similar functionality to the version used in the sun xlock screen saver from 1988-91 by Patrick J. Naughton
+        // https://github.com/oracle/solaris-xorg/blob/master/open-src/app/xlock/sun-src/life.c
+        // https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+        //
+        // Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+        // Any live cell with two or three live neighbours lives on to the next generation.
+        // Any live cell with more than three live neighbours dies, as if by overpopulation.
+
+        var ctx;
+
+        // Number of cells
+        const cellwidth=30;
+        const center=150;
+
+
+        kernel=[];
+
+        // Fast Gradient Functionality
+//        var grad=[[134,20,10],[234,124,48],[244,234,79],[141,227,141],[50,116,239],[4,7,120],[0,0,0]];
+        var grad=[[0,0,0],[4,7,120],[50,116,239],[141,227,141],[244,234,79],[234,124,48],[134,20,10]];
+
+        var gradlist=[];
+
+        function precomp()
+        {
+            for(var i=0;i<=255;i++){
+                var index=Math.floor(i/43);
+                var fract=(i/43)-Math.floor(i/43);
+                A=grad[index];
+                B=grad[index+1];
+                gradlist[i]="RGB("+Math.floor(A[0]+(fract*(B[0]-A[0])))+","+Math.floor(A[1]+(fract*(B[1]-A[1])))+","+Math.floor(A[2]+(fract*(B[2]-A[2])))+")";
+            }
+        }
+
+        function gradient(n)
+        {
+            var n=Math.max(Math.min(1.0,n),0);
+            return gradlist[Math.floor(n*255)];
+        }
+
+        function redraw()
+        {
+
+            ctx.font = "12px Arial";
+            ctx.strokeStyle="#eee";
+            ctx.fillStyle="#eee";
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+
+            for(var i=-4;i<4;i++){
+                  for(var j=-4;j<4;j++){
+
+                        var r=Math.sqrt((i*i)+(j*j));
+                        k=4*r*(1-r);
+                        a=4.0;
+                        w=Math.exp(a-(a/k));
+
+                        if(r<=3.2){
+                          kernel.push({x:i,y:j,w:w});
+                        }
+                  }
+            }
+
+            var sum=0;
+            for(weight of kernel){
+                sum+=weight.w;
+            }
+            for(weight of kernel){
+                weight.w/=sum;
+                weight.w=Math.floor(weight.w*100)/100;
+            }
+
+            for(weight of kernel){
+                ctx.beginPath();
+                ctx.rect(center+(cellwidth*weight.x),center+(cellwidth*weight.y),cellwidth,cellwidth);
+                ctx.stroke();
+                ctx.fillText(weight.w,center+(cellwidth*weight.x)+(cellwidth*0.5),center+(cellwidth*weight.y)+(cellwidth*0.5));
+            }
+
+            // My .14 sigma .03
+            m=0.30;
+            s=0.04;
+
+            ctx.beginPath();
+            ctx.moveTo(50,400);
+            ctx.lineTo(300,400);
+            ctx.moveTo(50,400);
+            ctx.lineTo(50,300);
+            ctx.stroke();
+
+            ctx.beginPath();
+            for(var u=0;u<1;u+=0.005){
+                val=2*Math.exp(-(((u-m)*(u-m))/(2*(s*s))))-1;
+                if(u==0){
+                    ctx.moveTo(50,400-(val*100));
+                }else{
+                    ctx.lineTo(50+(300*u),400-(val*100));
+                }
+            }
+            ctx.stroke();
+
+            for(var y=0;y<255;y++){
+                ctx.fillStyle=gradient(y/255);
+                ctx.fillRect(0,y*2,32,2);
+            }
+
+            var str="";
+            str+="["
+            for(entry of gradlist){
+                str+='"'+entry+'",'
+            }
+            str+="];"
+            document.getElementById("outp").innerHTML=str;
+
+            str="";
+            str+="["
+            for(entry of kernel){
+                str+="["+entry.x+","+entry.y+","+entry.w+"],";
+            }
+            str+="];"
+            //document.getElementById("outp").innerHTML=str;
+        }
+
+        function startup()
+        {
+            var c = document.getElementById("canvasid");
+            ctx = c.getContext("2d");   
+
+            precomp();
+
+            redraw();
+        }
+        
+        </script>
+    </head>
+    <body onload="startup();" style="background:#222;">
+        <canvas id="canvasid" width=500 height=500 style="width:800px;height:800px;image-rendering:pixelated;">
+        </canvas>
+        <textarea id="outp"></textarea>
+    </body>
+</html>

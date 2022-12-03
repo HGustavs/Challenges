@@ -1,0 +1,130 @@
+<html>
+    <head>
+        <script>
+        // Conways game of life. Similar functionality to the version used in the sun xlock screen saver from 1988-91 by Patrick J. Naughton
+        // https://github.com/oracle/solaris-xorg/blob/master/open-src/app/xlock/sun-src/life.c
+        // https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+        //
+        // Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+        // Any live cell with two or three live neighbours lives on to the next generation.
+        // Any live cell with more than three live neighbours dies, as if by overpopulation.
+
+        var ctx;
+
+        // Number of cells
+        const cellwidth=200;
+        const cellheight=200;
+        const drawsize=2;
+
+        const DEATH=1;
+        const LIVE=2;
+        const BIRTH=3;
+
+        cells=[];
+        fates=[];
+        lifes=[];
+
+        function mod(num,mod)
+        {
+            return ((num%mod)+mod)%mod;
+        }
+
+        function redraw()
+        {
+            // Clear fates
+            for(var i=0;i<(cellwidth*cellheight);i++){
+                fates[i]=0;
+            }
+
+            // Update fates
+            for(var xk=0;xk<cellwidth;xk++){
+                for(var yk=0;yk<cellwidth;yk++){
+                    var cnt=0;
+
+                    // Read all eight surrounding cells with modulo
+                    xm=mod((xk-1),cellwidth);
+                    xp=mod((xk+1),cellwidth);
+                    ym=mod((yk-1),cellheight);
+                    yp=mod((yk+1),cellheight);
+
+                    cnt+=cells[xm+(ym*cellwidth)];
+                    cnt+=cells[xm+(yk*cellwidth)];
+                    cnt+=cells[xm+(yp*cellwidth)];
+
+                    cnt+=cells[xk+(ym*cellwidth)];
+                    cnt+=cells[xk+(yp*cellwidth)];
+
+                    cnt+=cells[xp+(ym*cellwidth)];
+                    cnt+=cells[xp+(yk*cellwidth)];
+                    cnt+=cells[xp+(yp*cellwidth)];
+
+                    if(cnt<2){
+                        fates[xk+(yk*cellwidth)]=DEATH;
+                    }else if(cnt==3&&cells[xk+(yk*cellwidth)]==0){
+                        fates[xk+(yk*cellwidth)]=BIRTH;
+                    }else if(cnt>3){
+                        fates[xk+(yk*cellwidth)]=DEATH;
+                    }else{
+                        fates[xk+(yk*cellwidth)]=LIVE;
+                    }
+                }
+            }
+
+            // Update Cells
+            for(var i=0;i<(cellwidth*cellheight);i++){
+                if(fates[i]==DEATH){
+                    cells[i]=0;
+                }else if(fates[i]==BIRTH){
+                    cells[i]=1;
+                }
+            }
+
+            // Draw Cells
+            xk=0;
+            yk=0;
+            //ctx.clearRect(0,0,cellwidth*drawsize,cellheight*drawsize);
+            ctx.fillStyle="RGBA(0,0,0,0.01)";
+            ctx.fillRect(0,0,cellwidth*drawsize,cellheight*drawsize);
+
+            ctx.fillStyle="#ff0";
+            for(var i=0;i<(cellwidth*cellheight);i++){
+                if(cells[i]>0){
+                    ctx.fillRect(xk*drawsize,yk*drawsize,drawsize,drawsize);
+                }
+                xk++;
+                if(xk>=cellwidth){
+                    yk++;
+                    xk=0;
+                }
+            }
+            
+            //window.requestAnimationFrame(redraw);
+            setTimeout(redraw,100);
+        }
+
+        function startup()
+        {
+            var c = document.getElementById("canvasid");
+            ctx = c.getContext("2d");
+
+            // Initiate Random
+           for(var i=0;i<(cellwidth*cellheight);i++){
+                fates[i]=0;
+                lifes[i]=0;
+                if(Math.random()>0.55){
+                    cells[i]=1;
+                }else{
+                    cells[i]=0;
+                } 
+            }            
+
+            redraw();
+        }
+        
+        </script>
+    </head>
+    <body onload="startup();" style="background:#222;">
+        <canvas id="canvasid" width=300 height=300 style="width:800px;height:800px;image-rendering:pixelated;">
+        </canvas>
+    </body>
+</html>
