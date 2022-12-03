@@ -20,15 +20,17 @@
 
         // Fast Gradient Functionality
 //        var grad=[[134,20,10],[234,124,48],[244,234,79],[141,227,141],[50,116,239],[4,7,120],[0,0,0]];
-        var grad=[[0,0,0],[4,7,120],[50,116,239],[141,227,141],[244,234,79],[234,124,48],[134,20,10]];
+//        var grad=[[0,0,0],[4,7,120],[50,116,239],[141,227,141],[244,234,79],[234,124,48],[134,20,10]];
+        var grad=[[8,22,120],[50,116,239],[141,227,141],[244,234,79],[234,124,48],[134,20,10]];
 
         var gradlist=[];
 
         function precomp()
         {
+            var factor=Math.ceil(255/(grad.length-1))+1;
             for(var i=0;i<=255;i++){
-                var index=Math.floor(i/43);
-                var fract=(i/43)-Math.floor(i/43);
+                var index=Math.floor(i/factor);
+                var fract=(i/factor)-Math.floor(i/factor);
                 A=grad[index];
                 B=grad[index+1];
                 gradlist[i]="RGB("+Math.floor(A[0]+(fract*(B[0]-A[0])))+","+Math.floor(A[1]+(fract*(B[1]-A[1])))+","+Math.floor(A[2]+(fract*(B[2]-A[2])))+")";
