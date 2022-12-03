@@ -73,7 +73,52 @@
                 }
             }
 
-            // Draw output Scaled
+            // Pixelated
+            for(var xk=0;xk<cellwidth;xk++){
+                for(var yk=0;yk<cellheight;yk++){
+                    var index=xk+(yk*cellwidth);
+                    var r=Math.floor(cells[index]*255);
+                    ctx.fillStyle=gradient[r];
+                    ctx.fillRect(xk*drawsize,yk*drawsize,drawsize,drawsize);                    
+                }
+            }
+
+            window.requestAnimationFrame(redraw);
+            // setTimeout(redraw,100);
+        }
+
+        function startup()
+        {
+            var c = document.getElementById("canvasid");
+            ctx = c.getContext("2d");
+            
+
+            // Initiate Random
+            //var seed=77281;
+            var seed=6174457;
+            var i=0;
+            for(var j=0;j<cellheight;j++){
+              Math.setSeed(seed+j);
+              for(var k=0;k<cellwidth;k++){
+                  cells[i]=0;
+                  var rnd=Math.random();
+                  if(rnd>0.5) cells[i]=Math.random();
+                  i++;
+              } 
+            }
+
+
+            /*
+            for(var i=0;i<150;i++){
+                xk=70+Math.floor(Math.random()*10);
+                yk=70+Math.floor(Math.random()*10);
+                cells[xk+(yk*cellwidth)]+=0.1;
+            }
+            */
+
+            redraw();
+        }
+                    // Draw output Scaled
 /*
             for(var yk=0;yk<cellheight-1;yk++){
                 for(var xk=0;xk<cellwidth-1;xk++){
@@ -97,51 +142,6 @@
                 }
             }            
 */
-            // Pixelated
-            for(var xk=0;xk<cellwidth;xk++){
-                for(var yk=0;yk<cellheight;yk++){
-                    var index=xk+(yk*cellwidth);
-                    var r=Math.floor(cells[index]*255);
-                    ctx.fillStyle=gradient[r];
-                    ctx.fillRect(xk*drawsize,yk*drawsize,drawsize,drawsize);                    
-                }
-            }
-
-            window.requestAnimationFrame(redraw);
-            // setTimeout(redraw,100);
-        }
-
-        function startup()
-        {
-            var c = document.getElementById("canvasid");
-            ctx = c.getContext("2d");
-            
-
-            // Initiate Random
-            var seed=77281;
-            var i=0;
-            for(var j=0;j<cellheight;j++){
-              Math.setSeed(seed+j);
-              for(var k=0;k<cellwidth;k++){
-                  cells[i]=0;
-                  var rnd=Math.random();
-                  if(rnd>0.5) cells[i]=Math.random();
-                  i++;
-              } 
-            }
-
-
-            /*
-            for(var i=0;i<150;i++){
-                xk=70+Math.floor(Math.random()*10);
-                yk=70+Math.floor(Math.random()*10);
-                cells[xk+(yk*cellwidth)]+=0.1;
-            }
-            */
-
-            redraw();
-        }
-        
         </script>
     </head>
     <body onload="startup();" style="background:#222;">
