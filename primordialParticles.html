@@ -111,7 +111,7 @@
             // For each particle update position according to angle
             for(particle of particles){
                 particle.x+=particle.vx*Vel;
-                particly.y+=particle.vy*Vel;
+                particle.y+=particle.vy*Vel;
                 if(particle.x<0) particle.x=cwidth;
                 if(particle.x>cwidth) particle.x=0;
                 if(particle.y<0) particle.y=cheight;
