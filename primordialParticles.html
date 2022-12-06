@@ -30,7 +30,7 @@
 
         var ctx;
         
-        const gridsize=20;        // Spatial hash grid size
+        const gridsize=40;        // Spatial hash grid size
         const gridhalf=gridsize/2;
         const cwidth=600;
         const cheight=600;
@@ -71,13 +71,17 @@
 
             // Clear cell array
 
+            cells=[];
             for(particle of particles){
                 // Cell X, Cell Y and Hash
                 let cellx=Math.floor(particle.x/gridsize);
                 let celly=Math.floor(particle.y/gridsize);
                 let incellx=particle.x-(cellx*gridsize);
                 let incelly=particle.y-(celly*gridsize);
-                particle.hash=cellx*(celly*gridx);
+                particle.hash=cellx+(celly*gridx);
+                particle.vx=Math.sin(particle.ang);                  // (0.5*Math.PI)
+                particle.vy=Math.cos(particle.ang);
+
 
                 var xa=1;
                 var ya=1;                
@@ -92,9 +96,8 @@
 
             }
             
-            console.log(cells);
-            for(cellarr of cells){
-                  console.log(cellarr);
+            for(particle of particles){
+                
             }
 
             /*
@@ -107,17 +110,12 @@
 
             // For each particle update position according to angle
             for(particle of particles){
-                particle.x+=(Math.sin(particle.ang))*Vel;
-                particle.y+=(Math.cos(particle.ang))*Vel;
+                particle.x+=particle.vx*Vel;
+                particly.y+=particle.vy*Vel;
                 if(particle.x<0) particle.x=cwidth;
                 if(particle.x>cwidth) particle.x=0;
                 if(particle.y<0) particle.y=cheight;
                 if(particle.y>cheight) particle.y=0;
-
-                vx=Math.sin(particle.ang);                  // (0.5*Math.PI)
-                vy=Math.cos(particle.ang);
-
-
 
                 // Steering
                 /*
@@ -158,7 +156,7 @@
                 ctx.fillText(particle.btwang,particle.x+10,particle.y);
             }
 
-            // window.requestAnimationFrame(redraw);
+            window.requestAnimationFrame(redraw);
         }
 
         function startup()
@@ -167,8 +165,8 @@
             ctx = c.getContext("2d");
 
             // Create a random list of particles
-            for(var i=0;i<2;i++){
-                particles.push({id:i,x:Math.random()*cwidth,y:Math.random()*cheight,ang:0.0,color:0}); //Math.random()*6.28
+            for(var i=0;i<20;i++){
+                particles.push({id:i,x:Math.random()*cwidth,y:Math.random()*cheight,ang:Math.random()*6.28,color:0}); //Math.random()*6.28
             }
             
             redraw();
