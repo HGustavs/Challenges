@@ -1,0 +1,184 @@
+<html>
+    <head>
+        <script src="helperFunction/seededrandom.js"></script>
+        <script>
+        
+        //        (\ /)
+        //        (. .)           
+        //       c(")(")     ∴ 
+
+        // Primordial Particle Systems
+        // https://www.youtube.com/watch?v=makaJpLvbow
+        // https://gitlab.com/thomasschmickl/primordialparticlesystems_public
+        // https://observablehq.com/@martin12333/primordial-particle-system
+
+        // Particles have constant speed V
+        // Nt is Number of particles within radius R
+        // B is Turning Angle
+        // Rt and Lt Number of left hemisphere particles and Right hemisphere particles
+        // Equatin A+B*Nt*sign(Rt-Lt)
+        // A=180 deg B=17 deg v=0.67 r=5.0  
+
+        // Color pseudocode
+        // set color green
+        // if ((n > 35))[set color yellow ]
+        // if (n > 15 and n <= 35)[set color blue ]
+        // if ((n = 14 or n = 15 or n = 13)) [set color brown]
+        // if (count turtles in-radius 1.3) > 15 [set color magenta]
+
+        // Spatial hash determines list of particles to process 
+
+        var ctx;
+        
+        const gridsize=20;        // Spatial hash grid size
+        const gridhalf=gridsize/2;
+        const cwidth=600;
+        const cheight=600;
+        const gridx=cwidth/gridsize;
+        const colors=["RGB(12,255,35)"];
+
+        // PPS Constants
+        const Alpha=Math.PI;
+        const Beta=Math.PI*(17/180);
+        const Vel=0.67;
+        const Rad=5.0;
+
+        // Primordial particle set
+        var particles=[];
+        var cells=[];        
+
+        function addhash(cx,cy,incell){
+            if(cells[cx+(cy*gridsize)]==null){
+              cells[cx+(cy*gridsize)]=[];
+            }
+            cells[cx+(cy*gridsize)].push(incell);
+            console.log(cx,cy,gridsize,cx+(cy*gridsize));
+
+            ctx.strokeStyle="#ff4";
+                ctx.beginPath();
+                ctx.moveTo(cx*gridsize,cy*gridsize);
+                ctx.lineTo((cx*gridsize)+gridsize,cy*gridsize);
+                ctx.lineTo((cx*gridsize)+gridsize,(cy*gridsize)+gridsize);
+                ctx.lineTo((cx*gridsize),(cy*gridsize)+gridsize);
+                ctx.closePath();
+                ctx.stroke();            
+        }
+
+        function redraw()
+        {
+            ctx.clearRect(0,0,cwidth,cheight);
+            // Take old position to make spatial hash
+
+            // Clear cell array
+
+            for(particle of particles){
+                // Cell X, Cell Y and Hash
+                let cellx=Math.floor(particle.x/gridsize);
+                let celly=Math.floor(particle.y/gridsize);
+                let incellx=particle.x-(cellx*gridsize);
+                let incelly=particle.y-(celly*gridsize);
+                particle.hash=cellx*(celly*gridx);
+
+                var xa=1;
+                var ya=1;                
+                if(particle.incellx<gridhalf) xa=-1;
+                if(particle.incellx<gridhalf) ya=-1;
+
+                // Add particle to four closest cells - nine if size is larger than half of cell
+                addhash(cellx,celly,particle);
+                addhash(cellx+xa,celly,particle);
+                addhash(cellx+xa,celly+ya,particle);
+                addhash(cellx,celly+ya,particle);
+
+            }
+            
+            console.log(cells);
+            for(cellarr of cells){
+                  console.log(cellarr);
+            }
+
+            /*
+            var dx=200-particle.x;
+            var dy=200-particle.y;
+            var dotprod=(vx * dx) + (vy * dy);
+
+            var btwang=Math.acos(dotprod/(Math.sqrt((dx*dx)+(dy*dy))));
+            */
+
+            // For each particle update position according to angle
+            for(particle of particles){
+                particle.x+=(Math.sin(particle.ang))*Vel;
+                particle.y+=(Math.cos(particle.ang))*Vel;
+                if(particle.x<0) particle.x=cwidth;
+                if(particle.x>cwidth) particle.x=0;
+                if(particle.y<0) particle.y=cheight;
+                if(particle.y>cheight) particle.y=0;
+
+                vx=Math.sin(particle.ang);                  // (0.5*Math.PI)
+                vy=Math.cos(particle.ang);
+
+
+
+                // Steering
+                /*
+                if(dotprod>0){
+                    particle.ang+=0.03;
+                } else{
+                    particle.ang-=0.03;
+                }
+                */            
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(0,200);
+            ctx.lineTo(500,200);
+            ctx.stroke();
+
+            // Draw particle
+            for(particle of particles){
+                ctx.fillStyle=colors[particle.color];
+
+                if(particle.btwang>1.5){
+                  ctx.fillStyle="#fe4";
+                }else{
+                  ctx.fillStyle="#4ef";
+                }
+
+                ctx.beginPath();
+                ctx.arc(particle.x,particle.y, 4,0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.strokeStyle="#fe4";
+                ctx.beginPath();
+                ctx.moveTo(particle.x,particle.y);
+                ctx.lineTo(particle.x+(Math.sin(particle.ang)*10),particle.y+(Math.cos(particle.ang)*10));
+                ctx.stroke();
+
+                ctx.fillStyle="#fff";
+                ctx.fillText(particle.btwang,particle.x+10,particle.y);
+            }
+
+            // window.requestAnimationFrame(redraw);
+        }
+
+        function startup()
+        {
+            var c = document.getElementById("canvasid");
+            ctx = c.getContext("2d");
+
+            // Create a random list of particles
+            for(var i=0;i<2;i++){
+                particles.push({id:i,x:Math.random()*cwidth,y:Math.random()*cheight,ang:0.0,color:0}); //Math.random()*6.28
+            }
+            
+            redraw();
+        }
+
+    </script>
+    </head>
+    <body onload="startup();" style="background:#222;">
+        <canvas id="canvasid" width="600" height="600" style="width:800px;height:800px;">
+        </canvas>
+        <!-- image-rendering:pixelated;  filter:blur(4px) -->
+    </body>
+</html>
