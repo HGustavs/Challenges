@@ -34,7 +34,8 @@
         const gridhalf=gridsize/2;
         const cwidth=600;
         const cheight=600;
-        const gridx=cwidth/gridsize;
+        const gridx=Math.floor(cwidth/gridsize);
+        const gridy=Math.floor(cheight/gridsize);
         const colors=["RGB(12,255,35)"];
 
         // PPS Constants
@@ -42,26 +43,20 @@
         const Beta=Math.PI*(17/180);
         const Vel=0.67;
         const Rad=5.0;
+        const RadQuad=Rad*Rad;
 
         // Primordial particle set
         var particles=[];
         var cells=[];        
 
         function addhash(cx,cy,incell){
-            if(cells[cx+(cy*gridsize)]==null){
-              cells[cx+(cy*gridsize)]=[];
-            }
-            cells[cx+(cy*gridsize)].push(incell);
-            console.log(cx,cy,gridsize,cx+(cy*gridsize));
+            if(cx<0||cy<0||cx>=gridx||cy>=gridy) return false;
 
-            ctx.strokeStyle="#ff4";
-                ctx.beginPath();
-                ctx.moveTo(cx*gridsize,cy*gridsize);
-                ctx.lineTo((cx*gridsize)+gridsize,cy*gridsize);
-                ctx.lineTo((cx*gridsize)+gridsize,(cy*gridsize)+gridsize);
-                ctx.lineTo((cx*gridsize),(cy*gridsize)+gridsize);
-                ctx.closePath();
-                ctx.stroke();            
+            var index=cx+(cy*gridx);
+            if(cells[index]==null){
+              cells[index]=[];
+            }
+            cells[index].push(incell);
         }
 
         function redraw()
@@ -78,40 +73,83 @@
                 let celly=Math.floor(particle.y/gridsize);
                 let incellx=particle.x-(cellx*gridsize);
                 let incelly=particle.y-(celly*gridsize);
+                particle.cellx=cellx;
+                particle.celly=celly;
                 particle.hash=cellx+(celly*gridx);
                 particle.vx=Math.sin(particle.ang);                  // (0.5*Math.PI)
                 particle.vy=Math.cos(particle.ang);
 
 
-                var xa=1;
-                var ya=1;                
-                if(particle.incellx<gridhalf) xa=-1;
-                if(particle.incellx<gridhalf) ya=-1;
-
-                // Add particle to four closest cells - nine if size is larger than half of cell
-                addhash(cellx,celly,particle);
-                addhash(cellx+xa,celly,particle);
-                addhash(cellx+xa,celly+ya,particle);
-                addhash(cellx,celly+ya,particle);
-
+                // Add particle to nine closest cells
+                addhash(cellx,celly-1,particle,0);
+                addhash(cellx-1,celly-1,particle,1);
+                addhash(cellx+1,celly-1,particle,1);
+                addhash(cellx,celly,particle,0);
+                addhash(cellx-1,celly,particle,1);
+                addhash(cellx+1,celly,particle,1);
+                addhash(cellx,celly+1,particle,0);
+                addhash(cellx-1,celly+1,particle,1);
+                addhash(cellx+1,celly+1,particle,1);               
             }
             
+            // Iterate over cell in each cell
             for(particle of particles){
+                var cell=cells[particle.hash];
+
+                if(cell.length==1){
+                    particle.ang+=Alpha;
+                }else{
+                  ctx.strokeStyle="#ff4";
+
+                  for(inner of cell){
+                      var dx=inner.x-particle.x;
+                      var dy=inner.y-particle.y;
+                      var square=(dx*dx)+(dy*dy);
+                      var Rt=0;
+                      var Lt=0;
+                      var Nt=0;
+                      if(inner.id!=particle.id && square<=RadQuad){
+                          Nt++;
+                          var len=Math.sqrt(square);
+                          var dotprod=(particle.vx * dx) + (particle.vy * dy);
+                          var btwang=Math.acos(dotprod/len);
+                          if(btwang>1.5707){
+                              Rt++;
+                          }else{
+                              Lt++;
+                          }
+                      }
+
+                      particle.ang+=Alpha+(Nt*Beta*Math.sign(Rt-Lt));
+                      // Visualize net
+                      /*
+                      ctx.beginPath();
+                      ctx.moveTo(particle.x,particle.y);
+                      ctx.lineTo(inner.x,inner.y);
+                      ctx.stroke();
+                      */
+                  }
+
+                  ctx.fillStyle="#fff";
+                  ctx.fillText(cell.length,particle.x+10,particle.y);                  
+
+                  /*
+                  ctx.beginPath();
+                  ctx.moveTo(particle.cellx*gridsize,particle.celly*gridsize);
+                  ctx.lineTo((particle.cellx*gridsize)+gridsize,particle.celly*gridsize);
+                  ctx.lineTo((particle.cellx*gridsize)+gridsize,(particle.celly*gridsize)+gridsize);
+                  ctx.lineTo((particle.cellx*gridsize),(particle.celly*gridsize)+gridsize);
+                  ctx.closePath();
+                  ctx.stroke();                  
+                  */
+                }
                 
             }
 
-            /*
-            var dx=200-particle.x;
-            var dy=200-particle.y;
-            var dotprod=(vx * dx) + (vy * dy);
-
-            var btwang=Math.acos(dotprod/(Math.sqrt((dx*dx)+(dy*dy))));
-            */
-
             // For each particle update position according to angle
             for(particle of particles){
-                particle.x+=particle.vx*Vel;
-                particle.y+=particle.vy*Vel;
+                //particle.x+=particle.vx*Vel;
+                //particle.y+=particle.vy*Vel;
                 if(particle.x<0) particle.x=cwidth;
                 if(particle.x>cwidth) particle.x=0;
                 if(particle.y<0) particle.y=cheight;
@@ -152,8 +190,8 @@
                 ctx.lineTo(particle.x+(Math.sin(particle.ang)*10),particle.y+(Math.cos(particle.ang)*10));
                 ctx.stroke();
 
-                ctx.fillStyle="#fff";
-                ctx.fillText(particle.btwang,particle.x+10,particle.y);
+                //ctx.fillStyle="#fff";
+                //ctx.fillText(particle.btwang,particle.x+10,particle.y);
             }
 
             window.requestAnimationFrame(redraw);
@@ -165,7 +203,7 @@
             ctx = c.getContext("2d");
 
             // Create a random list of particles
-            for(var i=0;i<20;i++){
+            for(var i=0;i<80;i++){
                 particles.push({id:i,x:Math.random()*cwidth,y:Math.random()*cheight,ang:Math.random()*6.28,color:0}); //Math.random()*6.28
             }
             
