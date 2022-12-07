@@ -7,26 +7,7 @@
         //        (. .)           
         //       c(")(")     ∴ 
 
-        // Primordial Particle Systems
-        // https://www.youtube.com/watch?v=makaJpLvbow
-        // https://gitlab.com/thomasschmickl/primordialparticlesystems_public
-        // https://observablehq.com/@martin12333/primordial-particle-system
-
-        // Particles have constant speed V
-        // Nt is Number of particles within radius R
-        // B is Turning Angle
-        // Rt and Lt Number of left hemisphere particles and Right hemisphere particles
-        // Equatin A+B*Nt*sign(Rt-Lt)
-        // A=180 deg B=17 deg v=0.67 r=5.0  
-
-        // Color pseudocode
-        // set color green
-        // if ((n > 35))[set color yellow ]
-        // if (n > 15 and n <= 35)[set color blue ]
-        // if ((n = 14 or n = 15 or n = 13)) [set color brown]
-        // if (count turtles in-radius 1.3) > 15 [set color magenta]
-
-        // Spatial hash determines list of particles to process 
+        // Steering behavior test suite with clustering algorithm
 
         var ctx;
         
@@ -36,10 +17,9 @@
         const cheight=600;
         const gridx=Math.floor(cwidth/gridsize);
         const gridy=Math.floor(cheight/gridsize);
-        const colors=["RGB(12,255,35)"];
 
         // PPS Constants
-        const Alpha=Math.PI;
+        const Alpha=Math.PI;        
         const Beta=Math.PI*(17/180);
         const Vel=0.57;
         const Rad=16.0;
@@ -94,35 +74,30 @@
                 var cell=cells[particle.hash];
 
                 if(cell!=null){
-                    ctx.strokeStyle="#ff4";
-                    var Rt=0;
                     var Lt=0;
-                    var Nt=0;                  
+                    var Rt=0;
+                    var Nt=0;
                     for(inner of cell){
+                        if(inner.id!=particle.id){
+
+                        }
+                        Nt++;
                         var dx=inner.x-particle.x;
                         var dy=inner.y-particle.y;
                         var square=(dx*dx)+(dy*dy);
-                        if(inner.id!=particle.id && square<=RadQuad){
-                            Nt++;
-                            var len=Math.sqrt(square);
-                            var dotprod=(particle.vx * dx) + (particle.vy * dy);
-                            var btwang=Math.acos(dotprod/len);
-                            if(btwang<1.5707){
-                                Rt++;
-                            }else{
-                                Lt++;
-                            }
-                            // Visualize net
-                            /*
-                            ctx.beginPath();
-                            ctx.moveTo(particle.x,particle.y);
-                            ctx.lineTo(inner.x,inner.y);
-                            ctx.stroke();
-                            */            
+                        var len=Math.sqrt(square);
+                        var dotprod=(particle.ex * dx) + (particle.ey * dy);
+                        var btwang=Math.acos(dotprod/len);
+                        if(btwang<1.5707){
+                            Rt++;
+                        }else{
+                            Lt++;
                         }
-                        particle.nt=Nt;
                     }
-                    particle.ang+=Alpha+(Beta*Math.sign((Rt-Lt)));                  
+                    particle.nt=Nt;
+                    particle.rt=Rt;
+                    particle.lt=Lt;
+                    particle.ang+=Alpha+(Beta*Nt*Math.sign((Rt-Lt)));                  
                 }
                 
             }
@@ -130,7 +105,9 @@
             // For each particle update position according to angle
             for(particle of particles){
                 particle.vx=Math.sin(particle.ang);                  // (0.5*Math.PI)
-                particle.vy=Math.cos(particle.ang);              
+                particle.vy=Math.cos(particle.ang);
+                particle.ex=Math.sin(particle.ang+1.57);
+                particle.ey=Math.cos(particle.ang+1.57);             
                 particle.x+=particle.vx*Vel;
                 particle.y+=particle.vy*Vel;
                 if(particle.x<0) particle.x=cwidth;
@@ -139,44 +116,26 @@
                 if(particle.y>cheight) particle.y=0;         
             }
 
-                  /*
-                  ctx.beginPath();
-                  ctx.moveTo(particle.cellx*gridsize,particle.celly*gridsize);
-                  ctx.lineTo((particle.cellx*gridsize)+gridsize,particle.celly*gridsize);
-                  ctx.lineTo((particle.cellx*gridsize)+gridsize,(particle.celly*gridsize)+gridsize);
-                  ctx.lineTo((particle.cellx*gridsize),(particle.celly*gridsize)+gridsize);
-                  ctx.closePath();
-                  ctx.stroke();                  
-                  */            
-
             // Draw particle
             for(particle of particles){
-                if(particle.nt>0){
-                    ctx.fillStyle="#fff";
-                    //ctx.fillText(particle.nt,particle.x+10,particle.y);
+              
+                ctx.fillStyle="#fff";
+                //ctx.fillText(particle.nt,particle.x+10,particle.y);
 
-                    /*
-                    ctx.strokeStyle="#fe4";
-                    ctx.beginPath();
-                    ctx.moveTo(particle.x,particle.y);
-                    ctx.lineTo(particle.x+(particle.vx*5),particle.y+(particle.vy*5));
-                    ctx.stroke();
-                    */
+                ctx.strokeStyle="#fe4";
+                ctx.beginPath();
+                ctx.moveTo(particle.x,particle.y);
+                ctx.lineTo(particle.x+(particle.vx*10),particle.y+(particle.vy*10));
+                ctx.stroke();
 
-                    ctx.fillStyle="#020";
-                    if(particle.nt>8) ctx.fillStyle="#042";
-                    if(particle.nt>10) ctx.fillStyle="#4b6";
-                    if(particle.nt>12) ctx.fillStyle="#de8";                    
-                }else{
-                    ctx.fillStyle="#020";
-                }
+               ctx.fillStyle="#de8";                    
 
                 ctx.beginPath();
                 ctx.arc(particle.x,particle.y, 3,0, 2 * Math.PI);
                 ctx.fill();                  
 
-                //ctx.fillStyle="#fff";
-                //ctx.fillText(particle.btwang,particle.x+10,particle.y);
+                ctx.fillStyle="#fff";
+                ctx.fillText(particle.lt+" "+particle.rt+" "+particle.nt,particle.x+8,particle.y);
             }
 
             window.requestAnimationFrame(redraw);
@@ -188,9 +147,15 @@
             ctx = c.getContext("2d");
 
             // Create a random list of particles
-            for(var i=0;i<2800;i++){
+
+            for(var i=0;i<100;i++){
                 particles.push({id:i,x:Math.random()*cwidth,y:Math.random()*cheight,ang:Math.random()*6.28,color:0}); //Math.random()*6.28
             }
+
+//            particles.push({id:0,x:300,y:300,ang:0,color:0}); //Math.random()*6.28
+//            particles.push({id:1,x:350,y:280,ang:3.14,color:0}); //Math.random()*6.28
+//            particles.push({id:2,x:350,y:320,ang:3.14,color:0}); //Math.random()*6.28
+           
             
             redraw();
         }
