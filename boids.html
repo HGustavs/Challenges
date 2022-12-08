@@ -10,7 +10,11 @@
         // Steering behavior test suite with clustering algorithm
         // https://en.wikipedia.org/wiki/Boids
         // Codetrain Approach:
+
+        // https://www.red3d.com/cwr/boids/
         // https://www.youtube.com/watch?v=mhjuuHl6qHM
+        // https://natureofcode.com/book/chapter-6-autonomous-agents/
+        //
         // separation: steer to avoid crowding local flockmates
         // alignment: steer towards the average heading of local flockmates
         // cohesion: steer to move towards the average position (center of mass) of local flockmates
@@ -87,9 +91,11 @@
                 var cell=cells[particle.hash];
 
                 if(cell!=null){
-                    // Alignment
-                    var averageVx=0;
-                    var averageVy=0;
+                    // Alignment and Cohesion
+                    var avgVx=0;
+                    var avgVy=0;
+                    var avgPx=0;
+                    var avgPy=0;
                     var counter=1;
                     for(inner of cell){
                         var dx=inner.x-particle.x;
@@ -98,8 +104,11 @@
 
                         if(inner.id!=particle.id&&square<RadQuad){
                             counter++;
-                            averageVx+=inner.vx;
-                            averageVy+=inner.vy;
+                            avgVx+=inner.vx;
+                            avgVy+=inner.vy;
+
+                            avgPx=inner.x;
+                            avgPy=inner.y;
 
                             if(showNet){
                                 ctx.strokeStyle="#ef4";                            
@@ -110,8 +119,16 @@
                             }
                         }
                     }
-                    particle.ax=averageVx/counter;
-                    particle.ay=averageVy/counter;
+                    
+                    ctx.beginPath();
+                    ctx.arc(avgPx,avgPy, Rad,0, 2 * Math.PI);                    
+                    ctx.stroke();
+
+                    particle.ax=avgVx/counter;
+                    particle.ay=avgVy/counter;
+
+                    particle.ax+=particle.vx-(particle.x-avgPx);
+                    particle.ay+=particle.vy-(particle.y-avgPy);
 
                     // Cohesion?
                 }
