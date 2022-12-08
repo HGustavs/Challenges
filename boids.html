@@ -8,6 +8,11 @@
         //       c(")(")     ∴ 
 
         // Steering behavior test suite with clustering algorithm
+        // https://en.wikipedia.org/wiki/Boids
+        // Separation - Avoid Local Flock Mates
+        // Alignment - 
+        // Cohesion - 
+        // 
 
         var ctx;
         
@@ -17,13 +22,20 @@
         const cheight=600;
         const gridx=Math.floor(cwidth/gridsize);
         const gridy=Math.floor(cheight/gridsize);
+        const maxSpeed=0.1;
 
         // PPS Constants
         const Alpha=Math.PI;        
         const Beta=Math.PI*(17/180);
         const Vel=0.57;
-        const Rad=16.0;
+        const Rad=50;
         const RadQuad=Rad*Rad;
+
+        // Display constants
+        const TRIANGLE=1;
+        const LINE=2;
+        const showNet=false;
+        const speedvis=LINE;
 
         // Primordial particle set
         var particles=[];
@@ -44,8 +56,7 @@
             ctx.clearRect(0,0,cwidth,cheight);
             // Take old position to make spatial hash
 
-            // Clear cell array
-
+            // Clear cell array and update spatial hash
             cells=[];
             for(particle of particles){
                 // Cell X, Cell Y and Hash
@@ -74,47 +85,57 @@
                 var cell=cells[particle.hash];
 
                 if(cell!=null){
-                    var Lt=0;
-                    var Rt=0;
-                    var Nt=0;
+                    var averageVx=0;
+                    var averageVy=0;
+                    var counter=1;
                     for(inner of cell){
-                        if(inner.id!=particle.id){
-
-                        }
-                        Nt++;
                         var dx=inner.x-particle.x;
                         var dy=inner.y-particle.y;
                         var square=(dx*dx)+(dy*dy);
-                        var len=Math.sqrt(square);
-                        var dotprod=(particle.ex * dx) + (particle.ey * dy);
-                        var btwang=Math.acos(dotprod/len);
-                        if(btwang<1.5707){
-                            Rt++;
-                        }else{
-                            Lt++;
+
+                        if(inner.id!=particle.id&&square<RadQuad){
+                            counter++;
+                            averageVx+=inner.vx;
+                            averageVy+=inner.vy;
+
+                            if(showNet){
+                                ctx.strokeStyle="#ef4";                            
+                                ctx.beginPath();
+                                ctx.moveTo(particle.x,particle.y);
+                                ctx.lineTo(inner.x,inner.y);
+                                ctx.stroke();
+                            }
                         }
                     }
-                    particle.nt=Nt;
-                    particle.rt=Rt;
-                    particle.lt=Lt;
-                    particle.ang+=Alpha+(Beta*Nt*Math.sign((Rt-Lt)));                  
+                    particle.ax=averageVx/counter;
+                    particle.ay=averageVy/counter;
                 }
                 
             }
 
             // For each particle update position according to angle
-            for(particle of particles){
-                particle.vx=Math.sin(particle.ang);                  // (0.5*Math.PI)
-                particle.vy=Math.cos(particle.ang);
-                particle.ex=Math.sin(particle.ang+1.57);
-                particle.ey=Math.cos(particle.ang+1.57);             
-                particle.x+=particle.vx*Vel;
-                particle.y+=particle.vy*Vel;
+            for(particle of particles){                
+                // Update particle position
+                particle.vx+=particle.ax*0.01;
+                particle.vy+=particle.ay*0.01;
+
+                // Max speed limit 
+                var vLen=Math.sqrt((particle.vx*particle.vx)+(particle.vy*particle.vy));
+                particle.vx/=vLen;
+                particle.vy/=vLen;
+                particle.vx*=maxSpeed;
+                particle.vy*=maxSpeed;
+
+                particle.x+=particle.vx;
+                particle.y+=particle.vy;
                 if(particle.x<0) particle.x=cwidth;
                 if(particle.x>cwidth) particle.x=0;
                 if(particle.y<0) particle.y=cheight;
                 if(particle.y>cheight) particle.y=0;         
+            
+//                if(particle.id==1) console.log(particle.x,particle.y,particle.vx,particle.vy,particle.ax,particle.ay);
             }
+
 
             // Draw particle
             for(particle of particles){
@@ -122,20 +143,26 @@
                 ctx.fillStyle="#fff";
                 //ctx.fillText(particle.nt,particle.x+10,particle.y);
 
-                ctx.strokeStyle="#fe4";
+                ctx.fillStyle="#888";                    
                 ctx.beginPath();
-                ctx.moveTo(particle.x,particle.y);
-                ctx.lineTo(particle.x+(particle.vx*10),particle.y+(particle.vy*10));
-                ctx.stroke();
-
-               ctx.fillStyle="#de8";                    
-
-                ctx.beginPath();
-                ctx.arc(particle.x,particle.y, 3,0, 2 * Math.PI);
+                ctx.arc(particle.x,particle.y, 5,0, 2 * Math.PI);
                 ctx.fill();                  
 
-                ctx.fillStyle="#fff";
-                ctx.fillText(particle.lt+" "+particle.rt+" "+particle.nt,particle.x+8,particle.y);
+                if(speedvis==TRIANGLE){
+                    ctx.strokeStyle="#191";
+                    ctx.beginPath();
+                    ctx.moveTo(particle.x+(particle.vx*5.0*(1/maxSpeed)),particle.y+(particle.vy*5.0*(1/maxSpeed)));
+                    ctx.lineTo(particle.x+(particle.vy*5.0*(1/maxSpeed)),particle.y+(-particle.vx*5.0*(1/maxSpeed)));
+                    ctx.lineTo(particle.x+(-particle.vy*5.0*(1/maxSpeed)),particle.y+(particle.vx*5.0*(1/maxSpeed))); 
+                    ctx.closePath();                               
+                    ctx.stroke();
+                }else if(speedvis==LINE){
+                    ctx.strokeStyle="#ef4";
+                    ctx.beginPath();
+                    ctx.moveTo(particle.x,particle.y);
+                    ctx.lineTo(particle.x+(particle.vx*10.0*(1/maxSpeed)),particle.y+(particle.vy*10.0*(1/maxSpeed)));
+                    ctx.stroke();
+                }
             }
 
             window.requestAnimationFrame(redraw);
@@ -149,13 +176,9 @@
             // Create a random list of particles
 
             for(var i=0;i<100;i++){
-                particles.push({id:i,x:Math.random()*cwidth,y:Math.random()*cheight,ang:Math.random()*6.28,color:0}); //Math.random()*6.28
+                var ang=Math.random()*6.28;
+                particles.push({id:i,x:300+(Math.random()*150),y:300+(Math.random()*150),vx:Math.sin(ang)*0.3,vy:Math.cos(ang)*0.3,color:0}); //Math.random()*6.28
             }
-
-//            particles.push({id:0,x:300,y:300,ang:0,color:0}); //Math.random()*6.28
-//            particles.push({id:1,x:350,y:280,ang:3.14,color:0}); //Math.random()*6.28
-//            particles.push({id:2,x:350,y:320,ang:3.14,color:0}); //Math.random()*6.28
-           
             
             redraw();
         }

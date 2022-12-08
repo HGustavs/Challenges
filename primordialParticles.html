@@ -16,8 +16,7 @@
         // Nt is Number of particles within radius R
         // B is Turning Angle
         // Rt and Lt Number of left hemisphere particles and Right hemisphere particles
-        // Equatin A+B*Nt*sign(Rt-Lt)
-        // A=180 deg B=17 deg v=0.67 r=5.0  
+        // Equatin A+B*Nt*sign(Rt-Lt)  A=180 deg B=17 deg v=0.67 r=5.0  
 
         // Color pseudocode
         // set color green
@@ -41,8 +40,8 @@
         // PPS Constants
         const Alpha=Math.PI;
         const Beta=Math.PI*(17/180);
-        const Vel=0.57;
-        const Rad=16.0;
+        const Vel=0.87;
+        const Rad=24;
         const RadQuad=Rad*Rad;
 
         // Primordial particle set
@@ -94,35 +93,40 @@
                 var cell=cells[particle.hash];
 
                 if(cell!=null){
-                    ctx.strokeStyle="#ff4";
-                    var Rt=0;
                     var Lt=0;
-                    var Nt=0;                  
+                    var Rt=0;
+                    var Nt=0;
                     for(inner of cell){
-                        var dx=inner.x-particle.x;
-                        var dy=inner.y-particle.y;
-                        var square=(dx*dx)+(dy*dy);
-                        if(inner.id!=particle.id && square<=RadQuad){
-                            Nt++;
+                        if(inner.id!=particle.id){
+                            var dx=inner.x-particle.x;
+                            var dy=inner.y-particle.y;
+                            var square=(dx*dx)+(dy*dy);
                             var len=Math.sqrt(square);
-                            var dotprod=(particle.vx * dx) + (particle.vy * dy);
+                            var dotprod=(particle.ex * dx) + (particle.ey * dy);
                             var btwang=Math.acos(dotprod/len);
-                            if(btwang<1.5707){
-                                Rt++;
-                            }else{
-                                Lt++;
+                            if(square<RadQuad){
+                                Nt++;
+                                if(btwang<1.5707){
+                                  Rt++;
+                                }else{
+                                  Lt++;
+                                }
                             }
-                            // Visualize net
-                            /*
-                            ctx.beginPath();
-                            ctx.moveTo(particle.x,particle.y);
-                            ctx.lineTo(inner.x,inner.y);
-                            ctx.stroke();
-                            */            
                         }
-                        particle.nt=Nt;
+                        /*
+                        if(particle.id==1){
+                                ctx.strokeStyle="#fed";
+                                ctx.beginPath();
+                                ctx.moveTo(particle.x,particle.y);
+                                ctx.lineTo(inner.x,inner.y);
+                                ctx.stroke();
+                              //console.log(Math.floor(Math.sqrt(square)));
+                        }*/
                     }
-                    particle.ang+=Alpha+(Beta*Math.sign((Rt-Lt)));                  
+                    particle.nt=Nt;
+                    particle.rt=Rt;
+                    particle.lt=Lt;
+                    particle.ang+=Alpha+(Beta*Nt*Math.sign((Rt-Lt)));                  
                 }
                 
             }
@@ -130,7 +134,9 @@
             // For each particle update position according to angle
             for(particle of particles){
                 particle.vx=Math.sin(particle.ang);                  // (0.5*Math.PI)
-                particle.vy=Math.cos(particle.ang);              
+                particle.vy=Math.cos(particle.ang);
+                particle.ex=Math.sin(particle.ang+1.57);
+                particle.ey=Math.cos(particle.ang+1.57);             
                 particle.x+=particle.vx*Vel;
                 particle.y+=particle.vy*Vel;
                 if(particle.x<0) particle.x=cwidth;
@@ -139,44 +145,36 @@
                 if(particle.y>cheight) particle.y=0;         
             }
 
-                  /*
-                  ctx.beginPath();
-                  ctx.moveTo(particle.cellx*gridsize,particle.celly*gridsize);
-                  ctx.lineTo((particle.cellx*gridsize)+gridsize,particle.celly*gridsize);
-                  ctx.lineTo((particle.cellx*gridsize)+gridsize,(particle.celly*gridsize)+gridsize);
-                  ctx.lineTo((particle.cellx*gridsize),(particle.celly*gridsize)+gridsize);
-                  ctx.closePath();
-                  ctx.stroke();                  
-                  */            
-
             // Draw particle
             for(particle of particles){
-                if(particle.nt>0){
-                    ctx.fillStyle="#fff";
-                    //ctx.fillText(particle.nt,particle.x+10,particle.y);
+              
+                ctx.fillStyle="#fff";
+                //ctx.fillText(particle.nt,particle.x+10,particle.y);
 
-                    /*
-                    ctx.strokeStyle="#fe4";
-                    ctx.beginPath();
-                    ctx.moveTo(particle.x,particle.y);
-                    ctx.lineTo(particle.x+(particle.vx*5),particle.y+(particle.vy*5));
-                    ctx.stroke();
-                    */
+                /*
+                ctx.strokeStyle="#fe4";
+                ctx.beginPath();
+                ctx.moveTo(particle.x,particle.y);
+                ctx.lineTo(particle.x+(particle.vx*10),particle.y+(particle.vy*10));
+                ctx.stroke();
+                */
 
-                    ctx.fillStyle="#020";
-                    if(particle.nt>8) ctx.fillStyle="#042";
-                    if(particle.nt>10) ctx.fillStyle="#4b6";
-                    if(particle.nt>12) ctx.fillStyle="#de8";                    
+                var radius=5;
+                if(particle.nt>30){
+                    ctx.fillStyle="#de8";
+                    var radius=8;                    
+                }else if(particle.nt>15){
+                    ctx.fillStyle="#2b4";                    
                 }else{
-                    ctx.fillStyle="#020";
+                    ctx.fillStyle="#062";
                 }
 
                 ctx.beginPath();
-                ctx.arc(particle.x,particle.y, 3,0, 2 * Math.PI);
+                ctx.arc(particle.x,particle.y, radius,0, 2 * Math.PI);
                 ctx.fill();                  
 
-                //ctx.fillStyle="#fff";
-                //ctx.fillText(particle.btwang,particle.x+10,particle.y);
+                // ctx.fillStyle="#fff";
+                //ctx.fillText(particle.nt,particle.x+8,particle.y);
             }
 
             window.requestAnimationFrame(redraw);
@@ -188,7 +186,7 @@
             ctx = c.getContext("2d");
 
             // Create a random list of particles
-            for(var i=0;i<2800;i++){
+            for(var i=0;i<2000;i++){
                 particles.push({id:i,x:Math.random()*cwidth,y:Math.random()*cheight,ang:Math.random()*6.28,color:0}); //Math.random()*6.28
             }
             
@@ -198,7 +196,7 @@
     </script>
     </head>
     <body onload="startup();" style="background:#222;">
-        <canvas id="canvasid" width="600" height="600" style="width:800px;height:800px;">
+        <canvas id="canvasid" width="600" height="600" style="width:800px;height:800px;filter:blur(4px)">
         </canvas>
         <!-- image-rendering:pixelated;  filter:blur(4px) -->
     </body>
