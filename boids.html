@@ -9,9 +9,11 @@
 
         // Steering behavior test suite with clustering algorithm
         // https://en.wikipedia.org/wiki/Boids
-        // Separation - Avoid Local Flock Mates
-        // Alignment - 
-        // Cohesion - 
+        // Codetrain Approach:
+        // https://www.youtube.com/watch?v=mhjuuHl6qHM
+        // separation: steer to avoid crowding local flockmates
+        // alignment: steer towards the average heading of local flockmates
+        // cohesion: steer to move towards the average position (center of mass) of local flockmates
         // 
 
         var ctx;
@@ -85,6 +87,7 @@
                 var cell=cells[particle.hash];
 
                 if(cell!=null){
+                    // Alignment
                     var averageVx=0;
                     var averageVy=0;
                     var counter=1;
@@ -109,6 +112,8 @@
                     }
                     particle.ax=averageVx/counter;
                     particle.ay=averageVy/counter;
+
+                    // Cohesion?
                 }
                 
             }
