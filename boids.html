@@ -28,14 +28,13 @@
         const cheight=600;
         const gridx=Math.floor(cwidth/gridsize);
         const gridy=Math.floor(cheight/gridsize);
-        const maxSpeed=0.1;
+        
+        const maxSpeed=0.3;
 
         // PPS Constants
-        const Alpha=Math.PI;        
-        const Beta=Math.PI*(17/180);
-        const Vel=0.57;
         const Rad=50;
         const RadQuad=Rad*Rad;
+        var separation=2.5;
 
         // Display constants
         const TRIANGLE=1;
@@ -43,7 +42,7 @@
         const showNet=false;
         const speedvis=LINE;
 
-        // Primordial particle set
+        // Particle Grid
         var particles=[];
         var cells=[];        
 
@@ -92,11 +91,14 @@
 
                 if(cell!=null){
                     // Alignment and Cohesion
-                    var avgVx=0;
+                    var avgVx=0;    // Alignment
                     var avgVy=0;
-                    var avgPx=0;
+                    var avgPx=0;    // Cohesion
                     var avgPy=0;
-                    var counter=1;
+                    var avgDx=0;    // Separation
+                    var avgDy=0;
+
+                    var counter=0;
                     for(inner of cell){
                         var dx=inner.x-particle.x;
                         var dy=inner.y-particle.y;
@@ -106,10 +108,11 @@
                             counter++;
                             avgVx+=inner.vx;
                             avgVy+=inner.vy;
-
-                            avgPx=inner.x;
-                            avgPy=inner.y;
-
+                            avgPx+=inner.x;
+                            avgPy+=inner.y;
+                            var dst=Math.sqrt(square);
+                            avgDx+=((particle.x-inner.x)/dst);
+                            avgDy+=((particle.y-inner.y)/dst);
                             if(showNet){
                                 ctx.strokeStyle="#ef4";                            
                                 ctx.beginPath();
@@ -120,17 +123,26 @@
                         }
                     }
                     
-                    ctx.beginPath();
-                    ctx.arc(avgPx,avgPy, Rad,0, 2 * Math.PI);                    
-                    ctx.stroke();
+                    particle.ax=0;
+                    particle.ay=0;
+                    
+                    if(counter>0){
+                        avgPx/=counter;
+                        avgPy/=counter;
 
-                    particle.ax=avgVx/counter;
-                    particle.ay=avgVy/counter;
+                        // Cohesion
+                        particle.ax+=(particle.vx-(particle.x-avgPx))*0.08;
+                        particle.ay+=(particle.vx-(particle.y-avgPy))*0.08;
 
-                    particle.ax+=particle.vx-(particle.x-avgPx);
-                    particle.ay+=particle.vy-(particle.y-avgPy);
+                        // Alignment
+                        particle.ax+=avgVx/counter;
+                        particle.ay+=avgVy/counter;
 
-                    // Cohesion?
+                        // Separation
+                        particle.ax+=(avgDx/counter)*separation;
+                        particle.ay+=(avgDy/counter)*separation;                        
+                    }
+
                 }
                 
             }
@@ -155,7 +167,7 @@
                 if(particle.y<0) particle.y=cheight;
                 if(particle.y>cheight) particle.y=0;         
             
-//                if(particle.id==1) console.log(particle.x,particle.y,particle.vx,particle.vy,particle.ax,particle.ay);
+                // if(particle.id==1) console.log(particle.x,particle.y,particle.vx,particle.vy,particle.ax,particle.ay);
             }
 
 
@@ -166,9 +178,9 @@
                 //ctx.fillText(particle.nt,particle.x+10,particle.y);
 
                 ctx.fillStyle="#888";                    
-                ctx.beginPath();
-                ctx.arc(particle.x,particle.y, 5,0, 2 * Math.PI);
-                ctx.fill();                  
+                //ctx.beginPath();
+                //ctx.arc(particle.x,particle.y, 5,0, 2 * Math.PI);
+                //ctx.fill();                  
 
                 if(speedvis==TRIANGLE){
                     ctx.strokeStyle="#191";
@@ -197,11 +209,10 @@
 
             // Create a random list of particles
 
-            for(var i=0;i<100;i++){
+            for(var i=0;i<200;i++){
                 var ang=Math.random()*6.28;
-                particles.push({id:i,x:300+(Math.random()*150),y:300+(Math.random()*150),vx:Math.sin(ang)*0.3,vy:Math.cos(ang)*0.3,color:0}); //Math.random()*6.28
+                particles.push({id:i,x:300+(Math.random()*250),y:300+(Math.random()*250),vx:Math.sin(ang)*0.3,vy:Math.cos(ang)*0.3,color:0}); //Math.random()*6.28
             }
-            
             redraw();
         }
 
@@ -210,6 +221,9 @@
     <body onload="startup();" style="background:#222;">
         <canvas id="canvasid" width="600" height="600" style="width:800px;height:800px;">
         </canvas>
+        <div>
+          <input type="range" min="1.0" max="4.0" step="0.01" value="2.5" id="separation" onchange="separation=parseFloat(this.value);document.getElementById('separationtext').value=separation;" oninput="separation=parseFloat(this.value);document.getElementById('separationtext').value=separation"><input type="text" id="separationtext">
+        </div>
         <!-- image-rendering:pixelated;  filter:blur(4px) -->
     </body>
 </html>
