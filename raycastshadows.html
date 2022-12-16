@@ -12,13 +12,22 @@
         // Codetrain 
         // https://www.youtube.com/watch?v=TOEi6T2mtHo&t=16s
         // https://ncase.me/sight-and-light/
+        // https://www.redblobgames.com/articles/visibility/
         // Rays toward each segment end point
+
+        // We need spatial hash to only test cells near ray
 
 				var c;
         var xk=50;
         var yk=50;
         var xd=0;
         var yd=0;
+
+        var intersectcount=0;
+
+        // Spatial hash variables
+        var hash=[];
+
 			
 				// Segments, Floor Clip Polygons, Shadow Areas 
 				var segments=[
@@ -53,81 +62,30 @@
 				// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
 				// Determine the intersection point of two line segments
 				function intersect(p1,p2,p3,p4) {
+          intersectcount++;
 					
-						// Check if none of the lines are of length 0
-						if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+          // Check if none of the lines are of length 0
+          if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
 
-						denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
-					
-						// Lines are parallel
-						if (denominator === 0) return false;
+          denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+        
+          // Lines are parallel
+          if (denominator === 0) return false;
 
-						let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
-						let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+          let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+          let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
 
-						// is the intersection along the segments
-						if (ua < 0 || ua > 1 || ub < 0 || ub > 1) return false;
+          // is the intersection along the segments
+          if (ua < -0.01 || ua > 0.99 || ub < -0.01 || ub > 0.99) return false;
 
-						// Return a object with the x and y coordinates of the intersection
-						let x = p1.x + ua * (p2.x - p1.x)
-						let y = p1.y + ua * (p2.y - p1.y)
-						
-						return {x:x, y:y}
-				}
-
-				// Point s inside triangle p1,p2,p3
-				function pointInTriangle(s, a, b, c)
-				{
-						as_x = s.x-a.x;
-						as_y = s.y-a.y;
-
-						s_ab = (b.x-a.x)*as_y-(b.y-a.y)*as_x > 0;
-
-						if((c.x-a.x)*as_y-(c.y-a.y)*as_x > 0 == s_ab) return false;
-
-						if((c.x-b.x)*(s.y-b.y)-(c.y-b.y)*(s.x-b.x) > 0 != s_ab) return false;
-
-						return {x:s.x,y:s.y};
-				}
+          // Return a object with the x and y coordinates of the intersection
+          let x = p1.x + ua * (p2.x - p1.x)
+          let y = p1.y + ua * (p2.y - p1.y)
+          
+          return {x:x, y:y}
+      }
 			
-				// Even Odd Rule Polyon Point Colision
-				function pointInPolygon(point,segments)
-				{
-						// Never inside 	
-						if(segments.length<3) return false;
-					
-						// Inside bounding box?
-						if(!(point.x>=segments.p1.x&&point.x<=segments.p2.x&&point.y>=segments.p1.y&&point.y<=segments.p2.y)) return false;
-
-						// Iterate over all segments and 
-						var cnt=0;
-						for(i=0;i<segments.length;i++){
-								if(i==(segments.length-1)){
-										p2=segments[0];
-								}else{
-										p2=segments[i+1];
-								}
-								p1=segments[i];
-							
-								// Swap if negative incline!
-								if(p2.y<p1.y){
-										var tmp=p2;
-										p2=p1;
-										p1=tmp;
-								}
-
-								if(point.y>=p1.y&&point.y<=p2.y){
-										var dy=p2.y-p1.y;
-										var dx=p2.x-p1.x;
-										if((p1.x+((dx/dy)*(point.y-p1.y))<=point.x)) cnt++;
-								}
-						}
-						
-						if((cnt%2)==0) return false;
-						return true;
-				}
-									
-				function keydown(e)
+      function keydown(e)
 				{
 						if(e.keyCode==37){
 								xd=-1;
@@ -147,7 +105,7 @@
 						}else if(e.keyCode==38||e.keyCode==40){
 								yd=0;
 						}
-				}		
+				}			
 			
 				function setup()
 				{
@@ -167,13 +125,18 @@
 			
 				function drawit()
 				{	
+            intersectcount=0;
+
 						c.clearRect(0,0,900,900);
 						document.getElementById("mainsvg").innerHTML="";
+
+            c.save();
+            c.scale(2.0,2.0);
 					
 						// Display player
 						c.beginPath();
 						c.arc(xk, yk, 5, 0, 2 * Math.PI);
-						c.stroke(); 				
+						c.fill(); 				
 
             c.strokeStyle="#000";
             c.beginPath();
@@ -186,19 +149,57 @@
             c.stroke();
 
             c.strokeStyle="#f49";
-            c.beginPath();
             if(segments.length>0){
                 for(var segment of segments){
                     var dx=segment.x2-xk;
                     var dy=segment.y2-yk;
                     segment.ang=Math.atan2(dy,dx);
 
-                    c.moveTo(xk,yk);
-                    c.lineTo(xk+(Math.cos(segment.ang)*300),yk+(Math.sin(segment.ang)*300));
+                    // Create ray from segment
+                    var ray={x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang+0.01)*500),y2:yk+(Math.sin(segment.ang+0.01)*500)};
+
+                    c.beginPath();
+                    c.moveTo(ray.x1,ray.y1);
+                    c.lineTo(ray.x2,ray.y2);
+                    c.stroke();
+
+                    // Intersect ray and collate closest intersection point
+                    var currdst=100000;
+                    var currx=0;
+                    var curry=0;
+                    for(var innersegment of segments){
+
+                        var p1={x:ray.x1,y:ray.y1};
+                        var p2={x:ray.x2,y:ray.y2};
+                        var p3={x:innersegment.x1,y:innersegment.y1};
+                        var p4={x:innersegment.x2,y:innersegment.y2};
+
+                        var pnt=intersect(p1,p2,p3,p4);
+
+                        c.beginPath();
+				                c.arc(pnt.x,pnt.y, 5, 0, 2 * Math.PI);
+				                c.stroke(); 
+
+                        let dx=pnt.x-xk;
+                        let dy=pnt.y-yk;
+                        let dsts=(dx*dx)+(dy*dy);
+
+                        if(dsts<currdst){
+                            currdst=dsts;
+                            currx=pnt.x;
+                            curry=pnt.y;
+                        }
+                    }
+                    c.beginPath();
+				            c.arc(currx,curry, 8, 0, 2 * Math.PI);
+				            c.stroke(); 
                 }
             }
-            c.stroke();
 
+            c.restore();
+
+            c.font="20px Arial Narrow";
+            c.fillText(intersectcount,10,20);
 
 						window.requestAnimationFrame(drawit);
 				}
