@@ -152,29 +152,32 @@ function hashLine(x1,y1,x2,y2)
     c.stroke();
 
     c.globalAlpha=0.3;
-    c.fillStyle="#f44";
+
 
     /*
 
-plotLineLow(x0, y0, x1, y1)
-    dx = x1 - x0
-    dy = y1 - y0
-    yi = 1
-    if dy < 0
-        yi = -1
-        dy = -dy
-    end if
-    D = (2 * dy) - dx
-    y = y0
-
-    for x from x0 to x1
-        plot(x, y)
-        if D > 0
-            y = y + yi
-            D = D + (2 * (dy - dx))
-        else
-            D = D + 2*dy
+plotLine(x0, y0, x1, y1)
+    dx = abs(x1 - x0)
+    sx = x0 < x1 ? 1 : -1
+    dy = -abs(y1 - y0)
+    sy = y0 < y1 ? 1 : -1
+    error = dx + dy
+    
+    while true
+        plot(x0, y0)
+        if x0 == x1 && y0 == y1 break
+        e2 = 2 * error
+        if e2 >= dy
+            if x0 == x1 break
+            error = error + dy
+            x0 = x0 + sx
         end if
+        if e2 <= dx
+            if y0 == y1 break
+            error = error + dx
+            y0 = y0 + sy
+        end if
+    end while
 
     */
 
@@ -183,18 +186,37 @@ plotLineLow(x0, y0, x1, y1)
     x2=Math.floor(x2/gridsize);
     y2=Math.floor(y2/gridsize);
 
-    let dx=x2-x1;
-    let dy=y2-y1;
-    yi=1;
-    if(dy<0){
-      yi=-1;
-      dy=-dy;
-    }
-    let D=(2*dy)-dx;
-    let cnt=Math.abs(dx); 
-    let xk=x1;
-    let yk=y1;    
 
+    let dx=Math.abs(x2-x1);
+    let dy=-Math.abs(y2-y1);
+
+    let sx = x1 < x2 ? 1 : -1;
+    let sy = y1 < y2 ? 1 : -1;
+    let error=dx+dy;
+
+    var i=0;
+    while(true){
+        if(i++>50) break;
+        c.fillStyle="#f44";
+        c.fillRect(x1*gridsize,y1*gridsize,gridsize,gridsize);
+        if(x1==x2&&y1==y2) break;
+        let e2=2*error;
+        //if(e2>dy){
+        if(e2 - dy > dy - e2){
+            if(x1==x2) break;
+            c.fillStyle="#44";
+            error+=dy;
+            x1+=sx;
+        }else{
+        //if(e2<=dx){
+            if(y1==y2) break;
+            error+=dx;
+            y1+=sy;
+        }
+        console.log(x1,y1,x2,y2);
+    }
+
+ /*   
     for(i=0;i<=cnt;i++){
         c.fillRect(xk*gridsize,yk*gridsize,gridsize,gridsize);
         if(D>0){
@@ -207,6 +229,7 @@ plotLineLow(x0, y0, x1, y1)
     }
 
     c.globalAlpha=1.0;
+*/
 }
 
 // -------------------==============########==============-------------------
