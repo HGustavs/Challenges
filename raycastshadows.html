@@ -18,195 +18,311 @@
         // We need spatial hash to only test cells near ray
 
 				var c;
+        var mx,my;
+
+        // Avatar variables
         var xk=50;
         var yk=50;
         var xd=0;
         var yd=0;
 
+        // Benchmarking
         var intersectcount=0;
 
-        // Spatial hash variables
-        var hash=[];
+//------------------------------------=======############==========----------------------------------------
+//                                 Spatial Hash Global Variables and Constants
+//------------------------------------=======############==========----------------------------------------
+	        
+var hash=[];
+const gridsize=50;                          // Spatial hash grid size
+const gridhalf=gridsize/2;
+const cwidth=900;
+const cheight=900;
+const gridx=Math.floor(cwidth/gridsize);
+const gridy=Math.floor(cheight/gridsize);
 
 			
-				// Segments, Floor Clip Polygons, Shadow Areas 
-				var segments=[
-          {x1:8,y1:15,x2:198,y2:15},
-          {x1:198,y1:15,x2:249,y2:61},
-          {x1:249,y1:61,x2:286,y2:31},
-          {x1:286,y1:31,x2:286,y2:22},
-          {x1:286,y1:22,x2:360,y2:22},
-          {x1:360,y1:22,x2:360,y2:58},
-          {x1:360,y1:58,x2:296,y2:58},
-          {x1:296,y1:58,x2:296,y2:84},
-          {x1:296,y1:84,x2:334,y2:92},
-          {x1:334,y1:92,x2:353,y2:246},
-          {x1:353,y1:246,x2:264,y2:246},
-          {x1:264,y1:246,x2:270,y2:162},
-          {x1:270,y1:162,x2:287,y2:151},
-          {x1:287,y1:151,x2:291,y2:123},
-          {x1:291,y1:123,x2:215,y2:130},
-          {x1:215,y1:130,x2:220,y2:151},
-          {x1:220,y1:151,x2:232,y2:162},
-          {x1:232,y1:162,x2:227,y2:246},
-          {x1:227,y1:246,x2:172,y2:246},
-          {x1:172,y1:246,x2:162,y2:134},
-          {x1:162,y1:134,x2:117,y2:116},
-          {x1:117,y1:116,x2:120,y2:156}, 
-          {x1:120,y1:156,x2:64,y2:156},
-          {x1:64,y1:156,x2:68,y2:110},
-          {x1:68,y1:110,x2:8,y2:110},
-          {x1:8,y1:110,x2:8,y2:15}
-        ];
-			
-				// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
-				// Determine the intersection point of two line segments
-				function intersect(p1,p2,p3,p4) {
-          intersectcount++;
-					
-          // Check if none of the lines are of length 0
-          if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+// Segments, Floor Clip Polygons, Shadow Areas 
+var segments=[
+  {x1:8,y1:15,x2:198,y2:15},
+  {x1:198,y1:15,x2:249,y2:61},
+  {x1:249,y1:61,x2:286,y2:31},
+  {x1:286,y1:31,x2:286,y2:22},
+  {x1:286,y1:22,x2:360,y2:22},
+  {x1:360,y1:22,x2:360,y2:58},
+  {x1:360,y1:58,x2:296,y2:58},
+  {x1:296,y1:58,x2:296,y2:84},
+  {x1:296,y1:84,x2:334,y2:92},
+  {x1:334,y1:92,x2:353,y2:246},
+  {x1:353,y1:246,x2:264,y2:246},
+  {x1:264,y1:246,x2:270,y2:162},
+  {x1:270,y1:162,x2:287,y2:151},
+  {x1:287,y1:151,x2:291,y2:123},
+  {x1:291,y1:123,x2:215,y2:130},
+  {x1:215,y1:130,x2:220,y2:151},
+  {x1:220,y1:151,x2:232,y2:162},
+  {x1:232,y1:162,x2:227,y2:246},
+  {x1:227,y1:246,x2:172,y2:246},
+  {x1:172,y1:246,x2:162,y2:134},
+  {x1:162,y1:134,x2:117,y2:116},
+  {x1:117,y1:116,x2:120,y2:156}, 
+  {x1:120,y1:156,x2:64,y2:156},
+  {x1:64,y1:156,x2:68,y2:110},
+  {x1:68,y1:110,x2:8,y2:110},
+  {x1:8,y1:110,x2:8,y2:15}
+];
 
-          denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
-        
-          // Lines are parallel
-          if (denominator === 0) return false;
-
-          let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
-          let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
-
-          // is the intersection along the segments
-          if (ua < -0.01 || ua > 0.99 || ub < -0.01 || ub > 0.99) return false;
-
-          // Return a object with the x and y coordinates of the intersection
-          let x = p1.x + ua * (p2.x - p1.x)
-          let y = p1.y + ua * (p2.y - p1.y)
-          
-          return {x:x, y:y}
-      }
-			
-      function keydown(e)
-				{
-						if(e.keyCode==37){
-								xd=-1;
-						}else if(e.keyCode==39){
-								xd=1;
-						}else if(e.keyCode==38){
-								yd=-1;
-						}else if(e.keyCode==40){
-								yd=1;
-						}
-				}
-			
-				function keyup(e)
-				{
-						if(e.keyCode==37||e.keyCode==39){
-								xd=0;
-						}else if(e.keyCode==38||e.keyCode==40){
-								yd=0;
-						}
-				}			
-			
-				function setup()
-				{
-						var cc = document.getElementById("myCanvas");
-				    c = cc.getContext("2d");
+// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments
+function intersect(p1,p2,p3,p4) {
+  intersectcount++;
 	
-						setInterval(updatestate,20);
-					
-						drawit();
-				}
-											
-				function updatestate()
-				{
-						xk+=xd;
-						yk+=yd;
-				}
-			
-				function drawit()
-				{	
-            intersectcount=0;
+  // Check if none of the lines are of length 0
+  if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
 
-						c.clearRect(0,0,900,900);
-						document.getElementById("mainsvg").innerHTML="";
+  denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
 
-            c.save();
-            c.scale(2.0,2.0);
-					
-						// Display player
-						c.beginPath();
-						c.arc(xk, yk, 5, 0, 2 * Math.PI);
-						c.fill(); 				
+  // Lines are parallel
+  if (denominator === 0) return false;
 
-            c.strokeStyle="#000";
+  let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+  let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+  // is the intersection along the segments
+  if (ua < -0.01 || ua > 0.99 || ub < -0.01 || ub > 0.99) return false;
+
+  // Return a object with the x and y coordinates of the intersection
+  let x = p1.x + ua * (p2.x - p1.x)
+  let y = p1.y + ua * (p2.y - p1.y)
+  
+  return {x:x, y:y}
+}
+
+function mouseMove(e,t)
+{
+		var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element
+ }
+
+function keydown(e)
+{
+		if(e.keyCode==37){
+				xd=-1;
+		}else if(e.keyCode==39){
+				xd=1;
+		}else if(e.keyCode==38){
+				yd=-1;
+		}else if(e.keyCode==40){
+				yd=1;
+		}
+}
+
+function keyup(e)
+{
+		if(e.keyCode==37||e.keyCode==39){
+				xd=0;
+		}else if(e.keyCode==38||e.keyCode==40){
+				yd=0;
+		}
+}			
+
+function setup()
+{
+		var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+		setInterval(updatestate,20);
+	
+		drawit();
+}
+							
+function updatestate()
+{
+		xk+=xd;
+		yk+=yd;
+}
+
+// Ray / Segment Spatial Hashing Bresenham Algorithm
+function hashLine(x1,y1,x2,y2)
+{
+    c.beginPath();
+    c.moveTo(x1,y1);
+    c.lineTo(x2,y2);
+    c.stroke();
+
+    c.globalAlpha=0.3;
+    c.fillStyle="#f44";
+
+    /*
+
+plotLineLow(x0, y0, x1, y1)
+    dx = x1 - x0
+    dy = y1 - y0
+    yi = 1
+    if dy < 0
+        yi = -1
+        dy = -dy
+    end if
+    D = (2 * dy) - dx
+    y = y0
+
+    for x from x0 to x1
+        plot(x, y)
+        if D > 0
+            y = y + yi
+            D = D + (2 * (dy - dx))
+        else
+            D = D + 2*dy
+        end if
+
+    */
+
+    x1=Math.floor(x1/gridsize);
+    y1=Math.floor(y1/gridsize);
+    x2=Math.floor(x2/gridsize);
+    y2=Math.floor(y2/gridsize);
+
+    let dx=x2-x1;
+    let dy=y2-y1;
+    yi=1;
+    if(dy<0){
+      yi=-1;
+      dy=-dy;
+    }
+    let D=(2*dy)-dx;
+    let cnt=Math.abs(dx); 
+    let xk=x1;
+    let yk=y1;    
+
+    for(i=0;i<=cnt;i++){
+        c.fillRect(xk*gridsize,yk*gridsize,gridsize,gridsize);
+        if(D>0){
+            yk=yk+yi;
+            D=D+(2*(dy-dx));
+        }else{
+            D=D+2*dy;
+        }
+        xk++;
+    }
+
+    c.globalAlpha=1.0;
+}
+
+// -------------------==============########==============-------------------
+// Update of Spatial Hash - Find Which Segments that Intersect with Spatial Hash Cells
+// We must make sure that we do not add same value to list again (to avoid double tests).
+// Sparse Array?
+
+function updateHash()
+{
+
+}
+
+function drawit()
+{	
+    intersectcount=0;
+
+		c.clearRect(0,0,900,900);
+		document.getElementById("mainsvg").innerHTML="";
+
+    // Draw spatial hash grid
+    c.globalAlpha=0.5;
+    c.strokeStyle="#080";
+    c.beginPath();
+    for(var i=0;i<cheight;i+=gridsize){
+            c.moveTo(0,i);
+            c.lineTo(cwidth,i);
+    }
+    for(var i=0;i<cwidth;i+=gridsize){
+            c.moveTo(i,0);
+            c.lineTo(i,cheight);
+    }
+    c.stroke();
+
+    c.strokeStyle="#46b";
+    c.globalAlpha=1.0;
+    c.lineWidth=3;
+    hashLine(330,225,mx,my);
+    c.lineWidth=1;
+/*    
+    c.save();
+    c.scale(2.0,2.0);
+	
+		// Display player
+		c.beginPath();
+		c.arc(xk, yk, 5, 0, 2 * Math.PI);
+		c.fill(); 				
+
+    c.strokeStyle="#000";
+    c.beginPath();
+    if(segments.length>0){
+        c.moveTo(segments[0].x1,segments[0].y1);
+        for(var segment of segments){
+            c.lineTo(segment.x2,segment.y2);
+        }
+    }
+    c.stroke();
+
+    c.strokeStyle="#f49";
+    if(segments.length>0){
+        for(var segment of segments){
+            var dx=segment.x2-xk;
+            var dy=segment.y2-yk;
+            segment.ang=Math.atan2(dy,dx);
+
+            // Create ray from segment
+            var ray={x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang+0.01)*500),y2:yk+(Math.sin(segment.ang+0.01)*500)};
+
             c.beginPath();
-            if(segments.length>0){
-                c.moveTo(segments[0].x1,segments[0].y1);
-                for(var segment of segments){
-                    c.lineTo(segment.x2,segment.y2);
-                }
-            }
+            c.moveTo(ray.x1,ray.y1);
+            c.lineTo(ray.x2,ray.y2);
             c.stroke();
 
-            c.strokeStyle="#f49";
-            if(segments.length>0){
-                for(var segment of segments){
-                    var dx=segment.x2-xk;
-                    var dy=segment.y2-yk;
-                    segment.ang=Math.atan2(dy,dx);
+            // Intersect ray and collate closest intersection point
+            var currdst=100000;
+            var currx=0;
+            var curry=0;
+            for(var innersegment of segments){
 
-                    // Create ray from segment
-                    var ray={x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang+0.01)*500),y2:yk+(Math.sin(segment.ang+0.01)*500)};
+                var p1={x:ray.x1,y:ray.y1};
+                var p2={x:ray.x2,y:ray.y2};
+                var p3={x:innersegment.x1,y:innersegment.y1};
+                var p4={x:innersegment.x2,y:innersegment.y2};
 
-                    c.beginPath();
-                    c.moveTo(ray.x1,ray.y1);
-                    c.lineTo(ray.x2,ray.y2);
-                    c.stroke();
+                var pnt=intersect(p1,p2,p3,p4);
 
-                    // Intersect ray and collate closest intersection point
-                    var currdst=100000;
-                    var currx=0;
-                    var curry=0;
-                    for(var innersegment of segments){
+                c.beginPath();
+                c.arc(pnt.x,pnt.y, 5, 0, 2 * Math.PI);
+                c.stroke(); 
 
-                        var p1={x:ray.x1,y:ray.y1};
-                        var p2={x:ray.x2,y:ray.y2};
-                        var p3={x:innersegment.x1,y:innersegment.y1};
-                        var p4={x:innersegment.x2,y:innersegment.y2};
+                let dx=pnt.x-xk;
+                let dy=pnt.y-yk;
+                let dsts=(dx*dx)+(dy*dy);
 
-                        var pnt=intersect(p1,p2,p3,p4);
-
-                        c.beginPath();
-				                c.arc(pnt.x,pnt.y, 5, 0, 2 * Math.PI);
-				                c.stroke(); 
-
-                        let dx=pnt.x-xk;
-                        let dy=pnt.y-yk;
-                        let dsts=(dx*dx)+(dy*dy);
-
-                        if(dsts<currdst){
-                            currdst=dsts;
-                            currx=pnt.x;
-                            curry=pnt.y;
-                        }
-                    }
-                    c.beginPath();
-				            c.arc(currx,curry, 8, 0, 2 * Math.PI);
-				            c.stroke(); 
+                if(dsts<currdst){
+                    currdst=dsts;
+                    currx=pnt.x;
+                    curry=pnt.y;
                 }
             }
+            c.beginPath();
+            c.arc(currx,curry, 8, 0, 2 * Math.PI);
+            c.stroke(); 
+        }
+    }
 
-            c.restore();
+    c.restore();
 
-            c.font="20px Arial Narrow";
-            c.fillText(intersectcount,10,20);
-
-						window.requestAnimationFrame(drawit);
-				}
+    c.font="20px Arial Narrow";
+    c.fillText(intersectcount,10,20);
+*/
+		window.requestAnimationFrame(drawit);
+}
 			
 		</script>
 </head>
-<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" >
+<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" onmousedown="mousedown()" onmousemove="mouseMove(event)">
  	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas>
 	<svg style='border:1px dotted red;' height="900" width="900" id="mainsvg"></svg>
 </body>
