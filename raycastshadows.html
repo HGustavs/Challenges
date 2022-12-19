@@ -16,9 +16,13 @@
         // Rays toward each segment end point
 
         // We need spatial hash to only test cells near ray
+        // https://stackoverflow.com/questions/24679963/precise-subpixel-line-drawing-algorithm-rasterization-algorithm
+        // https://stackoverflow.com/questions/4381269/line-rasterisation-cover-all-pixels-regardless-of-line-gradient
 
 				var c;
         var mx,my;
+        var mmx=300;
+        var mmy=300;
 
         // Avatar variables
         var xk=50;
@@ -105,6 +109,12 @@ function mouseMove(e,t)
     my = e.clientY - rect.top;  //y position within the element
  }
 
+ function mouseDown(e)
+ {
+    mmx=mx;
+    mmy=my;
+ }
+
 function keydown(e)
 {
 		if(e.keyCode==37){
@@ -132,7 +142,13 @@ function setup()
 		var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
 
-		setInterval(updatestate,20);
+    for(var segment of segments){
+        segment.x1*=2.5;
+        segment.y1*=2.5;
+        segment.x2*=2.5;
+        segment.y2*=2.5;
+
+    }
 	
 		drawit();
 }
@@ -143,44 +159,19 @@ function updatestate()
 		yk+=yd;
 }
 
-// Ray / Segment Spatial Hashing Bresenham Algorithm
-function hashLine(x1,y1,x2,y2)
+function visualizeHit(cxk,cyk)
 {
-    c.beginPath();
-    c.moveTo(x1,y1);
-    c.lineTo(x2,y2);
-    c.stroke();
+  c.fillStyle="#f44"; 
+  c.beginPath();
+  c.fillRect(cxk*gridsize,cyk*gridsize,gridsize,gridsize);
+  c.fill();
+}
 
-    c.globalAlpha=0.3;
-
-
-    /*
-
-plotLine(x0, y0, x1, y1)
-    dx = abs(x1 - x0)
-    sx = x0 < x1 ? 1 : -1
-    dy = -abs(y1 - y0)
-    sy = y0 < y1 ? 1 : -1
-    error = dx + dy
-    
-    while true
-        plot(x0, y0)
-        if x0 == x1 && y0 == y1 break
-        e2 = 2 * error
-        if e2 >= dy
-            if x0 == x1 break
-            error = error + dy
-            x0 = x0 + sx
-        end if
-        if e2 <= dx
-            if y0 == y1 break
-            error = error + dx
-            y0 = y0 + sy
-        end if
-    end while
-
-    */
-
+// Ray / Segment Spatial Hashing Bresenham Algorithm
+// Itemcall function is called for each 'pixel' and is passed X and Y coordinate
+function hashLine(x1,y1,x2,y2,itemcall)
+{
+    alert(itemcall);
     x1=Math.floor(x1/gridsize);
     y1=Math.floor(y1/gridsize);
     x2=Math.floor(x2/gridsize);
@@ -197,14 +188,12 @@ plotLine(x0, y0, x1, y1)
     var i=0;
     while(true){
         if(i++>50) break;
-        c.fillStyle="#f44";
-        c.fillRect(x1*gridsize,y1*gridsize,gridsize,gridsize);
+        if(itemcall!=null) itemcall(x1,y1);
         if(x1==x2&&y1==y2) break;
         let e2=2*error;
         //if(e2>dy){
         if(e2 - dy > dy - e2){
             if(x1==x2) break;
-            c.fillStyle="#44";
             error+=dy;
             x1+=sx;
         }else{
@@ -213,23 +202,7 @@ plotLine(x0, y0, x1, y1)
             error+=dx;
             y1+=sy;
         }
-        console.log(x1,y1,x2,y2);
     }
-
- /*   
-    for(i=0;i<=cnt;i++){
-        c.fillRect(xk*gridsize,yk*gridsize,gridsize,gridsize);
-        if(D>0){
-            yk=yk+yi;
-            D=D+(2*(dy-dx));
-        }else{
-            D=D+2*dy;
-        }
-        xk++;
-    }
-
-    c.globalAlpha=1.0;
-*/
 }
 
 // -------------------==============########==============-------------------
@@ -266,11 +239,16 @@ function drawit()
     c.strokeStyle="#46b";
     c.globalAlpha=1.0;
     c.lineWidth=3;
-    hashLine(330,225,mx,my);
+    c.beginPath();
+    c.moveTo(mmx,mmy);
+    c.lineTo(mx,my);
+    c.stroke();
+    c.globalAlpha=0.3;
+    hashLine(mmx,mmy,mx,my);
     c.lineWidth=1;
-/*    
+     
     c.save();
-    c.scale(2.0,2.0);
+    //c.scale(2.0,2.0);
 	
 		// Display player
 		c.beginPath();
@@ -287,6 +265,12 @@ function drawit()
     }
     c.stroke();
 
+    for(segment of segments){
+        hashLine(segment.x1,segment.y1,segment.x2,segment.y2,visualizeHit);
+    }
+
+    c.restore();
+    /*   
     c.strokeStyle="#f49";
     if(segments.length>0){
         for(var segment of segments){
@@ -345,7 +329,7 @@ function drawit()
 			
 		</script>
 </head>
-<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" onmousedown="mousedown()" onmousemove="mouseMove(event)">
+<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" onmousedown="mouseDown(event)" onmousemove="mouseMove(event)">
  	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas>
 	<svg style='border:1px dotted red;' height="900" width="900" id="mainsvg"></svg>
 </body>
