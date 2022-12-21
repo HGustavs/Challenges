@@ -38,6 +38,7 @@
 //------------------------------------=======############==========----------------------------------------
 	        
 var hash=[];
+var found=[];
 const gridsize=50;                          // Spatial hash grid size
 const gridhalf=gridsize/2;
 const cwidth=900;
@@ -165,7 +166,7 @@ function visualizeHit(cxk,cyk,segment)
   if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
   c.fillStyle="#f44";
   
-  var index=(cyk*gridx)+cyk;
+  var index=(cyk*gridx)+cxk;
 
   if(hash[index]==null){
       hash[index]=[];
@@ -175,6 +176,8 @@ function visualizeHit(cxk,cyk,segment)
   c.beginPath();
   c.fillRect(cxk*gridsize,cyk*gridsize,gridsize,gridsize);
   c.fill();
+
+  return 0;
 }
 
 function readHit(cxk,cyk,segment)
@@ -182,18 +185,25 @@ function readHit(cxk,cyk,segment)
   if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
   c.fillStyle="#46f";
   
-  var index=(cyk*gridx)+cyk;
+  var index=(cyk*gridx)+cxk;
+  if(hash[index]!=null){
+      for(segment of hash[index]){
+          pushIfNotPresent(found,segment);
+      }
+      //return 1;
+  }
   
   c.beginPath();
   c.fillRect(cxk*gridsize,cyk*gridsize,gridsize,gridsize);
   c.fill();
+
+  return 0;
 }
 
 // Ray / Segment Spatial Hashing Bresenham Algorithm
 // Itemcall function is called for each 'pixel' and is passed X and Y coordinate
 function hashLine(x1,y1,x2,y2,segment,itemcall)
 {
-    alert(itemcall);
     x1=Math.floor(x1/gridsize);
     y1=Math.floor(y1/gridsize);
     x2=Math.floor(x2/gridsize);
@@ -210,7 +220,10 @@ function hashLine(x1,y1,x2,y2,segment,itemcall)
     var i=0;
     while(true){
         if(i++>50) break;
-        if(itemcall!=null) itemcall(x1,y1,segment);
+        if(itemcall!=null){
+          var ret=itemcall(x1,y1,segment);
+          if(ret>0) return true;
+        }
         if(x1==x2&&y1==y2) break;
         let e2=2*error;
         //if(e2>dy){
@@ -231,11 +244,6 @@ function hashLine(x1,y1,x2,y2,segment,itemcall)
 // Update of Spatial Hash - Find Which Segments that Intersect with Spatial Hash Cells
 // We must make sure that we do not add same value to list again (to avoid double tests).
 // Sparse Array?
-
-function updateHash()
-{
-    
-}
 
 function pushIfNotPresent(list,item)
 {
@@ -265,17 +273,6 @@ function drawit()
             c.lineTo(i,cheight);
     }
     c.stroke();
-
-    c.strokeStyle="#46b";
-    c.globalAlpha=1.0;
-    c.lineWidth=3;
-    c.beginPath();
-    c.moveTo(mmx,mmy);
-    c.lineTo(mx,my);
-    c.stroke();
-    c.globalAlpha=0.3;
-    hashLine(mmx,mmy,mx,my,null,readHit);
-    c.lineWidth=1;
      
     c.save();
     //c.scale(2.0,2.0);
@@ -295,11 +292,40 @@ function drawit()
     }
     c.stroke();
 
+    // Update hash
     hash=[];
     for(segment of segments){
         hashLine(segment.x1,segment.y1,segment.x2,segment.y2,segment,visualizeHit);
     }
-    console.log(hash);
+
+    // Retrieve list of intersections
+    c.strokeStyle="#46b";
+    c.globalAlpha=1.0;
+    c.lineWidth=3;
+    c.beginPath();
+    c.moveTo(mmx,mmy);
+    c.lineTo(mx,my);
+    c.stroke();
+    c.globalAlpha=0.3;
+    
+    // Clear found list and cast ray
+    found=[];
+    hashLine(mmx,mmy,mx,my,null,readHit);
+
+    c.globalAlpha=1.0;
+    c.fillText(found.length,100,40);
+    for(var i=0;i<found.length;i++){
+      c.fillText(found[i].id,100,40+(20*i));
+    }    
+
+    // Visualize found segments
+    for(segment of found){
+        c.beginPath();
+        c.moveTo(segment.x1,segment.y1); 
+        c.lineTo(segment.x2,segment.y2);               
+        c.stroke();
+    }
+    c.lineWidth=1;
 
     c.restore();
     /*   
@@ -356,7 +382,7 @@ function drawit()
     c.font="20px Arial Narrow";
     c.fillText(intersectcount,10,20);
 */
-		//window.requestAnimationFrame(drawit);
+		window.requestAnimationFrame(drawit);
 }
 			
 		</script>
