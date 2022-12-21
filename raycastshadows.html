@@ -42,38 +42,38 @@ const gridsize=50;                          // Spatial hash grid size
 const gridhalf=gridsize/2;
 const cwidth=900;
 const cheight=900;
-const gridx=Math.floor(cwidth/gridsize);
+const gridx=Math.ceil(cwidth/gridsize);
 const gridy=Math.floor(cheight/gridsize);
 
 			
 // Segments, Floor Clip Polygons, Shadow Areas 
 var segments=[
-  {x1:8,y1:15,x2:198,y2:15},
-  {x1:198,y1:15,x2:249,y2:61},
-  {x1:249,y1:61,x2:286,y2:31},
-  {x1:286,y1:31,x2:286,y2:22},
-  {x1:286,y1:22,x2:360,y2:22},
-  {x1:360,y1:22,x2:360,y2:58},
-  {x1:360,y1:58,x2:296,y2:58},
-  {x1:296,y1:58,x2:296,y2:84},
-  {x1:296,y1:84,x2:334,y2:92},
-  {x1:334,y1:92,x2:353,y2:246},
-  {x1:353,y1:246,x2:264,y2:246},
-  {x1:264,y1:246,x2:270,y2:162},
-  {x1:270,y1:162,x2:287,y2:151},
-  {x1:287,y1:151,x2:291,y2:123},
-  {x1:291,y1:123,x2:215,y2:130},
-  {x1:215,y1:130,x2:220,y2:151},
-  {x1:220,y1:151,x2:232,y2:162},
-  {x1:232,y1:162,x2:227,y2:246},
-  {x1:227,y1:246,x2:172,y2:246},
-  {x1:172,y1:246,x2:162,y2:134},
-  {x1:162,y1:134,x2:117,y2:116},
-  {x1:117,y1:116,x2:120,y2:156}, 
-  {x1:120,y1:156,x2:64,y2:156},
-  {x1:64,y1:156,x2:68,y2:110},
-  {x1:68,y1:110,x2:8,y2:110},
-  {x1:8,y1:110,x2:8,y2:15}
+  {x1:8,y1:15,x2:198,y2:15,id:0},
+  {x1:198,y1:15,x2:249,y2:61,id:1},
+  {x1:249,y1:61,x2:286,y2:31,id:2},
+  {x1:286,y1:31,x2:286,y2:22,id:3},
+  {x1:286,y1:22,x2:360,y2:22,id:4},
+  {x1:360,y1:22,x2:360,y2:58,id:5},
+  {x1:360,y1:58,x2:296,y2:58,id:6},
+  {x1:296,y1:58,x2:296,y2:84,id:7},
+  {x1:296,y1:84,x2:334,y2:92,id:8},
+  {x1:334,y1:92,x2:353,y2:246,id:9},
+  {x1:353,y1:246,x2:264,y2:246,id:10},
+  {x1:264,y1:246,x2:270,y2:162,id:11},
+  {x1:270,y1:162,x2:287,y2:151,id:12},
+  {x1:287,y1:151,x2:291,y2:123,id:13},
+  {x1:291,y1:123,x2:215,y2:130,id:14},
+  {x1:215,y1:130,x2:220,y2:151,id:15},
+  {x1:220,y1:151,x2:232,y2:162,id:16},
+  {x1:232,y1:162,x2:227,y2:246,id:17},
+  {x1:227,y1:246,x2:172,y2:246,id:18},
+  {x1:172,y1:246,x2:162,y2:134,id:19},
+  {x1:162,y1:134,x2:117,y2:116,id:20},
+  {x1:117,y1:116,x2:120,y2:156,id:21}, 
+  {x1:120,y1:156,x2:64,y2:156,id:22},
+  {x1:64,y1:156,x2:68,y2:110,id:23},
+  {x1:68,y1:110,x2:8,y2:110,id:24},
+  {x1:8,y1:110,x2:8,y2:15,id:25}
 ];
 
 // line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
@@ -159,9 +159,31 @@ function updatestate()
 		yk+=yd;
 }
 
-function visualizeHit(cxk,cyk)
+
+function visualizeHit(cxk,cyk,segment)
 {
-  c.fillStyle="#f44"; 
+  if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
+  c.fillStyle="#f44";
+  
+  var index=(cyk*gridx)+cyk;
+
+  if(hash[index]==null){
+      hash[index]=[];
+  }
+  pushIfNotPresent(hash[index],segment);
+  
+  c.beginPath();
+  c.fillRect(cxk*gridsize,cyk*gridsize,gridsize,gridsize);
+  c.fill();
+}
+
+function readHit(cxk,cyk,segment)
+{
+  if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
+  c.fillStyle="#46f";
+  
+  var index=(cyk*gridx)+cyk;
+  
   c.beginPath();
   c.fillRect(cxk*gridsize,cyk*gridsize,gridsize,gridsize);
   c.fill();
@@ -169,7 +191,7 @@ function visualizeHit(cxk,cyk)
 
 // Ray / Segment Spatial Hashing Bresenham Algorithm
 // Itemcall function is called for each 'pixel' and is passed X and Y coordinate
-function hashLine(x1,y1,x2,y2,itemcall)
+function hashLine(x1,y1,x2,y2,segment,itemcall)
 {
     alert(itemcall);
     x1=Math.floor(x1/gridsize);
@@ -188,7 +210,7 @@ function hashLine(x1,y1,x2,y2,itemcall)
     var i=0;
     while(true){
         if(i++>50) break;
-        if(itemcall!=null) itemcall(x1,y1);
+        if(itemcall!=null) itemcall(x1,y1,segment);
         if(x1==x2&&y1==y2) break;
         let e2=2*error;
         //if(e2>dy){
@@ -212,7 +234,15 @@ function hashLine(x1,y1,x2,y2,itemcall)
 
 function updateHash()
 {
+    
+}
 
+function pushIfNotPresent(list,item)
+{
+    for(inner of list){
+        if(inner.id==item.id) return false;
+    }
+    list.push(item);
 }
 
 function drawit()
@@ -244,7 +274,7 @@ function drawit()
     c.lineTo(mx,my);
     c.stroke();
     c.globalAlpha=0.3;
-    hashLine(mmx,mmy,mx,my);
+    hashLine(mmx,mmy,mx,my,null,readHit);
     c.lineWidth=1;
      
     c.save();
@@ -265,9 +295,11 @@ function drawit()
     }
     c.stroke();
 
+    hash=[];
     for(segment of segments){
-        hashLine(segment.x1,segment.y1,segment.x2,segment.y2,visualizeHit);
+        hashLine(segment.x1,segment.y1,segment.x2,segment.y2,segment,visualizeHit);
     }
+    console.log(hash);
 
     c.restore();
     /*   
@@ -324,7 +356,7 @@ function drawit()
     c.font="20px Arial Narrow";
     c.fillText(intersectcount,10,20);
 */
-		window.requestAnimationFrame(drawit);
+		//window.requestAnimationFrame(drawit);
 }
 			
 		</script>
