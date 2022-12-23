@@ -1,0 +1,296 @@
+<html>
+<head>
+		<style>
+				body {margin: 0; height: 100%; overflow: hidden}
+		</style>
+		<script>
+
+        //        (\ /)
+        //        (. .)           
+        //       c(")(")     ∴ 
+        // Raycast Shadows
+        // Codetrain 
+        // https://www.youtube.com/watch?v=TOEi6T2mtHo&t=16s
+        // https://ncase.me/sight-and-light/
+        // https://www.redblobgames.com/articles/visibility/
+        // Rays toward each segment end point
+
+        // We need spatial hash to only test cells near ray
+        // https://stackoverflow.com/questions/24679963/precise-subpixel-line-drawing-algorithm-rasterization-algorithm
+        // https://stackoverflow.com/questions/4381269/line-rasterisation-cover-all-pixels-regardless-of-line-gradient
+
+				var c;
+        var mx=0,my=0;
+        var mmx=310;
+        var mmy=140;
+
+        // Avatar variables
+        var xk=320;
+        var yk=140;
+        var xd=0;
+        var yd=0;
+
+        // Benchmarking
+        var intersectcount=0;
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Spatial Hash Global Variables and Constants
+//------------------------------------=======############==========----------------------------------------
+	        
+var hash=[];
+var found=[];
+const gridsize=50;                          // Spatial hash grid size
+const gridhalf=gridsize/2;
+const cwidth=900;
+const cheight=900;
+const gridx=Math.ceil(cwidth/gridsize);
+const gridy=Math.floor(cheight/gridsize);
+
+function mouseMove(e,t)
+{
+		var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element
+ }
+
+ function mouseDown(e)
+ {
+    mmx=mx;
+    mmy=my;
+
+    xk=mx;
+    yk=my;
+ }
+
+function keydown(e)
+{
+		if(e.keyCode==37){
+				xd=-1;
+		}else if(e.keyCode==39){
+				xd=1;
+		}else if(e.keyCode==38){
+				yd=-1;
+		}else if(e.keyCode==40){
+				yd=1;
+		}
+}
+
+function keyup(e)
+{
+		if(e.keyCode==37||e.keyCode==39){
+				xd=0;
+		}else if(e.keyCode==38||e.keyCode==40){
+				yd=0;
+		}
+}			
+
+function setup()
+{
+		var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+	
+		drawit();
+}
+							
+function updatestate()
+{
+		xk+=xd;
+		yk+=yd;
+}
+
+function readHit(cxk,cyk,segment)
+{
+  if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
+  
+  var index=(cyk*gridx)+cxk;
+  if(hash[index]!=null){
+      for(segment of hash[index]){
+          pushIfNotPresent(found,segment);
+      }
+      //return 1;
+  }
+
+  drawBox(cxk*gridsize,cyk*gridsize,gridsize,gridsize,0.2,"#46f");
+  
+  return 0;
+}
+
+// Ray / Segment Spatial Hashing Bresenham Algorithm
+// Itemcall function is called for each 'pixel' and is passed X and Y coordinate
+function hashLine(x1,y1,x2,y2,segment,itemcall)
+{
+    drawLine(x1,y1,x2,y2,2.0,"#c42");
+
+    x1=Math.floor(x1/gridsize);
+    y1=Math.floor(y1/gridsize);
+    x2=Math.floor(x2/gridsize);
+    y2=Math.floor(y2/gridsize);
+
+    let dx=Math.abs(x2-x1);
+    let dy=-Math.abs(y2-y1);
+
+    let sx = x1 < x2 ? 1 : -1;
+    let sy = y1 < y2 ? 1 : -1;
+    let error=dx+dy;
+
+    var i=0;
+    while(true){
+        if(i++>50) break;
+        if(itemcall!=null){
+          var ret=itemcall(x1,y1,segment);
+          if(ret>0) return true;
+        }
+        if(x1==x2&&y1==y2) break;
+        let e2=2*error;
+        //if(e2>dy){
+        if(e2 - dy > dy - e2){
+            if(x1==x2) break;
+            error+=dy;
+            x1+=sx;
+        }else{
+        //if(e2<=dx){
+            if(y1==y2) break;
+            error+=dx;
+            y1+=sy;
+        }
+    }
+}
+
+function hashLineb(x1,y1,x2,y2,segment,itemcall)
+{
+    drawLine(x1,y1,x2,y2,2.0,"#c42");
+
+    var dx=x2-x1;
+    var dy=y2-y1;
+
+    if(Math.abs(dx)>=Math.abs(dy)){
+        var k=dy/dx;
+        var m=y1-(k*x1);
+
+        // Take care of left running lines
+        if(x2<x1){
+          tmp=x1;
+          x1=x2;
+          x2=tmp;
+        }
+
+        var cnt=Math.ceil(x2/gridsize)-Math.floor(x1/gridsize)+1;
+        var xk=Math.floor(x1/gridsize);
+        var oldyt=Math.floor(((k*xk*gridsize)+m)/gridsize);
+        for(var i=0;i<cnt;i++){
+            yk=(k*(xk*gridsize)+m);
+            yt=Math.floor(yk/gridsize);
+            if(oldyt==yt){
+                drawBox(xk*gridsize,yt*gridsize,gridsize,gridsize,0.3,"#d46");
+            }else{
+                drawBox(xk*gridsize,yt*gridsize,gridsize,gridsize,0.3,"#4d6");
+                drawBox((xk-1)*gridsize,yt*gridsize,gridsize,gridsize,0.3,"#4d6");
+            }
+            drawCirc(xk*gridsize,(k*xk*gridsize)+m,5,1.0,"#d73");
+            oldyt=yt;
+            xk++;
+        }
+    }else{
+        var k=dx/dy;
+        var m=x1-(k*y1);
+
+        // Take care of left running lines
+        if(y2<y1){
+          tmp=y1;
+          y1=y2;
+          y2=tmp;
+        }
+
+        var cnt=Math.ceil(y2/gridsize)-Math.floor(y1/gridsize)+1;
+        var yk=Math.floor(y1/gridsize);
+        var oldxt=Math.floor(((k*yk*gridsize)+m)/gridsize);
+        for(var i=0;i<cnt;i++){
+            xk=(k*(yk*gridsize)+m);
+            xt=Math.floor(xk/gridsize);
+            if(oldxt==xt){
+                drawBox(xt*gridsize,yk*gridsize,gridsize,gridsize,0.3,"#d46");
+            }else{
+                drawBox(xt*gridsize,yk*gridsize,gridsize,gridsize,0.3,"#4d6");
+                drawBox(xt*gridsize,(yk-1)*gridsize,gridsize,gridsize,0.3,"#4d6");
+            }
+            drawCirc((k*yk*gridsize)+m,yk*gridsize,5,1.0,"#d73");
+            oldxt=xt;
+            yk++;
+        }        
+    }
+}
+
+// -------------------==============########==============-------------------
+// Update of Spatial Hash - Find Which Segments that Intersect with Spatial Hash Cells
+// We must make sure that we do not add same value to list again (to avoid double tests).
+// Sparse Array?
+
+function drawBox(x1,y1,w,h,opacity,fillcolor)
+{
+  c.fillStyle=fillcolor;
+  c.globalAlpha=opacity;
+  c.beginPath();
+  c.fillRect(x1,y1,w,h);
+  c.fill();  
+  c.globalAlpha=1.0;
+}
+
+function drawLine(x1,y1,x2,y2,width,color)
+{
+    c.strokeStyle=color;
+    c.globalAlpha=1.0;
+    c.lineWidth=width;
+
+    c.beginPath();
+    c.moveTo(x1,y1);
+    c.lineTo(x2,y2);
+    c.stroke();
+
+    c.lineWidth=1.0;
+}
+
+function drawCirc(x1,y1,rad,width,color)
+{
+      c.strokeStyle=color;
+      c.lineWidth=width;
+      c.beginPath();
+		  c.arc(x1, y1, rad, 0, 2 * Math.PI);
+		  c.fill();
+      c.lineWidth=1.0; 				
+}
+
+function drawit()
+{	
+    intersectcount=0;
+
+		c.clearRect(0,0,900,900);
+		document.getElementById("mainsvg").innerHTML="";
+
+    // Draw spatial hash grid
+    c.globalAlpha=0.5;
+    c.strokeStyle="#080";
+    c.beginPath();
+    for(var i=0;i<cheight;i+=gridsize){
+            c.moveTo(0,i);
+            c.lineTo(cwidth,i);
+    }
+    for(var i=0;i<cwidth;i+=gridsize){
+            c.moveTo(i,0);
+            c.lineTo(i,cheight);
+    }
+    c.stroke();
+     
+    c.save();
+    hashLine(mx,my,mmx,mmy,null,readHit);
+    hashLineb(mx,my+190,mmx,mmy+190,null,readHit);
+    c.restore();
+ 
+		window.requestAnimationFrame(drawit);
+}
+			
+		</script>
+</head>
+<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" onmousedown="mouseDown(event)" onmousemove="mouseMove(event)">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas>
+	<svg style='border:1px dotted red;' height="900" width="900" id="mainsvg"></svg>
+</body>

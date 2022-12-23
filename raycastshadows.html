@@ -22,11 +22,11 @@
 				var c;
         var mx,my;
         var mmx=300;
-        var mmy=300;
+        var mmy=140;
 
         // Avatar variables
-        var xk=50;
-        var yk=50;
+        var xk=320;
+        var yk=140;
         var xd=0;
         var yd=0;
 
@@ -114,6 +114,9 @@ function mouseMove(e,t)
  {
     mmx=mx;
     mmy=my;
+
+    xk=mx;
+    yk=my;
  }
 
 function keydown(e)
@@ -160,83 +163,128 @@ function updatestate()
 		yk+=yd;
 }
 
+function drawBox(x1,y1,w,h,opacity,fillcolor)
+{
+  c.fillStyle=fillcolor;
+  c.globalAlpha=opacity;
+  c.beginPath();
+  c.fillRect(x1,y1,w,h);
+  c.fill();  
+  c.globalAlpha=1.0;
+}
+
+function drawLine(x1,y1,x2,y2,width,color)
+{
+    c.strokeStyle=color;
+    c.globalAlpha=1.0;
+    c.lineWidth=width;
+
+    c.beginPath();
+    c.moveTo(x1,y1);
+    c.lineTo(x2,y2);
+    c.stroke();
+
+    c.lineWidth=1.0;
+}
+
+function drawCirc(x1,y1,rad,width,color)
+{
+      c.strokeStyle=color;
+      c.lineWidth=width;
+      c.beginPath();
+		  c.arc(x1, y1, rad, 0, 2 * Math.PI);
+		  c.fill();
+      c.lineWidth=1.0; 				
+}
 
 function visualizeHit(cxk,cyk,segment)
 {
   if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
-  c.fillStyle="#f44";
-  
-  var index=(cyk*gridx)+cxk;
 
+  var index=(cyk*gridx)+cxk;
   if(hash[index]==null){
       hash[index]=[];
   }
   pushIfNotPresent(hash[index],segment);
-  
-  c.beginPath();
-  c.fillRect(cxk*gridsize,cyk*gridsize,gridsize,gridsize);
-  c.fill();
-
-  return 0;
 }
 
 function readHit(cxk,cyk,segment)
 {
   if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
-  c.fillStyle="#46f";
   
   var index=(cyk*gridx)+cxk;
   if(hash[index]!=null){
       for(segment of hash[index]){
           pushIfNotPresent(found,segment);
       }
-      //return 1;
   }
-  
-  c.beginPath();
-  c.fillRect(cxk*gridsize,cyk*gridsize,gridsize,gridsize);
-  c.fill();
-
-  return 0;
+  //drawBox(cxk*gridsize,cyk*gridsize,gridsize,gridsize,0.3,"#46f");
 }
 
 // Ray / Segment Spatial Hashing Bresenham Algorithm
 // Itemcall function is called for each 'pixel' and is passed X and Y coordinate
 function hashLine(x1,y1,x2,y2,segment,itemcall)
 {
-    x1=Math.floor(x1/gridsize);
-    y1=Math.floor(y1/gridsize);
-    x2=Math.floor(x2/gridsize);
-    y2=Math.floor(y2/gridsize);
+    // drawLine(x1,y1,x2,y2,2.0,"#c42");
 
+    var dx=x2-x1;
+    var dy=y2-y1;
 
-    let dx=Math.abs(x2-x1);
-    let dy=-Math.abs(y2-y1);
+    if(Math.abs(dx)>=Math.abs(dy)){
+        var k=dy/dx;
+        var m=y1-(k*x1);
 
-    let sx = x1 < x2 ? 1 : -1;
-    let sy = y1 < y2 ? 1 : -1;
-    let error=dx+dy;
-
-    var i=0;
-    while(true){
-        if(i++>50) break;
-        if(itemcall!=null){
-          var ret=itemcall(x1,y1,segment);
-          if(ret>0) return true;
+        // Take care of left running lines
+        if(x2<x1){
+          tmp=x1;
+          x1=x2;
+          x2=tmp;
         }
-        if(x1==x2&&y1==y2) break;
-        let e2=2*error;
-        //if(e2>dy){
-        if(e2 - dy > dy - e2){
-            if(x1==x2) break;
-            error+=dy;
-            x1+=sx;
-        }else{
-        //if(e2<=dx){
-            if(y1==y2) break;
-            error+=dx;
-            y1+=sy;
+
+        var cnt=Math.ceil(x2/gridsize)-Math.floor(x1/gridsize)+1;
+        var xk=Math.floor(x1/gridsize);
+        var oldyt=Math.floor(((k*xk*gridsize)+m)/gridsize);
+        var ret=0;        
+        for(var i=0;i<cnt;i++){
+            yk=(k*(xk*gridsize)+m);
+            yt=Math.floor(yk/gridsize);
+            if(oldyt==yt){
+                itemcall(xk,yt,segment);
+            }else{
+                itemcall(xk,yt,segment);
+                itemcall(xk-1,yt,segment);
+            }
+            oldyt=yt;
+            xk++;
         }
+    }else{
+        var k=dx/dy;
+        var m=x1-(k*y1);
+
+        // Take care of left running lines
+        if(y2<y1){
+          tmp=y1;
+          y1=y2;
+          y2=tmp;
+        }
+
+        var cnt=Math.ceil(y2/gridsize)-Math.floor(y1/gridsize)+1;
+        var yk=Math.floor(y1/gridsize);
+        var oldxt=Math.floor(((k*yk*gridsize)+m)/gridsize);
+        var ret=0;
+        for(var i=0;i<cnt;i++){
+            xk=(k*(yk*gridsize)+m);
+            xt=Math.floor(xk/gridsize);
+            if(oldxt==xt){
+                itemcall(xt,yk,segment);
+            }else{
+                itemcall(xt,yk,segment);
+                itemcall(xt,yk-1,segment);
+            }
+            if(ret>0) break;
+            oldxt=xt;
+            yk++;
+        }        
     }
 }
 
@@ -251,6 +299,21 @@ function pushIfNotPresent(list,item)
         if(inner.id==item.id) return false;
     }
     list.push(item);
+}
+
+function drawLine(x1,y1,x2,y2,width,color)
+{
+    c.strokeStyle=color;
+    c.globalAlpha=1.0;
+    c.lineWidth=width;
+
+    c.beginPath();
+    c.moveTo(x1,y1);
+    c.lineTo(x2,y2);
+    c.stroke();
+
+    c.lineWidth=1.0;
+
 }
 
 function drawit()
@@ -298,90 +361,65 @@ function drawit()
         hashLine(segment.x1,segment.y1,segment.x2,segment.y2,segment,visualizeHit);
     }
 
-    // Retrieve list of intersections
-    c.strokeStyle="#46b";
-    c.globalAlpha=1.0;
-    c.lineWidth=3;
-    c.beginPath();
-    c.moveTo(mmx,mmy);
-    c.lineTo(mx,my);
-    c.stroke();
-    c.globalAlpha=0.3;
-    
-    // Clear found list and cast ray
-    found=[];
-    hashLine(mmx,mmy,mx,my,null,readHit);
-
-    c.globalAlpha=1.0;
-    c.fillText(found.length,100,40);
-    for(var i=0;i<found.length;i++){
-      c.fillText(found[i].id,100,40+(20*i));
-    }    
-
-    // Visualize found segments
-    for(segment of found){
-        c.beginPath();
-        c.moveTo(segment.x1,segment.y1); 
-        c.lineTo(segment.x2,segment.y2);               
-        c.stroke();
-    }
-    c.lineWidth=1;
-
     c.restore();
-    /*   
-    c.strokeStyle="#f49";
-    if(segments.length>0){
-        for(var segment of segments){
+
+    for(var segment of segments){
             var dx=segment.x2-xk;
             var dy=segment.y2-yk;
             segment.ang=Math.atan2(dy,dx);
 
             // Create ray from segment
-            var ray={x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang+0.01)*500),y2:yk+(Math.sin(segment.ang+0.01)*500)};
+            var ray={x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang-0.01)*900),y2:yk+(Math.sin(segment.ang-0.01)*900)};
 
-            c.beginPath();
-            c.moveTo(ray.x1,ray.y1);
-            c.lineTo(ray.x2,ray.y2);
-            c.stroke();
-
-            // Intersect ray and collate closest intersection point
-            var currdst=100000;
-            var currx=0;
-            var curry=0;
-            for(var innersegment of segments){
-
-                var p1={x:ray.x1,y:ray.y1};
-                var p2={x:ray.x2,y:ray.y2};
-                var p3={x:innersegment.x1,y:innersegment.y1};
-                var p4={x:innersegment.x2,y:innersegment.y2};
-
-                var pnt=intersect(p1,p2,p3,p4);
-
+            if(segment.id>-1){
                 c.beginPath();
-                c.arc(pnt.x,pnt.y, 5, 0, 2 * Math.PI);
-                c.stroke(); 
+                c.moveTo(ray.x1,ray.y1);
+                c.lineTo(ray.x2,ray.y2);
+                c.stroke();
 
-                let dx=pnt.x-xk;
-                let dy=pnt.y-yk;
-                let dsts=(dx*dx)+(dy*dy);
+                // Intersect ray and collate closest intersection point
+                found=[];
+                hashLine(ray.x1,ray.y1,ray.x2,ray.y2,null,readHit);
+                var currdst=10000000;
+                var currx=0;
+                var curry=0;
+                for(var innersegment of found){
 
-                if(dsts<currdst){
-                    currdst=dsts;
-                    currx=pnt.x;
-                    curry=pnt.y;
+                    // drawLine(segment.x1,segment.y1,segment.x2,segment.y2,3.0,"#486");
+
+                    var p1={x:ray.x1,y:ray.y1};
+                    var p2={x:ray.x2,y:ray.y2};
+                    var p3={x:innersegment.x1,y:innersegment.y1};
+                    var p4={x:innersegment.x2,y:innersegment.y2};
+
+                    var pnt=intersect(p1,p2,p3,p4);
+
+                    c.beginPath();
+                    c.arc(pnt.x,pnt.y, 5, 0, 2 * Math.PI);
+                    c.stroke(); 
+
+                    let dx=pnt.x-xk;
+                    let dy=pnt.y-yk;
+                    let dsts=(dx*dx)+(dy*dy);
+
+                    if(dsts<currdst){
+                        currdst=dsts;
+                        currx=pnt.x;
+                        curry=pnt.y;
+                    }
+                }
+
+                if(currdst<10000000){
+                  c.beginPath();
+                  c.arc(currx,curry, 8, 0, 2 * Math.PI);
+                  c.stroke(); 
                 }
             }
-            c.beginPath();
-            c.arc(currx,curry, 8, 0, 2 * Math.PI);
-            c.stroke(); 
-        }
     }
 
-    c.restore();
-
     c.font="20px Arial Narrow";
-    c.fillText(intersectcount,10,20);
-*/
+    c.fillText(intersectcount,50,25);
+
 		window.requestAnimationFrame(drawit);
 }
 			
