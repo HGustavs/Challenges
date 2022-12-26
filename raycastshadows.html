@@ -20,7 +20,7 @@
         // https://stackoverflow.com/questions/4381269/line-rasterisation-cover-all-pixels-regardless-of-line-gradient
 
 				var c;
-        var mx,my;
+        var mx,my,md;
         var mmx=300;
         var mmy=140;
 
@@ -39,7 +39,7 @@
 	        
 var hash=[];
 var found=[];
-const gridsize=50;                          // Spatial hash grid size
+const gridsize=20;                          // Spatial hash grid size
 const gridhalf=gridsize/2;
 const cwidth=900;
 const cheight=900;
@@ -108,16 +108,25 @@ function mouseMove(e,t)
 		var rect = e.target.getBoundingClientRect();
     mx = e.clientX - rect.left; //x position within the element.
     my = e.clientY - rect.top;  //y position within the element
+
+    if (md){
+        mmx=mx;
+        mmy=my;
+
+        xk=mx;
+        yk=my;
+    }
  }
 
  function mouseDown(e)
  {
-    mmx=mx;
-    mmy=my;
-
-    xk=mx;
-    yk=my;
+    md=true;
  }
+
+function mouseUp(e)
+{
+  md=false;
+}
 
 function keydown(e)
 {
@@ -363,14 +372,19 @@ function drawit()
 
     c.restore();
 
+    var rays=[];
     for(var segment of segments){
             var dx=segment.x2-xk;
             var dy=segment.y2-yk;
             segment.ang=Math.atan2(dy,dx);
 
-            // Create ray from segment
-            var ray={x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang-0.01)*900),y2:yk+(Math.sin(segment.ang-0.01)*900)};
+            // Create ray from segment - push to list
+            rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang-0.01)*900),y2:yk+(Math.sin(segment.ang-0.01)*900)});
+            rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang+0.01)*900),y2:yk+(Math.sin(segment.ang+0.01)*900)});
+    }
 
+    var hits=[];
+    for(var ray of rays){
             if(segment.id>-1){
                 c.beginPath();
                 c.moveTo(ray.x1,ray.y1);
@@ -394,10 +408,6 @@ function drawit()
 
                     var pnt=intersect(p1,p2,p3,p4);
 
-                    c.beginPath();
-                    c.arc(pnt.x,pnt.y, 5, 0, 2 * Math.PI);
-                    c.stroke(); 
-
                     let dx=pnt.x-xk;
                     let dy=pnt.y-yk;
                     let dsts=(dx*dx)+(dy*dy);
@@ -410,11 +420,21 @@ function drawit()
                 }
 
                 if(currdst<10000000){
-                  c.beginPath();
-                  c.arc(currx,curry, 8, 0, 2 * Math.PI);
-                  c.stroke(); 
+                    hits.push({xk:currx,yk:curry,dst:currdst});
                 }
-            }
+            }    
+    }
+
+    // Visualize hits
+    if(hits.length>0){
+        //c.beginPath();
+        //c.moveTo(hits[0].xk,hits[0].yk);
+        for(hit of hits){
+          //c.lineTo(hit.xk,hit.yk);
+          drawCirc(hit.xk,hit.yk,8,2,"#48c");
+        }
+        //c.closePath();
+        //c.fill();
     }
 
     c.font="20px Arial Narrow";
@@ -425,7 +445,7 @@ function drawit()
 			
 		</script>
 </head>
-<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" onmousedown="mouseDown(event)" onmousemove="mouseMove(event)">
+<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" onmousedown="mouseDown(event)" onmouseup="mouseUp(event)" onmousemove="mouseMove(event)">
  	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas>
 	<svg style='border:1px dotted red;' height="900" width="900" id="mainsvg"></svg>
 </body>
