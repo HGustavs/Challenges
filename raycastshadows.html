@@ -49,7 +49,8 @@ const gridy=Math.floor(cheight/gridsize);
 			
 // Segments, Floor Clip Polygons, Shadow Areas 
 var segments=[
-  {x1:8,y1:15,x2:198,y2:15,id:0},
+  {x1:8,y1:15,x2:98,y2:15,id:0},
+  {x1:98,y1:15,x2:198,y2:15,id:26}, 
   {x1:198,y1:15,x2:249,y2:61,id:1},
   {x1:249,y1:61,x2:286,y2:31,id:2},
   {x1:286,y1:31,x2:286,y2:22,id:3},
@@ -360,6 +361,14 @@ function drawit()
         c.moveTo(segments[0].x1,segments[0].y1);
         for(var segment of segments){
             c.lineTo(segment.x2,segment.y2);
+
+            // Hit list
+            segment.minX=100000;
+            segment.minY=100000;
+            segment.minDst=100000;
+            segment.maxX=-100000;
+            segment.maxY=-100000;
+            segment.maxDst=-100000;
         }
     }
     c.stroke();
@@ -379,8 +388,8 @@ function drawit()
             segment.ang=Math.atan2(dy,dx);
 
             // Create ray from segment - push to list
-            rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang-0.01)*900),y2:yk+(Math.sin(segment.ang-0.01)*900)});
-            rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang+0.01)*900),y2:yk+(Math.sin(segment.ang+0.01)*900)});
+            rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang-0.02)*900),y2:yk+(Math.sin(segment.ang-0.01)*900)});
+            rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang+0.02)*900),y2:yk+(Math.sin(segment.ang+0.01)*900)});
     }
 
     var hits=[];
@@ -392,6 +401,7 @@ function drawit()
                 var currdst=10000000;
                 var currx=0;
                 var curry=0;
+                var currseg=null;
                 for(var innersegment of found){
 
                     var pnt=intersect(ray.x1,ray.y1,ray.x2,ray.y2,innersegment.x1,innersegment.y1,innersegment.x2,innersegment.y2);
@@ -404,17 +414,55 @@ function drawit()
                         currdst=dsts;
                         currx=pnt.x;
                         curry=pnt.y;
+                        currseg=innersegment;
                     }
                 }
 
                 if(currdst<10000000){
-                    hits.push({xk:currx,yk:curry,dst:currdst,ang:Math.atan2(yk-curry,xk-currx),no:hits.length+1});
+
+                    //drawCirc(currx,curry,5,2,"#c64");
+
+                    var dx=currseg.x1-currx;
+                    var dy=currseg.y1-curry;
+                    var dst=(dx*dx)+(dy*dy);
+
+                    if(dst<currseg.minDst){
+                        currseg.minDst=dst;
+                        currseg.minX=currx;
+                        currseg.minY=curry;
+                    }
+                    if(dst>currseg.maxDst){
+                        currseg.maxDst=dst;
+                        currseg.maxX=currx;
+                        currseg.maxY=curry;
+                    }
                 }
-            }    
+            } 
+
     }
 
-    hits.sort(function cond(a,b){return a.ang-b.ang});
+    var i=0;
+    c.font="16px Arial Narrow";
+    var started=true;
+    c.beginPath();
+    for(segment of segments){
+        // c.fillText(i+" "+segment.minX+" "+segment.minY+" "+segment.minDst,30,60+(i*18));
+        if(segment.maxDst>-100000&&segment.minDst<100000){
+            if(started){
+                c.moveTo(segment.minX,segment.minY);
+                started=false;
+            }else{
+                c.lineTo(segment.minX,segment.minY);
+            }
+            c.lineTo(segment.maxX,segment.maxY);
+        }
+        // drawCirc(segment.minX,segment.minY,5,1,"#c42");
+        // drawCirc(segment.maxX,segment.maxY,5,1,"#c42");
+        i++;
+    }
+    c.fill();
 
+/*
     // Visualize hits
     if(hits.length>0){
         //c.beginPath();
@@ -427,7 +475,7 @@ function drawit()
         //c.closePath();
         //c.fill();
     }
-
+*/
     c.font="20px Arial Narrow";
     c.fillText(intersectcount,50,25);
 
