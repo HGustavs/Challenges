@@ -4,33 +4,39 @@
 				body {margin: 0; height: 100%; overflow: hidden}
 		</style>
     <script src="helperFunction/canvasDraw.js"></script>
+    <script src="helperFunction/spatialHash.js"></script>    
 		<script>
 
-        //        (\ /)
-        //        (. .)           
-        //       c(")(")     ∴ 
-        // Raycast Shadows
-        // Codetrain 
-        // https://www.youtube.com/watch?v=TOEi6T2mtHo&t=16s
-        // https://ncase.me/sight-and-light/
-        // https://www.redblobgames.com/articles/visibility/
-        // Rays toward each segment end point
 
-        // We need spatial hash to only test cells near ray
-        // https://stackoverflow.com/questions/24679963/precise-subpixel-line-drawing-algorithm-rasterization-algorithm
-        // https://stackoverflow.com/questions/4381269/line-rasterisation-cover-all-pixels-regardless-of-line-gradient
+//        (\ /)
+//        (. .)           
+//       c(")(")     ∴ 
+// Raycast Shadows
+// Codetrain 
+// https://www.youtube.com/watch?v=TOEi6T2mtHo&t=16s
+// https://ncase.me/sight-and-light/
+// https://www.redblobgames.com/articles/visibility/
+// Rays toward each segment end point
 
-				var c;
-        var mx,my,md;
+// We need spatial hash to only test cells near ray
+// https://stackoverflow.com/questions/24679963/precise-subpixel-line-drawing-algorithm-rasterization-algorithm
+// https://stackoverflow.com/questions/4381269/line-rasterisation-cover-all-pixels-regardless-of-line-gradient
 
-        // Avatar variables
-        var xk=320;
-        var yk=140;
-        var xd=0;
-        var yd=0;
+/// <reference path="helperFunction/canvasDraw.js" />
+/// <reference path="helperFunction/spatialHash.js" />
 
-        // Benchmarking
-        var intersectcount=0;
+
+var c;
+var mx,my,md;
+
+// Avatar variables
+var xk=320;
+var yk=140;
+var xd=0;
+var yd=0;
+
+// Benchmarking
+var intersectcount=0;
 
 //------------------------------------=======############==========----------------------------------------
 //                                 Spatial Hash Global Variables and Constants
@@ -50,7 +56,7 @@ const rayang=0.025;
 const raylen=2200;
 const lengthenRay=1.0;
 			
-const showHits=true;
+const showHits=false;
 const showRays=true;
 const showGrid=true;
 
@@ -73,32 +79,6 @@ var segmentsb=[
   {x1:380, y1:307, x2:181, y2:253, id:105},
   {x1:181, y1:253, x2:56, y2:101, id:106}  
 ];
-
-// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
-// Determine the intersection point of two line segments
-function intersect(x1,y1,x2,y2,x3,y3,x4,y4) {
-  intersectcount++;
-	
-  // Check if none of the lines are of length 0
-  if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) return false;
-
-  denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
-
-  // Lines are parallel
-  if (denominator === 0) return false;
-
-  let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
-  let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
-
-  // is the intersection along the segments
-  if (ua <= -0.001 || ua >= 0.999 || ub <= -0.001 || ub >= 0.999) return false;
-
-  // Return a object with the x and y coordinates of the intersection
-  let x = x1 + ua * (x2 - x1)
-  let y = y1 + ua * (y2 - y1)
-  
-  return {x:x, y:y}
-}
 
 function mouseMove(e,t)
 {
@@ -167,137 +147,6 @@ function updatestate()
 		yk+=yd;
 }
 
-function visualizeHit(cxk,cyk,segment)
-{
-  if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
-
-  var index=(cyk*gridx)+cxk;
-  if(hash[index]==null){
-      hash[index]=[];
-  }
-  pushIfNotPresent(hash[index],segment);
-}
-
-function readHit(cxk,cyk,segment)
-{
-  if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;
-  
-  var index=(cyk*gridx)+cxk;
-  if(hash[index]!=null){
-      for(segment of hash[index]){
-          pushIfNotPresent(found,segment);
-      }
-  }
-  if(showHits) drawBox(cxk*gridsize,cyk*gridsize,gridsize,gridsize,0.1,"#46f");
-}
-
-// Ray / Segment Spatial Hashing Bresenham Algorithm
-// Itemcall function is called for each 'pixel' and is passed X and Y coordinate
-function hashLine(x1,y1,x2,y2,segment,itemcall)
-{
-    // drawLine(x1,y1,x2,y2,2.0,"#c42");
-
-    var dx=x2-x1;
-    var dy=y2-y1;
-
-    if(Math.abs(dx)>=Math.abs(dy)){
-        var k=dy/dx;
-        var m=y1-(k*x1);
-
-        // Take care of left running lines
-        if(x2<x1){
-          tmp=x1;
-          x1=x2;
-          x2=tmp;
-        }
-
-        var cnt=Math.ceil(x2/gridsize)-Math.floor(x1/gridsize)+1;
-        var xk=Math.floor(x1/gridsize);
-        var oldyt=Math.floor(((k*xk*gridsize)+m)/gridsize);
-        var ret=0;        
-        for(var i=0;i<cnt;i++){
-            yk=(k*(xk*gridsize)+m);
-            yt=Math.floor(yk/gridsize);
-            if(oldyt==yt){
-                itemcall(xk,yt,segment);
-            }else{
-                itemcall(xk,yt,segment);
-                itemcall(xk-1,yt,segment);
-            }
-            oldyt=yt;
-            xk++;
-        }
-    }else{
-        var k=dx/dy;
-        var m=x1-(k*y1);
-
-        // Take care of left running lines
-        if(y2<y1){
-          tmp=y1;
-          y1=y2;
-          y2=tmp;
-        }
-
-        var cnt=Math.ceil(y2/gridsize)-Math.floor(y1/gridsize)+1;
-        var yk=Math.floor(y1/gridsize);
-        var oldxt=Math.floor(((k*yk*gridsize)+m)/gridsize);
-        var ret=0;
-        for(var i=0;i<cnt;i++){
-            xk=(k*(yk*gridsize)+m);
-            xt=Math.floor(xk/gridsize);
-            if(oldxt==xt){
-                itemcall(xt,yk,segment);
-            }else{
-                itemcall(xt,yk,segment);
-                itemcall(xt,yk-1,segment);
-            }
-            if(ret>0) break;
-            oldxt=xt;
-            yk++;
-        }        
-    }
-}
-
-// -------------------==============########==============-------------------
-// Update of Spatial Hash - Find Which Segments that Intersect with Spatial Hash Cells
-// We must make sure that we do not add same value to list again (to avoid double tests).
-// Sparse Array?
-
-function pushIfNotPresent(list,item)
-{
-    for(inner of list){
-        if(inner.id==item.id) return false;
-    }
-    list.push(item);
-}
-
-// Even odd rule
-function inside(xk,yk,path)
-{
-    console.log(xk,yk);
-    drawCross(xk,yk,8,3,"#5d3");
-
-    // Collect segments with Y coordinate around coordinate
-    var cnt=0;
-    for(var segment of path){
-        if(segment.y2>segment.y1&&yk<=segment.y2&&yk>=segment.y1){
-            let dx=segment.x2-segment.x1;
-            let dy=segment.y2-segment.y1;
-            let k=dx/dy;
-            let m=segment.x1-(k*segment.y1);
-            if(xk>=(k*yk)+m) cnt++;
-        }else if(segment.y2<segment.y1&&yk<=segment.y1&&yk>=segment.y2){
-            let dx=segment.x1-segment.x2;
-            let dy=segment.y1-segment.y2;
-            let k=dx/dy;
-            let m=segment.x2-(k*segment.y2);
-            if(xk>=(k*yk)+m) cnt++;
-        }
-    }
-    if(cnt%2==0) return false;
-    return true;
-}
-
 function drawit()
 {	
     c.font='10px Arial Narrow';
@@ -309,23 +158,33 @@ function drawit()
     c.save();
     c.scale(gridscale,gridscale);
 
+    if(showGrid) drawGrid();
+
     // Update hash...do we even need the hash for this?
     hash=[];
     for(segment of segments){
         hashLine(segment.x1,segment.y1,segment.x2,segment.y2,segment,visualizeHit);
     }
 
-    if(showGrid) drawGrid();
+    found=[];
+    for(segment of segmentsb){
+        hashLine(segment.x1,segment.y1,segment.x2,segment.y2,null,readHit);
+    }
 		
     drawPath(segments,"#487");
     drawPath(segmentsb,"#874");
 
-    var hitlist=[];
-
-    for(segment of hitlist){
-        drawLine(segment.x1,segment.y1,segment.x2,segment.y2,3,"#d62");
+    // Iterate over segments in 
+    for(segment of found){
+        drawLine(segment.x1,segment.y1,segment.x2,segment.y2,1.2,"#d62");
+        console.log(segment);
+        for(inner of segmentsb){
+            var pnt=intersect(segment.x1,segment.y1,segment.x2,segment.y2,inner.x1,inner.y1,inner.x2,inner.y2);
+            if(pnt!=false){
+                drawCross(pnt.x,pnt.y,4.0,2.0,"#4b5");
+            }
+        }
     }
-
     c.restore();
 
 		// window.requestAnimationFrame(drawit);

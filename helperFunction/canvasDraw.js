@@ -1,3 +1,64 @@
+//------------------------------------=======############==========----------------------------------------
+//                                   Math Functions for Line Geometry
+//------------------------------------=======############==========----------------------------------------
+
+// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments
+function intersect(x1,y1,x2,y2,x3,y3,x4,y4) {
+  intersectcount++;
+	
+  // Check if none of the lines are of length 0
+  if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) return false;
+
+  denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
+
+  // Lines are parallel
+  if (denominator === 0) return false;
+
+  let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
+  let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
+
+  // is the intersection along the segments
+  if (ua <= -0.001 || ua >= 0.999 || ub <= -0.001 || ub >= 0.999) return false;
+
+  // Return a object with the x and y coordinates of the intersection
+  let x = x1 + ua * (x2 - x1)
+  let y = y1 + ua * (y2 - y1)
+  
+  return {x:x, y:y}
+}
+
+// Even odd rule
+function inside(xk,yk,path)
+{
+    console.log(xk,yk);
+    drawCross(xk,yk,8,3,"#5d3");
+
+    // Collect segments with Y coordinate around coordinate
+    var cnt=0;
+    for(var segment of path){
+        if(segment.y2>segment.y1&&yk<=segment.y2&&yk>=segment.y1){
+            let dx=segment.x2-segment.x1;
+            let dy=segment.y2-segment.y1;
+            let k=dx/dy;
+            let m=segment.x1-(k*segment.y1);
+            if(xk>=(k*yk)+m) cnt++;
+        }else if(segment.y2<segment.y1&&yk<=segment.y1&&yk>=segment.y2){
+            let dx=segment.x1-segment.x2;
+            let dy=segment.y1-segment.y2;
+            let k=dx/dy;
+            let m=segment.x2-(k*segment.y2);
+            if(xk>=(k*yk)+m) cnt++;
+        }
+    }
+    if(cnt%2==0) return false;
+    return true;
+}
+
+//------------------------------------=======############==========----------------------------------------
+//                                         Drawing Functions
+//------------------------------------=======############==========----------------------------------------
+
 function drawBox(x1,y1,w,h,opacity,fillcolor)
 {
   c.fillStyle=fillcolor;
