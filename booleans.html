@@ -3,6 +3,7 @@
 		<style>
 				body {margin: 0; height: 100%; overflow: hidden}
 		</style>
+    <script src="helperFunction/canvasDraw.js"></script>
 		<script>
 
         //        (\ /)
@@ -43,45 +44,34 @@ const cwidth=1800;
 const cheight=1800;
 const gridx=Math.ceil(cwidth/gridsize);
 const gridy=Math.floor(cheight/gridsize);
-const gridscale=0.5;
+const gridscale=1.0;
 
 const rayang=0.025;
 const raylen=2200;
 const lengthenRay=1.0;
 			
-const showHits=false;
+const showHits=true;
 const showRays=true;
 const showGrid=true;
 
 // Segments, Floor Clip Polygons, Shadow Areas 
 var segments=[
-    {x1:40,y1:75,x2:490,y2:90,id:0},
-    {x1:490,y1:90,x2:990,y2:75,id:26},
-    {x1:990,y1:75,x2:1245,y2:305,id:1},
-    {x1:1245,y1:305,x2:1430,y2:155,id:2},
-    {x1:1430,y1:155,x2:1430,y2:110,id:3},
-    {x1:1430,y1:110,x2:1750,y2:110,id:4},
-    {x1:1750,y1:110,x2:1750,y2:290,id:5},
-    {x1:1750,y1:290,x2:1480,y2:290,id:6},
-    {x1:1480,y1:290,x2:1480,y2:420,id:7},
-    {x1:1480,y1:420,x2:1670,y2:460,id:8},
-    {x1:1670,y1:460,x2:1765,y2:1230,id:9},
-    {x1:1765,y1:1230,x2:1320,y2:1230,id:10},
-    {x1:1320,y1:1230,x2:1350,y2:810,id:11},
-    {x1:1350,y1:810,x2:1435,y2:755,id:12},
-    {x1:1435,y1:755,x2:1455,y2:615,id:13},
-    {x1:1455,y1:615,x2:1075,y2:650,id:14},
-    {x1:1075,y1:650,x2:1100,y2:755,id:15},
-    {x1:1100,y1:755,x2:1160,y2:810,id:16},
-    {x1:1160,y1:810,x2:1135,y2:1230,id:17},
-    {x1:1135,y1:1230,x2:860,y2:1230,id:18},
-    {x1:860,y1:1230,x2:810,y2:670,id:19},
-    {x1:810,y1:670,x2:585,y2:580,id:20},
-    {x1:585,y1:580,x2:600,y2:780,id:21},
-    {x1:600,y1:780,x2:320,y2:780,id:22},
-    {x1:320,y1:780,x2:340,y2:550,id:23},
-    {x1:340,y1:550,x2:40,y2:550,id:24},
-    {x1:40,y1:550,x2:40,y2:75,id:25},
+    {x1:5,y1:283,x2:186,y2:147,id:0},
+    {x1:186,y1:147,x2:279,y2:373,id:1},
+    {x1:279,y1:373,x2:342,y2:186,id:2},
+    {x1:342,y1:186,x2:520,y2:318,id:3},
+    {x1:520,y1:318,x2:562,y2:444,id:4},
+    {x1:562,y1:444,x2:84,y2:505,id:5},
+    {x1:84,y1:505,x2:5,y2:283,id:6}
+];
+
+var segmentsb=[
+  {x1:56, y1:101, x2:170, y2:12, id:101},
+  {x1:170, y1:12, x2:380, y2:8, id:102},
+  {x1:380, y1:12, x2:493, y2:208, id:103},
+  {x1:493, y1:208, x2:380, y2:307, id:104},
+  {x1:380, y1:307, x2:181, y2:253, id:105},
+  {x1:181, y1:253, x2:56, y2:101, id:106}  
 ];
 
 // line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
@@ -159,21 +149,6 @@ function setup()
 		var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
 
-    // Lengthen vectors by 1 pixel
-    for(segment of segments){
-      dx=segment.x2-segment.x1;
-      dy=segment.y2-segment.y1;
-      var len=Math.sqrt((dx*dx)+(dy*dy));
-      dx=dx/len;
-      dy=dy/len;
-      segment.x1-=dx*(0.5*lengthenRay);
-      segment.y1-=dy*(0.5*lengthenRay);
-      dx=dx*(len+(lengthenRay));
-      dy=dy*(len+(lengthenRay));
-      segment.x2=segment.x1+dx;
-      segment.y2=segment.y1+dy;
-    }
-
     /*
     // Serialize Segments
     var str="";
@@ -190,40 +165,6 @@ function updatestate()
 {
 		xk+=xd;
 		yk+=yd;
-}
-
-function drawBox(x1,y1,w,h,opacity,fillcolor)
-{
-  c.fillStyle=fillcolor;
-  c.globalAlpha=opacity;
-  c.beginPath();
-  c.fillRect(x1,y1,w,h);
-  c.fill();  
-  c.globalAlpha=1.0;
-}
-
-function drawLine(x1,y1,x2,y2,width,color)
-{
-    c.strokeStyle=color;
-    c.globalAlpha=1.0;
-    c.lineWidth=width;
-
-    c.beginPath();
-    c.moveTo(x1,y1);
-    c.lineTo(x2,y2);
-    c.stroke();
-
-    c.lineWidth=1.0;
-}
-
-function drawCirc(x1,y1,rad,width,color)
-{
-      c.strokeStyle=color;
-      c.lineWidth=width;
-      c.beginPath();
-		  c.arc(x1, y1, rad, 0, 2 * Math.PI);
-		  c.fill();
-      c.lineWidth=1.0; 				
 }
 
 function visualizeHit(cxk,cyk,segment)
@@ -330,179 +271,64 @@ function pushIfNotPresent(list,item)
     list.push(item);
 }
 
-function drawLine(x1,y1,x2,y2,width,color)
+// Even odd rule
+function inside(xk,yk,path)
 {
-    c.strokeStyle=color;
-    c.globalAlpha=1.0;
-    c.lineWidth=width;
+    console.log(xk,yk);
+    drawCross(xk,yk,8,3,"#5d3");
 
-    c.beginPath();
-    c.moveTo(x1,y1);
-    c.lineTo(x2,y2);
-    c.stroke();
-
-    c.lineWidth=1.0;
-
-}
-
-function drawGrid()
-{
-    // Draw spatial hash grid
-    c.globalAlpha=0.5;
-    c.strokeStyle="#080";
-    c.beginPath();
-    for(var i=0;i<cheight;i+=gridsize){
-            c.moveTo(0,i);
-            c.lineTo(cwidth,i);
+    // Collect segments with Y coordinate around coordinate
+    var cnt=0;
+    for(var segment of path){
+        if(segment.y2>segment.y1&&yk<=segment.y2&&yk>=segment.y1){
+            let dx=segment.x2-segment.x1;
+            let dy=segment.y2-segment.y1;
+            let k=dx/dy;
+            let m=segment.x1-(k*segment.y1);
+            if(xk>=(k*yk)+m) cnt++;
+        }else if(segment.y2<segment.y1&&yk<=segment.y1&&yk>=segment.y2){
+            let dx=segment.x1-segment.x2;
+            let dy=segment.y1-segment.y2;
+            let k=dx/dy;
+            let m=segment.x2-(k*segment.y2);
+            if(xk>=(k*yk)+m) cnt++;
+        }
     }
-    for(var i=0;i<cwidth;i+=gridsize){
-            c.moveTo(i,0);
-            c.lineTo(i,cheight);
-    }
-    c.stroke();
-}
-
-function showRay(ray,color,aph)
-{
-    c.globalAlpha=aph;
-    c.strokeStyle=color;
-    c.beginPath();
-    c.moveTo(ray.x1,ray.y1);
-    c.lineTo(ray.x2,ray.y2);
-    c.stroke();
-    c.globalAlpha=1.0;
-
+    if(cnt%2==0) return false;
+    return true;
 }
 
 function drawit()
 {	
-    intersectcount=0;
+    c.font='10px Arial Narrow';
+    c.textAlign='left';
+    c.textBaseline='middle';
 
 		c.clearRect(0,0,900,900);
      
     c.save();
     c.scale(gridscale,gridscale);
 
-    if(showGrid) drawGrid();
-	
-		// Display player
-		c.beginPath();
-		c.arc(xk, yk, 5, 0, 2 * Math.PI);
-		c.fill(); 				
-
-    // Draw Segments
-    for(var segment of segments){
-        showRay(segment,"#448",1.0);
-    }
-
-    // Reset segments
-    for(var segment of segments){
-        // Hit list
-        segment.minX=100000;
-        segment.minY=100000;
-        segment.minDst=100000;
-        segment.maxX=-100000;
-        segment.maxY=-100000;
-        segment.maxDst=-100000;
-    }
-
-    // Update hash
+    // Update hash...do we even need the hash for this?
     hash=[];
     for(segment of segments){
         hashLine(segment.x1,segment.y1,segment.x2,segment.y2,segment,visualizeHit);
     }
 
-    // Make Rays
-    var rays=[];
-    for(var segment of segments){
-            var dx=segment.x2-xk;
-            var dy=segment.y2-yk;
-            segment.ang=Math.atan2(dy,dx);
+    if(showGrid) drawGrid();
+		
+    drawPath(segments,"#487");
+    drawPath(segmentsb,"#874");
 
-            // Create ray from segment - push to list
-            rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang-rayang)*raylen),y2:yk+(Math.sin(segment.ang-rayang)*raylen)});
-            rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang+rayang)*raylen),y2:yk+(Math.sin(segment.ang+rayang)*raylen)});
-            // rays.push({x1:xk,y1:yk,x2:xk+(Math.cos(segment.ang)*raylen),y2:yk+(Math.sin(segment.ang)*raylen)});
+    var hitlist=[];
+
+    for(segment of hitlist){
+        drawLine(segment.x1,segment.y1,segment.x2,segment.y2,3,"#d62");
     }
-
-    var hits=[];
-    for(var ray of rays){
-            
-            // Visualize Ray
-            if(showRays) showRay(ray,"#c6a",0.5);
-
-            if(segment.id>-1){
-                // Intersect ray and collate closest intersection point
-                found=[];
-                hashLine(ray.x1,ray.y1,ray.x2,ray.y2,null,readHit);
-                var currdst=10000000;
-                var currx=0;
-                var curry=0;
-                var currseg=null;
-                for(var innersegment of found){
-                    var pnt=intersect(ray.x1,ray.y1,ray.x2,ray.y2,innersegment.x1,innersegment.y1,innersegment.x2,innersegment.y2);
-
-                    let dx=pnt.x-xk;
-                    let dy=pnt.y-yk;
-                    let dsts=(dx*dx)+(dy*dy);
-
-                    if(dsts<currdst){
-                        currdst=dsts;
-                        currx=pnt.x;
-                        curry=pnt.y;
-                        currseg=innersegment;
-                        // drawCirc(pnt.x,pnt.y,4,2,"#48c");
-                    }
-                }
-
-                if(currdst<10000000){
-                    var dx=currseg.x1-currx;
-                    var dy=currseg.y1-curry;
-                    var dst=(dx*dx)+(dy*dy);
-
-                    if(dst<currseg.minDst){
-                        currseg.minDst=dst;
-                        currseg.minX=currx;
-                        currseg.minY=curry;
-                    }
-                    if(dst>currseg.maxDst){
-                        currseg.maxDst=dst;
-                        currseg.maxX=currx;
-                        currseg.maxY=curry;
-                    }
-                }
-            } 
-
-    }
-
-    var i=0;
-    c.font="16px Arial Narrow";
-    c.fillStyle="#4b4";
-    c.globalAlpha=0.2;
-    var started=true;
-    c.beginPath();
-
-    for(segment of segments){
-        if(segment.maxDst>-100000&&segment.minDst<100000){
-            if(started){
-                c.moveTo(segment.minX,segment.minY);
-                started=false;
-            }else{
-                c.lineTo(segment.minX,segment.minY);
-            }
-            c.lineTo(segment.maxX,segment.maxY);
-        }
-        i++;
-    }
-    c.fill();
-    c.globalAlpha=1.0;
-
-    c.font="20px Arial Narrow";
-    c.fillText(intersectcount,50,25);
 
     c.restore();
 
-		window.requestAnimationFrame(drawit);
+		// window.requestAnimationFrame(drawit);
 }
 			
 		</script>
