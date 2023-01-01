@@ -3,6 +3,7 @@
 		<style>
 				body {margin: 0; height: 100%; overflow: hidden}
 		</style>
+    <script src="helperFunction/canvasDraw.js"></script>    
 		<script>
 
         //        (\ /)
@@ -84,32 +85,6 @@ var segments=[
     {x1:40,y1:550,x2:40,y2:75,id:25},
 ];
 
-// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
-// Determine the intersection point of two line segments
-function intersect(x1,y1,x2,y2,x3,y3,x4,y4) {
-  intersectcount++;
-	
-  // Check if none of the lines are of length 0
-  if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) return false;
-
-  denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
-
-  // Lines are parallel
-  if (denominator === 0) return false;
-
-  let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
-  let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
-
-  // is the intersection along the segments
-  if (ua <= -0.001 || ua >= 0.999 || ub <= -0.001 || ub >= 0.999) return false;
-
-  // Return a object with the x and y coordinates of the intersection
-  let x = x1 + ua * (x2 - x1)
-  let y = y1 + ua * (y2 - y1)
-  
-  return {x:x, y:y}
-}
-
 function mouseMove(e,t)
 {
 		var rect = e.target.getBoundingClientRect();
@@ -190,40 +165,6 @@ function updatestate()
 {
 		xk+=xd;
 		yk+=yd;
-}
-
-function drawBox(x1,y1,w,h,opacity,fillcolor)
-{
-  c.fillStyle=fillcolor;
-  c.globalAlpha=opacity;
-  c.beginPath();
-  c.fillRect(x1,y1,w,h);
-  c.fill();  
-  c.globalAlpha=1.0;
-}
-
-function drawLine(x1,y1,x2,y2,width,color)
-{
-    c.strokeStyle=color;
-    c.globalAlpha=1.0;
-    c.lineWidth=width;
-
-    c.beginPath();
-    c.moveTo(x1,y1);
-    c.lineTo(x2,y2);
-    c.stroke();
-
-    c.lineWidth=1.0;
-}
-
-function drawCirc(x1,y1,rad,width,color)
-{
-      c.strokeStyle=color;
-      c.lineWidth=width;
-      c.beginPath();
-		  c.arc(x1, y1, rad, 0, 2 * Math.PI);
-		  c.fill();
-      c.lineWidth=1.0; 				
 }
 
 function visualizeHit(cxk,cyk,segment)
@@ -328,50 +269,6 @@ function pushIfNotPresent(list,item)
         if(inner.id==item.id) return false;
     }
     list.push(item);
-}
-
-function drawLine(x1,y1,x2,y2,width,color)
-{
-    c.strokeStyle=color;
-    c.globalAlpha=1.0;
-    c.lineWidth=width;
-
-    c.beginPath();
-    c.moveTo(x1,y1);
-    c.lineTo(x2,y2);
-    c.stroke();
-
-    c.lineWidth=1.0;
-
-}
-
-function drawGrid()
-{
-    // Draw spatial hash grid
-    c.globalAlpha=0.5;
-    c.strokeStyle="#080";
-    c.beginPath();
-    for(var i=0;i<cheight;i+=gridsize){
-            c.moveTo(0,i);
-            c.lineTo(cwidth,i);
-    }
-    for(var i=0;i<cwidth;i+=gridsize){
-            c.moveTo(i,0);
-            c.lineTo(i,cheight);
-    }
-    c.stroke();
-}
-
-function showRay(ray,color,aph)
-{
-    c.globalAlpha=aph;
-    c.strokeStyle=color;
-    c.beginPath();
-    c.moveTo(ray.x1,ray.y1);
-    c.lineTo(ray.x2,ray.y2);
-    c.stroke();
-    c.globalAlpha=1.0;
-
 }
 
 function drawit()
