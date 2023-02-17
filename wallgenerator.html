@@ -8,7 +8,39 @@
             var xEnd=100;
             var yEnd=100;
 
-            var drawQueue=[];
+            var graphQueue=[];
+
+            function drawQueue()
+            {
+                var str="";
+                for(poly of graphQueue){
+                    str+="<polygon fill='"+poly.color+"' points='";
+                    for(point of poly.coords){
+                        str+=point.x+","+point.y+" ";
+                    } 
+                    str+="'/>\n";
+                }
+                return str;
+            }
+
+            // Offset polygon for seamless tiling - creates a new copy with otherwise identical properties as primary
+            function offsetPoly(poly,xoffs,yoffs)
+            {
+                var copy={color:poly.color,coords:[]};
+
+                for(point of poly.coords){
+                    copy.coords.push({x:point.x+xoffs,y:point.y+yoffs});
+                }
+
+                copy.Xmin=poly.Xmin+xoffs;
+                copy.Ymin=poly.Ymin+yoffs;
+                copy.Xmax=poly.Xmax+xoffs;
+                copy.Ymax=poly.Ymax+yoffs;
+
+                console.log(xoffs,yoffs);
+
+                return copy;              
+            }
 
             function addQueue(poly)
             {
@@ -18,7 +50,7 @@
                 var Xmin=100000;
                 var Ymin=100000;
 
-                for(pnt of poly.coords){
+                for(point of poly.coords){
                     if(point.x<Xmin) Xmin=point.x;
                     if(point.x>Xmax) Xmax=point.x;
                     if(point.y<Ymin) Ymin=point.y;
@@ -30,7 +62,10 @@
                 poly.Ymin=Ymin;
                 poly.Xmax=Xmax;
                 poly.Ymax=Ymax;
-                
+
+                if(poly.Xmax>xEnd) graphQueue.push(offsetPoly(poly,(xStart-(poly.Xmax-xEnd))-poly.Xmin,0));
+
+                graphQueue.push(poly);                
             }
 
             function init()
@@ -60,7 +95,7 @@
 
                 var str="";
 
-                // Lookup of euler angles
+                // Lookup of euler angles with jitter
                 var ang=(Math.random()*0.1)-0.05;
                 var cs = Math.cos(ang);
                 var sn = Math.sin(ang);
@@ -78,6 +113,9 @@
                 px4 = cx+((-hw) * cs - (hh) * sn); 
                 py4 = cy+((-hw) * sn + (hh) * cs);                
 
+                addQueue({color:fillcolor,coords:[{x:px1,y:py1},{x:px2,y:py2},{x:px3,y:py3},{x:px4,y:py4}]});
+
+                /*
                 str+="<circle cx='"+cx+"' cy='"+cy+"' r='1' fill='#848' />";
 
                 str+="<circle cx='"+px1+"' cy='"+py1+"' r='1' fill='#488' />";
@@ -85,8 +123,7 @@
                 str+="<circle cx='"+px3+"' cy='"+py3+"' r='1' fill='#488' />";
                 str+="<circle cx='"+px4+"' cy='"+py4+"' r='1' fill='#488' />";
 
-                str+="<polygon fill='#888' points='"+px1+","+py1+","+px2+","+py2+","+px3+","+py3+","+px4+","+py4+"'/>";
-
+                */ 
                 return str;
             }
 
@@ -106,17 +143,20 @@
 
                 for(j=0;j<noheight;j++){
                     if((j%2)==0){
-                        xk=-brickwidth*0.5;
+                        xk=(brickwidth*0.5)+halfmortar;
                     }else{
                         xk=halfmortar;                    
                     }
                     for(i=0;i<nowidth;i++){
-                        str+=makeRect(xk,yk,(brickwidth-(halfmortar*2)),(brickheight-(halfmortar*2)),"#888",0.0);;
+                        var col="#888";
+                        if(i==nowidth-1) col="#844";
+                        str+=makeRect(xk,yk,(brickwidth-(halfmortar*2)),(brickheight-(halfmortar*2)),col,0.0);;
                         xk+=brickwidth;
                     }
                     yk+=brickheight;
                 }
                 
+                str+=drawQueue();
                 document.getElementById("content").innerHTML=str;
             }
 
