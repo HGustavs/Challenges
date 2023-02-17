@@ -1,0 +1,132 @@
+<html>
+    <head>
+        <script>
+
+            // Define box coordinate
+            var xStart=0;
+            var yStart=0;
+            var xEnd=100;
+            var yEnd=100;
+
+            var drawQueue=[];
+
+            function addQueue(poly)
+            {
+                // Iterate over all points of polygon to find min and max
+                var Xmax=-100000;
+                var Ymax=-100000;
+                var Xmin=100000;
+                var Ymin=100000;
+
+                for(pnt of poly.coords){
+                    if(point.x<Xmin) Xmin=point.x;
+                    if(point.x>Xmax) Xmax=point.x;
+                    if(point.y<Ymin) Ymin=point.y;
+                    if(point.y>Ymax) Ymax=point.y;
+                }
+                
+                // Assign Bounding Box
+                poly.Xmin=Xmin;
+                poly.Ymin=Ymin;
+                poly.Xmax=Xmax;
+                poly.Ymax=Ymax;
+                
+            }
+
+            function init()
+            {
+                generateBrickwall(7,12,0.7);
+            }        
+
+            function gradient(startcol,endcol,no){
+                var arr=[];
+                var dr=endcol[0]-startcol[0];
+                var dg=endcol[1]-startcol[1];
+                var db=endcol[2]-startcol[2];
+                for(var i=0;i<no;i++){
+                    var diff=i/no;
+                    arr.push([startcol[0]+(dr*diff)],[startcol[1]+(dg*diff)],[startcol[2]+(db*diff)]);
+                }
+                return arr;
+            }
+
+            function makeRect(xk,yk,width,height,fillcolor,rotang)
+            {
+                var cx=xk+(width*0.5);
+                var cy=yk+(height*0.5);
+
+                var hw=width*0.5;
+                var hh=height*0.5;
+
+                var str="";
+
+                // Lookup of euler angles
+                var ang=(Math.random()*0.1)-0.05;
+                var cs = Math.cos(ang);
+                var sn = Math.sin(ang);
+
+                // Euler rotation in 2d using sin and cos for angle
+                px1 = cx+((-hw) * cs - (-hh) * sn); 
+                py1 = cy+((-hw) * sn + (-hh) * cs);
+
+                px2 = cx+(hw * cs - (-hh) * sn); 
+                py2 = cy+(hw * sn + (-hh) * cs);
+                
+                px3 = cx+(hw * cs - (hh) * sn); 
+                py3 = cy+(hw * sn + (hh) * cs);
+
+                px4 = cx+((-hw) * cs - (hh) * sn); 
+                py4 = cy+((-hw) * sn + (hh) * cs);                
+
+                str+="<circle cx='"+cx+"' cy='"+cy+"' r='1' fill='#848' />";
+
+                str+="<circle cx='"+px1+"' cy='"+py1+"' r='1' fill='#488' />";
+                str+="<circle cx='"+px2+"' cy='"+py2+"' r='1' fill='#488' />";
+                str+="<circle cx='"+px3+"' cy='"+py3+"' r='1' fill='#488' />";
+                str+="<circle cx='"+px4+"' cy='"+py4+"' r='1' fill='#488' />";
+
+                str+="<polygon fill='#888' points='"+px1+","+py1+","+px2+","+py2+","+px3+","+py3+","+px4+","+py4+"'/>";
+
+                return str;
+            }
+
+            function generateBrickwall(nowidth,noheight,halfmortar)
+            {
+                var str="";
+
+                str+="<line x1='0' x2='0' y1='-8' y2='108' stroke='#fff' stroke-width='0.3' stroke-dasharray='1,2'></line>";
+                str+="<line x1='100' x2='100' y1='-8' y2='108' stroke='#fff' stroke-width='0.3' stroke-dasharray='1,2'></line>";
+                str+="<line x1='-8' x2='108' y1='0' y2='0' stroke='#fff' stroke-width='0.3' stroke-dasharray='1,2'></line>";
+                str+="<line x1='-8' x2='108' y1='100' y2='100' stroke='#fff' stroke-width='0.3' stroke-dasharray='1,2'></line>";
+
+                var brickheight=100/noheight;
+                var brickwidth=100/nowidth;
+                var xk=halfmortar;
+                var yk=halfmortar;
+
+                for(j=0;j<noheight;j++){
+                    if((j%2)==0){
+                        xk=-brickwidth*0.5;
+                    }else{
+                        xk=halfmortar;                    
+                    }
+                    for(i=0;i<nowidth;i++){
+                        str+=makeRect(xk,yk,(brickwidth-(halfmortar*2)),(brickheight-(halfmortar*2)),"#888",0.0);;
+                        xk+=brickwidth;
+                    }
+                    yk+=brickheight;
+                }
+                
+                document.getElementById("content").innerHTML=str;
+            }
+
+        </script>    
+    </head>
+    <body onload="init();" style="background-color:#222;">
+        <svg id="content" viewBox="-20 -20 140 140" style='width:400px;height:400px;border:1px solid #800;' xmlns="http://www.w3.org/2000/svg">
+
+        
+
+        </svg>
+    </body>
+</html>

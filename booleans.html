@@ -63,21 +63,24 @@ const showGrid=true;
 // Segments, Floor Clip Polygons, Shadow Areas 
 var segments=[
     {x1:5,y1:283,x2:186,y2:147,id:0},
-    {x1:186,y1:147,x2:279,y2:373,id:1},
-    {x1:279,y1:373,x2:342,y2:186,id:2},
-    {x1:342,y1:186,x2:520,y2:318,id:3},
-    {x1:520,y1:318,x2:562,y2:444,id:4},
-    {x1:562,y1:444,x2:84,y2:505,id:5},
-    {x1:84,y1:505,x2:5,y2:283,id:6}
+    {x1:186,y1:147,x2:220,y2:200,id:1},
+    {x1:220,y1:200,x2:279,y2:373,id:2},
+    {x1:279,y1:373,x2:342,y2:186,id:3},
+    {x1:342,y1:186,x2:520,y2:318,id:4},
+    {x1:520,y1:318,x2:562,y2:444,id:5},
+    {x1:562,y1:444,x2:84,y2:505,id:6},
+    {x1:84,y1:505,x2:5,y2:283,id:7}
 ];
 
 var segmentsb=[
   {x1:56, y1:101, x2:170, y2:12, id:101},
   {x1:170, y1:12, x2:380, y2:8, id:102},
   {x1:380, y1:12, x2:493, y2:208, id:103},
-  {x1:493, y1:208, x2:380, y2:307, id:104},
-  {x1:380, y1:307, x2:181, y2:253, id:105},
-  {x1:181, y1:253, x2:56, y2:101, id:106}  
+  {x1:493, y1:208, x2:425, y2:317, id:104},
+  {x1:425, y1:317, x2:410, y2:155, id:105},
+  {x1:410, y1:155, x2:360, y2:307, id:106},
+  {x1:360, y1:307, x2:181, y2:253, id:107},
+  {x1:181, y1:253, x2:56, y2:101, id:108}  
 ];
 
 function mouseMove(e,t)
@@ -160,15 +163,18 @@ function drawit()
 
     if(showGrid) drawGrid();
 
-    // Update hash...do we even need the hash for this?
+    // Update hash and clear hitlist
     hash=[];
     for(segment of segments){
         hashLine(segment.x1,segment.y1,segment.x2,segment.y2,segment,visualizeHit);
+        segment.hitlist=[];
     }
 
+    // Find intersections and clear hitlist
     found=[];
     for(segment of segmentsb){
         hashLine(segment.x1,segment.y1,segment.x2,segment.y2,null,readHit);
+        segment.hitlist=[];
     }
 		
     drawPath(segments,"#487");
@@ -177,14 +183,28 @@ function drawit()
     // Iterate over segments in 
     for(segment of found){
         drawLine(segment.x1,segment.y1,segment.x2,segment.y2,1.2,"#d62");
-        console.log(segment);
         for(inner of segmentsb){
             var pnt=intersect(segment.x1,segment.y1,segment.x2,segment.y2,inner.x1,inner.y1,inner.x2,inner.y2);
             if(pnt!=false){
-                drawCross(pnt.x,pnt.y,4.0,2.0,"#4b5");
+                inner.hitlist.push({x:pnt.x,y:pnt.y});
+                segment.hitlist.push({x:pnt.x,y:pnt.y});
             }
         }
     }
+
+    // Show hits - remove segment and add new segments
+    for(segment of found){
+        for(hit of segment.hitlist){
+            drawCross(hit.x,hit.y,4,2,"#6b8");
+        }
+    }
+    for(segment of segmentsb){
+        for(hit of segment.hitlist){
+            drawCross(hit.x,hit.y,4,2,"#6b8");
+        }    
+    }
+
+    // Restore canvas transforms
     c.restore();
 
 		// window.requestAnimationFrame(drawit);
