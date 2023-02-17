@@ -64,6 +64,7 @@
                 poly.Ymax=Ymax;
 
                 if(poly.Xmax>xEnd) graphQueue.push(offsetPoly(poly,(xStart-(poly.Xmax-xEnd))-poly.Xmin,0));
+                if(poly.Xmin<xStart) graphQueue.push(offsetPoly(poly,(xEnd-(xStart-poly.Xmin))-poly.Xmin,0));        
 
                 graphQueue.push(poly);                
             }
@@ -143,7 +144,9 @@
 
                 for(j=0;j<noheight;j++){
                     if((j%2)==0){
-                        xk=(brickwidth*0.5)+halfmortar;
+                        xk=-(brickwidth*1.1);
+                        //xk=(brickwidth*0.5)+halfmortar;
+                        //xk=halfmortar;
                     }else{
                         xk=halfmortar;                    
                     }
