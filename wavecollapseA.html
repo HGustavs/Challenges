@@ -82,58 +82,43 @@ function drawit()
             if(block.no==0){
 
             }else if(block.no==1){ 
-                Vertical(); 
-                UpperEnd();
-                LowerEnd();           
+                Vertical();           
             }else if(block.no==2){
                 Horizontal();
-                LeftEnd();
-                RightEnd();
             }else if(block.no==3){
                 Cross4();
-                UpperEnd();
-                LowerEnd();
-                LeftEnd();
-                RightEnd();                                 
             }else if(block.no==4){
                 Cross3Up();
-                UpperEnd();
-                LeftEnd();
-                RightEnd();
             }else if(block.no==5){
                 Cross3Down();
-                LowerEnd();
-                LeftEnd();
-                RightEnd();            
             }else if(block.no==6){
                 Cross3Left();
-                UpperEnd();
-                LowerEnd();
-                LeftEnd();
             }else if(block.no==7){                    
                 Cross3Right();
-                UpperEnd();
-                LowerEnd();
-                RightEnd();
             }else if(block.no==8){   
                 TurnDownLeft();
-                LowerEnd();
-                LeftEnd();
             }else if(block.no==9){                  
                 TurnUpLeft();
-                UpperEnd();
-                LeftEnd();
             }else if(block.no==10){   
                 TurnDownRight();
-                LowerEnd();
-                RightEnd();                               
             }else if(block.no==11){
                 TurnUpRight();
-                UpperEnd();
-                RightEnd();   
             }else if(block.no==12){
             }else if(block.no==13){
             }else if(block.no==14){
+            }
+
+            if(block.no==11||block.no==9||block.no==7||block.no==6||block.no==4||block.no==3||block.no==1){
+                UpperEnd();
+            }
+            if(block.no==10||block.no==7||block.no==6||block.no==5||block.no==4||block.no==3||block.no==1){
+                LowerEnd();
+            }            
+            if(block.no==9||block.no==8||block.no==6||block.no==5||block.no==4||block.no==3||block.no==2){
+                LeftEnd();
+            }
+            if(block.no==11||block.no==10||block.no==7||block.no==5||block.no==4||block.no==3||block.no==2){
+                RightEnd();
             }
 
             ctx.restore();
