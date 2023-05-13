@@ -1,5 +1,6 @@
 <html>
 <head>
+    <script src="helperFunction/pipes.js"></script>
 		<script>
 
 //------------------------------------=======############==========----------------------------------------
@@ -15,9 +16,31 @@ var mx,my,mb=0;
 // Array of building blocks ( 0-10 )
 var blocks=[];
 
+var blockTemplate=[
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,1 ,1 ,1 ,1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
+]
+
 var bw=64;
-var bh=16;
-var blockno=20;
+var bh=64;
+var blockno=19;
 
 //----------------------------------------------------------------------------------
 // Canvas Setup
@@ -31,8 +54,9 @@ function setup()
     for(var i=0;i<blockno;i++){
         blocks[i]=[];
         for(var j=0;j<blockno;j++){
+            var tileno=blockTemplate[i][j];
             blocks[i][j]={
-                no:Math.round(Math.random()*15),
+                no:tileno,
                 xk:j*bw,
                 yk:i*bw
             };
@@ -48,578 +72,68 @@ function drawit()
     ctx.fillStyle="#888";
     ctx.strokeStyle="#000";
 
-    for(var i=0;i<blockno;i++){
-        for(var j=0;j<blockno;j++){
-            block=blocks[i][j];
+    for(var yk=0;yk<blockno;yk++){
+        for(var xk=0;xk<blockno;xk++){
+            block=blocks[yk][xk];
 
             ctx.save();
-            ctx.translate(i*bw,j*bw);
-
+            ctx.translate(xk*bw,yk*bw);
+            
             if(block.no==0){
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(64,0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,0);
-               ctx.fill();
-            }else if(block.no==1){                 
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(64,0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(50,50);
-               ctx.lineTo(64,50);
-               ctx.lineTo(64,64);
-               ctx.lineTo(50,64);
-               ctx.lineTo(50,50);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(64,46);
-               ctx.lineTo(46,46);
-               ctx.lineTo(46,64);
-               ctx.lineTo(50,64);
-               ctx.lineTo(50,50);
-               ctx.lineTo(64,50);
-               ctx.lineTo(64,46);
-               ctx.lineTo(64,46);
-               ctx.fill();
+
+            }else if(block.no==1){ 
+                Vertical(); 
+                UpperEnd();
+                LowerEnd();           
             }else if(block.no==2){
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(64,0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(46,0);
-               ctx.lineTo(46,18);
-               ctx.lineTo(64,18);
-               ctx.lineTo(64,14);
-               ctx.lineTo(50,14);
-               ctx.lineTo(50,0);
-               ctx.lineTo(46,0);
-               ctx.lineTo(46,0);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(50,0);
-               ctx.lineTo(64,0);
-               ctx.lineTo(64,14);
-               ctx.lineTo(50,14);
-               ctx.lineTo(50,0);
-               ctx.fill();
-            }else if(block.no==3){                    // Left-Down
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(64,0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(14,0);
-               ctx.lineTo(14,14);
-               ctx.lineTo(0,14);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(0,18);
-               ctx.lineTo(18,18);
-               ctx.lineTo(18,0);
-               ctx.lineTo(14,0);
-               ctx.lineTo(14,14);
-               ctx.lineTo(0,14);
-               ctx.lineTo(0,18);
-               ctx.lineTo(0,18);
-               ctx.fill();
-            }else if(block.no==4){                    // Left-Up
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(64,0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(14,64);
-               ctx.lineTo(14,50);
-               ctx.lineTo(0,50);
-               ctx.lineTo(0,64);
-               ctx.lineTo(14,64);
-               ctx.lineTo(14,64);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(18,64);
-               ctx.lineTo(18,46);
-               ctx.lineTo(0,46);
-               ctx.lineTo(0,50);
-               ctx.lineTo(14,50);
-               ctx.lineTo(14,64);
-               ctx.lineTo(18,64);
-               ctx.lineTo(18,64);
-               ctx.fill();
-            }else if(block.no==5){                    // Right-Up
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(64,64);
-               ctx.lineTo(64,0);
-               ctx.lineTo(0,0);
-               ctx.lineTo(0,64);
-               ctx.lineTo(64,64);
-               ctx.lineTo(64,64);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(47,18);
-               ctx.lineTo(64,18);
-               ctx.lineTo(64,14);
-               ctx.lineTo(0,14);
-               ctx.lineTo(0,18);
-               ctx.lineTo(17,18);
-               ctx.lineTo(17,29);
-               ctx.lineTo(22,37);
-               ctx.lineTo(22,64);
-               ctx.lineTo(42,64);
-               ctx.lineTo(42,37);
-               ctx.lineTo(47,29);
-               ctx.lineTo(47,18);
-               ctx.lineTo(47,18);
-               ctx.fill();
-               ctx.fillStyle='#9f9f9f';
-               ctx.beginPath();
-               ctx.moveTo(36,39);
-               ctx.lineTo(42,28);
-               ctx.lineTo(42,18);
-               ctx.lineTo(22,18);
-               ctx.lineTo(22,28);
-               ctx.lineTo(29,39);
-               ctx.lineTo(36,39);
-               ctx.lineTo(36,39);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(36,64);
-               ctx.lineTo(36,39);
-               ctx.lineTo(29,39);
-               ctx.lineTo(29,64);
-               ctx.lineTo(36,64);
-               ctx.lineTo(36,64);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(64,14);
-               ctx.lineTo(64,0);
-               ctx.lineTo(0,0);
-               ctx.lineTo(0,14);
-               ctx.lineTo(64,14);
-               ctx.lineTo(64,14);
-               ctx.fill();
-            }else if(block.no==6){                    // Right-Down
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(0,64);
-               ctx.lineTo(64,64);
-               ctx.lineTo(64,0);
-               ctx.lineTo(0,0);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(17,46);
-               ctx.lineTo(0,46);
-               ctx.lineTo(0,50);
-               ctx.lineTo(64,50);
-               ctx.lineTo(64,46);
-               ctx.lineTo(47,46);
-               ctx.lineTo(47,36);
-               ctx.lineTo(42,27);
-               ctx.lineTo(42,0);
-               ctx.lineTo(22,0);
-               ctx.lineTo(22,27);
-               ctx.lineTo(17,36);
-               ctx.lineTo(17,46);
-               ctx.lineTo(17,46);
-               ctx.fill();
-               ctx.fillStyle='#9f9f9f';
-               ctx.beginPath();
-               ctx.moveTo(29,25);
-               ctx.lineTo(22,36);
-               ctx.lineTo(22,46);
-               ctx.lineTo(42,46);
-               ctx.lineTo(42,36);
-               ctx.lineTo(36,25);
-               ctx.lineTo(29,25);
-               ctx.lineTo(29,25);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(29,0);
-               ctx.lineTo(29,25);
-               ctx.lineTo(36,25);
-               ctx.lineTo(36,0);
-               ctx.lineTo(29,0);
-               ctx.lineTo(29,0);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(0,50);
-               ctx.lineTo(0,64);
-               ctx.lineTo(64,64);
-               ctx.lineTo(64,50);
-               ctx.lineTo(0,50);
-               ctx.lineTo(0,50);
-               ctx.fill();
-            }else if(block.no==7){                    // Top-Bottom-Right
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,-0);
-               ctx.lineTo(64,-0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,-0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(46,47);
-               ctx.lineTo(46,64);
-               ctx.lineTo(50,64);
-               ctx.lineTo(50,0);
-               ctx.lineTo(46,0);
-               ctx.lineTo(46,17);
-               ctx.lineTo(36,17);
-               ctx.lineTo(27,22);
-               ctx.lineTo(0,22);
-               ctx.lineTo(0,42);
-               ctx.lineTo(27,42);
-               ctx.lineTo(36,47);
-               ctx.lineTo(46,47);
-               ctx.lineTo(46,47);
-               ctx.fill();
-               ctx.fillStyle='#9f9f9f';
-               ctx.beginPath();
-               ctx.moveTo(25,36);
-               ctx.lineTo(36,42);
-               ctx.lineTo(46,42);
-               ctx.lineTo(46,22);
-               ctx.lineTo(36,22);
-               ctx.lineTo(25,29);
-               ctx.lineTo(25,36);
-               ctx.lineTo(25,36);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(0,29);
-               ctx.lineTo(25,29);
-               ctx.lineTo(25,36);
-               ctx.lineTo(0,36);
-               ctx.lineTo(0,29);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(50,-0);
-               ctx.lineTo(64,-0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(50,64);
-               ctx.lineTo(50,-0);
-               ctx.fill();
-            }else if(block.no==8){                    // Topp-Bottom-Left
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(64,0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(18,17);
-               ctx.lineTo(18,0);
-               ctx.lineTo(14,0);
-               ctx.lineTo(14,64);
-               ctx.lineTo(18,64);
-               ctx.lineTo(18,47);
-               ctx.lineTo(29,47);
-               ctx.lineTo(37,42);
-               ctx.lineTo(64,42);
-               ctx.lineTo(64,22);
-               ctx.lineTo(37,22);
-               ctx.lineTo(29,17);
-               ctx.lineTo(18,17);
-               ctx.lineTo(18,17);
-               ctx.fill();
-               ctx.fillStyle='#9f9f9f';
-               ctx.beginPath();
-               ctx.moveTo(39,29);
-               ctx.lineTo(28,22);
-               ctx.lineTo(18,22);
-               ctx.lineTo(18,42);
-               ctx.lineTo(28,42);
-               ctx.lineTo(39,36);
-               ctx.lineTo(39,29);
-               ctx.lineTo(39,29);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(39,29);
-               ctx.lineTo(64,29);
-               ctx.lineTo(64,36);
-               ctx.lineTo(39,36);
-               ctx.lineTo(39,29);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(-0,-0);
-               ctx.lineTo(14,-0);
-               ctx.lineTo(14,64);
-               ctx.lineTo(-0,64);
-               ctx.lineTo(-0,-0);
-               ctx.fill();
-            }else if(block.no==9){                  // Left-Right-Bottom
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(64,64);
-               ctx.lineTo(64,0);
-               ctx.lineTo(0,0);
-               ctx.lineTo(0,64);
-               ctx.lineTo(64,64);
-               ctx.lineTo(64,64);
-               ctx.fill();
-            }else if(block.no==10){                   // Left-Right-Top
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(64,0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(39,42);
-               ctx.bezierCurveTo(37,44,35,45,32,45);
-               ctx.bezierCurveTo(25,45,20,39,20,32);
-               ctx.bezierCurveTo(20,25,25,20,32,20);
-               ctx.bezierCurveTo(35,20,37,20,39,22);
-               ctx.lineTo(64,22);
-               ctx.lineTo(64,42);
-               ctx.lineTo(39,42);
-               ctx.lineTo(39,42);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(40,36);
-               ctx.bezierCurveTo(39,39,36,41,32,41);
-               ctx.bezierCurveTo(27,41,24,37,24,32);
-               ctx.bezierCurveTo(24,27,27,23,32,23);
-               ctx.bezierCurveTo(36,23,39,25,40,29);
-               ctx.lineTo(64,29);
-               ctx.lineTo(64,36);
-               ctx.lineTo(40,36);
-               ctx.lineTo(40,36);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(32,27);
-               ctx.bezierCurveTo(30,27,28,29,28,32);
-               ctx.bezierCurveTo(28,35,30,37,32,37);
-               ctx.bezierCurveTo(34,37,37,35,37,32);
-               ctx.bezierCurveTo(37,29,34,27,32,27);
-               ctx.fill();
-            }else if(block.no==11){                   // Left-Right-Top
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(64,64);
-               ctx.lineTo(64,0);
-               ctx.lineTo(0,0);
-               ctx.lineTo(0,64);
-               ctx.lineTo(64,64);
-               ctx.lineTo(64,64);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(22,39);
-               ctx.bezierCurveTo(20,37,20,35,20,32);
-               ctx.bezierCurveTo(20,25,25,20,32,20);
-               ctx.bezierCurveTo(39,20,45,25,45,32);
-               ctx.bezierCurveTo(45,35,44,37,42,39);
-               ctx.lineTo(42,64);
-               ctx.lineTo(22,64);
-               ctx.lineTo(22,39);
-               ctx.lineTo(22,39);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(29,40);
-               ctx.bezierCurveTo(25,39,23,36,23,32);
-               ctx.bezierCurveTo(23,27,27,24,32,24);
-               ctx.bezierCurveTo(37,24,41,27,41,32);
-               ctx.bezierCurveTo(41,36,39,39,36,40);
-               ctx.lineTo(36,64);
-               ctx.lineTo(29,64);
-               ctx.lineTo(29,40);
-               ctx.lineTo(29,40);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(37,32);
-               ctx.bezierCurveTo(37,34,35,37,32,37);
-               ctx.bezierCurveTo(29,37,27,34,27,32);
-               ctx.bezierCurveTo(27,30,29,28,32,28);
-               ctx.bezierCurveTo(35,28,37,30,37,32);
-               ctx.lineTo(37,32);
-               ctx.fill();
+                Horizontal();
+                LeftEnd();
+                RightEnd();
+            }else if(block.no==3){
+                Cross4();
+                UpperEnd();
+                LowerEnd();
+                LeftEnd();
+                RightEnd();                                 
+            }else if(block.no==4){
+                Cross3Up();
+                UpperEnd();
+                LeftEnd();
+                RightEnd();
+            }else if(block.no==5){
+                Cross3Down();
+                LowerEnd();
+                LeftEnd();
+                RightEnd();            
+            }else if(block.no==6){
+                Cross3Left();
+                UpperEnd();
+                LowerEnd();
+                LeftEnd();
+            }else if(block.no==7){                    
+                Cross3Right();
+                UpperEnd();
+                LowerEnd();
+                RightEnd();
+            }else if(block.no==8){   
+                TurnDownLeft();
+                LowerEnd();
+                LeftEnd();
+            }else if(block.no==9){                  
+                TurnUpLeft();
+                UpperEnd();
+                LeftEnd();
+            }else if(block.no==10){   
+                TurnDownRight();
+                LowerEnd();
+                RightEnd();                               
+            }else if(block.no==11){
+                TurnUpRight();
+                UpperEnd();
+                RightEnd();   
             }else if(block.no==12){
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,-0);
-               ctx.lineTo(64,-0);
-               ctx.lineTo(64,64);
-               ctx.lineTo(0,64);
-               ctx.lineTo(0,-0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(25,22);
-               ctx.bezierCurveTo(27,20,29,20,32,20);
-               ctx.bezierCurveTo(39,20,45,25,45,32);
-               ctx.bezierCurveTo(45,39,39,45,32,45);
-               ctx.bezierCurveTo(29,45,27,44,25,42);
-               ctx.lineTo(0,42);
-               ctx.lineTo(0,22);
-               ctx.lineTo(25,22);
-               ctx.lineTo(25,22);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(24,29);
-               ctx.bezierCurveTo(25,25,28,23,32,23);
-               ctx.bezierCurveTo(37,23,41,27,41,32);
-               ctx.bezierCurveTo(41,37,37,41,32,41);
-               ctx.bezierCurveTo(28,41,25,39,24,36);
-               ctx.lineTo(0,36);
-               ctx.lineTo(0,29);
-               ctx.lineTo(24,29);
-               ctx.lineTo(24,29);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(32,27);
-               ctx.bezierCurveTo(30,27,28,29,28,32);
-               ctx.bezierCurveTo(28,35,30,37,32,37);
-               ctx.bezierCurveTo(34,37,37,35,37,32);
-               ctx.bezierCurveTo(37,29,34,27,32,27);
-               ctx.fill();
             }else if(block.no==13){
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(0,64);
-               ctx.lineTo(64,64);
-               ctx.lineTo(64,0);
-               ctx.lineTo(0,0);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(42,25);
-               ctx.bezierCurveTo(44,27,45,29,45,32);
-               ctx.bezierCurveTo(45,39,39,45,32,45);
-               ctx.bezierCurveTo(25,45,20,39,20,32);
-               ctx.bezierCurveTo(20,29,20,27,22,25);
-               ctx.lineTo(22,0);
-               ctx.lineTo(42,0);
-               ctx.lineTo(42,25);
-               ctx.lineTo(42,25);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(36,24);
-               ctx.bezierCurveTo(39,25,41,28,41,32);
-               ctx.bezierCurveTo(41,37,37,41,32,41);
-               ctx.bezierCurveTo(27,41,23,37,23,32);
-               ctx.bezierCurveTo(23,28,25,25,29,24);
-               ctx.lineTo(29,0);
-               ctx.lineTo(36,0);
-               ctx.lineTo(36,24);
-               ctx.lineTo(36,24);
-               ctx.fill();
-               ctx.fillStyle='#353535';
-               ctx.beginPath();
-               ctx.moveTo(27,32);
-               ctx.bezierCurveTo(27,30,29,28,32,28);
-               ctx.bezierCurveTo(35,28,37,30,37,32);
-               ctx.bezierCurveTo(37,34,35,37,32,37);
-               ctx.bezierCurveTo(29,37,27,34,27,32);
-               ctx.lineTo(27,32);
-               ctx.fill();
             }else if(block.no==14){
-               ctx.globalAlpha=1.0;
-               ctx.fillStyle='#05690a';
-               ctx.beginPath();
-               ctx.moveTo(0,0);
-               ctx.lineTo(0,64);
-               ctx.lineTo(64,64);
-               ctx.lineTo(64,0);
-               ctx.lineTo(0,0);
-               ctx.lineTo(0,0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(22,0);
-               ctx.lineTo(64,42);
-               ctx.lineTo(64,22);
-               ctx.lineTo(42,0);
-               ctx.lineTo(22,0);
-               ctx.lineTo(22,0);
-               ctx.fill();
-               ctx.fillStyle='#000';
-               ctx.beginPath();
-               ctx.moveTo(42,64);
-               ctx.lineTo(0,22);
-               ctx.lineTo(0,42);
-               ctx.lineTo(22,64);
-               ctx.lineTo(42,64);
-               ctx.lineTo(42,64);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(27,0);
-               ctx.lineTo(64,37);
-               ctx.lineTo(64,27);
-               ctx.lineTo(37,0);
-               ctx.lineTo(27,0);
-               ctx.lineTo(27,0);
-               ctx.fill();
-               ctx.fillStyle='#00d07a';
-               ctx.beginPath();
-               ctx.moveTo(37,64);
-               ctx.lineTo(0,27);
-               ctx.lineTo(0,37);
-               ctx.lineTo(27,64);
-               ctx.lineTo(37,64);
-               ctx.lineTo(37,64);
-               ctx.fill();                
             }
 
             ctx.restore();

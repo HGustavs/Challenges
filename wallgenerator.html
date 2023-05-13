@@ -23,6 +23,17 @@
                 return str;
             }
 
+            function clipQueue()
+            {
+                for(poly of graphQueue){
+                    var cnt=poly.coords.length;
+                    for(i=0;i<cnt;i++){
+                        if(poly.coords[i].x>xEnd) poly.coords[i].x=xEnd;
+                        if(poly.coords[i].x<xStart) poly.coords[i].x=xStart;
+                    }
+                }                
+            }
+
             // Offset polygon for seamless tiling - creates a new copy with otherwise identical properties as primary
             function offsetPoly(poly,xoffs,yoffs)
             {
@@ -144,7 +155,7 @@
 
                 for(j=0;j<noheight;j++){
                     if((j%2)==0){
-                        xk=-(brickwidth*1.1);
+                        xk=-(brickwidth*0.5);
                         //xk=(brickwidth*0.5)+halfmortar;
                         //xk=halfmortar;
                     }else{
@@ -158,7 +169,8 @@
                     }
                     yk+=brickheight;
                 }
-                
+
+                clipQueue();
                 str+=drawQueue();
                 document.getElementById("content").innerHTML=str;
             }

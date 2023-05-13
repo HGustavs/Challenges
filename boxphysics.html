@@ -14,12 +14,13 @@
         // https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects
         // www.dtecta.com/papers/gdc2001depth.pdf
         // https://www.youtube.com/watch?v=1L2g4ZqmFLQ
+        // https://www.youtube.com/watch?v=YpwLArBofkk
+        // https://2dengine.com/?p=collisions
 
 				var c;
 			  var mx,my,mb=0;
 				
-        var circles=[];
-        var lines=[];
+        var boxes=[];
 
         var vx=0.5;
         var vy=-2;
@@ -30,23 +31,14 @@
         var gravity=0.5;
 
         var stop=false;
+
 			
 				function setup()
 				{
 						var cc = document.getElementById("myCanvas");
 				    c = cc.getContext("2d");
 
-            //circles.push({x:70,y:100,r:30,vx:0.5,vy:1,streak:[]});
-            //circles.push({x:120,y:110,r:40,vx:-0.5,vy:1.2,streak:[]});
-            //circles.push({x:90,y:80,r:30,vx:0.8,vy:1.5,streak:[]});
-
-            circles.push({x:70,y:100,r:30,vx:0.5,vy:0,streak:[]});
-            circles.push({x:120,y:110,r:40,vx:-0.5,vy:0,streak:[]});
-            circles.push({x:90,y:40,r:30,vx:0.8,vy:0,streak:[]});
-
-            lines.push({x1:20,y1:140,x2:300,y2:220});
-            lines.push({x1:500,y1:270,x2:210,y2:370});
-            lines.push({x1:20,y1:400,x2:300,y2:520});
+            boxes.push({x1:250,y1:150,x2:400,y2:150,x3:400,y3:400,x4:250,y4:400});
 
             updatestate();
 					
@@ -55,6 +47,8 @@
 								
 				function updatestate()
 				{
+
+        /*
             // Update fall parabola
             for(var i=0;i<circles.length;i++){
                 var circle=circles[i];
@@ -131,6 +125,7 @@
                     }
                 } 
             }
+            */
 
             setTimeout(updatestate,20);
 				}
@@ -192,8 +187,10 @@
             var yk=ay+dy*t;
             dx=xk-px;
             dy=yk-py;
+            
             return {x:xk,y:yk,l:((dx*dx)+(dy*dy))}
-    }
+            
+        }
 
         function drawCirc(x,y,r,fill)
         {
@@ -222,34 +219,36 @@
 						// c.fillText("Mb:"+dx+" "+dy+" "+ang,100,50);
 
             c.strokeStyle="#6aa";
-            for(var i=0;i<lines.length;i++){
-                var line=lines[i];
-                drawLine(line.x1,line.y1,line.x2,line.y2);
+
+            var circle={x:290,y:220};
+
+            for(box of boxes){
+                var pnt=project(box.x1,box.y1,box.x2,box.y2,circle.x,circle.y);
+                drawCirc(pnt.x,pnt.y,6,false);
+                console.log(pnt.l);
+
+                var pnt=project(box.x2,box.y2,box.x3,box.y3,circle.x,circle.y);
+                drawCirc(pnt.x,pnt.y,6,false);
+                console.log(pnt.l);
+
+                var pnt=project(box.x3,box.y3,box.x4,box.y4,circle.x,circle.y);
+                drawCirc(pnt.x,pnt.y,6,false);
+                console.log(pnt.l);
+
+                var pnt=project(box.x4,box.y4,box.x1,box.y1,circle.x,circle.y);
+                drawCirc(pnt.x,pnt.y,6,false);
+                console.log(pnt.l);
+
+                drawCirc(circle.x,circle.y,5,false);
+
+                drawLine(box.x1,box.y1,box.x2,box.y2);
+                drawLine(box.x2,box.y2,box.x3,box.y3);
+                drawLine(box.x3,box.y3,box.x4,box.y4);
+                drawLine(box.x4,box.y4,box.x1,box.y1);
             }
 
-            c.strokeStyle="#a6a";
-            for(var i=0;i<circles.length;i++){
-                var circ=circles[i];
-                drawCirc(circ.x,circ.y,circ.r);
-            }
 
-            c.strokeStyle="#d72";
-            for(var i=0;i<circles.length;i++){
-                var circ=circles[i];
-                c.beginPath();
-                
-                for(var j=0;j<circ.streak.length;j++){
-                      var st=circ.streak[j];
-                      if(j==0){
-                          c.moveTo(st.x,st.y);
-                      }
-                      c.lineTo(st.x,st.y);
-                }
-                c.stroke();
-            }
-
-
-            window.requestAnimationFrame(drawit);
+            // window.requestAnimationFrame(drawit);
 				} 			
 
 		</script>

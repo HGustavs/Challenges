@@ -1,0 +1,200 @@
+<html>
+<head>
+    <script>
+        // This is my attempt at making a Dpaint pixel art tool like on the old Amiga Computer
+        // Step 1 Drawing Canvas from Buffer
+        // Step 2 Dirty Rectangle Mode (a stack of rectangles that need to be updated)
+
+        var ctx;
+
+        // Palette entries. 4*RGBA format - close to the metal - standard 32 color dPaint III palette
+        var palette=[
+                      [0,0,0,255],
+                      [238,204,170,255],
+                      [238,0,0,255],
+                      [170,0,0,255],
+                      [221,136,0,255],
+                      [255,238,0,255],
+                      [136,255,0,255],
+                      [0,136,0,255],
+                      [0,187,102,255],
+                      [0,221,221,255],
+                      [0,170,255,255],
+                      [0,119,204,255],
+                      [0,0,255,255],
+                      [119,0,255,255],
+                      [204,0,238,255],
+                      [204,0,136,255],
+                      [102,34,0,255],
+                      [238,85,34,255],
+                      [170,85,34,255],
+                      [255,204,170,255],
+                      [51,51,51,255],
+                      [68,68,68,255],
+                      [85,85,85,255],
+                      [102,102,102,255],
+                      [119,119,119,255],
+                      [136,136,136,255],
+                      [153,153,153,255],
+                      [170,170,170,255],
+                      [204,204,204,255],
+                      [221,221,221,255],
+                      [238,238,238,255],
+                      [255,255,255,255]                                                                   
+                    ];
+
+        var uicolor=[
+            [0,0,0,0],
+            [238,204,170,255],
+            [255,255,255,255]
+        ]
+
+        const screenW=640;
+        const screenH=400;
+        const uiW=48;
+        const uiH=screenH;
+        const borderWidth=1;
+
+        var mainbuffer=new Array();
+        var uibuffer=new Array();
+        var currentColor=13;
+
+        var pointer=[];
+
+        // Draw UI Box - used for most UI functionality except for text
+        function drawBox(x,y,w,h,col)
+        {
+            for(var yk=0;yk<h;yk++){
+                var ind=((y+yk)*uiW*4)+(x*4);
+                for(var xk=0;xk<w;xk++){
+                    uibuffer[ind]=col[0];
+                    uibuffer[ind+1]=col[1];
+                    uibuffer[ind+2]=col[2];
+                    uibuffer[ind+3]=255;
+                    ind+=4;
+                }            
+            }
+        }
+
+        function drawBorder(x,y,w,h,col)
+        {
+            drawBox(x,y,w,borderWidth,col);
+            drawBox(x,y+h-borderWidth,w,borderWidth,col);
+            drawBox(x,y,borderWidth,h,col);         
+            drawBox(x+w-borderWidth,y,borderWidth,h,col);         
+        }
+
+        // Draw UI button to buffer
+        function drawButton(buff,x,y,w,h,state,uicol)
+        {
+            drawBorder(x,y,w,h,uicolor[0]);
+            if(state){
+                drawBox(x+borderWidth,y+borderWidth,w-(borderWidth*2),h-(borderWidth*2),uicolor[0]);
+            }else{
+                drawBox(x+borderWidth,y+borderWidth,w-(borderWidth*2),h-(borderWidth*2),uicolor[1]);
+                drawBox(x+borderWidth,y+borderWidth,w-(borderWidth*2),borderWidth,uicolor[2]);
+                drawBox(x+borderWidth,y+borderWidth,borderWidth,h-(borderWidth*2),uicolor[2]);
+            }
+        }
+
+        // Update UI
+        function updateUI()
+        {
+            // Tool Symbol Button
+            drawButton(uibuffer,0,0,48,20,false,uicolor);
+
+            for(i=1;i<10;i++){
+                drawButton(uibuffer,0,i*20,24,20,false,uicolor);
+                drawButton(uibuffer,24,i*20,24,20,false,uicolor);            
+            }
+
+            // Draw palette - 
+            var palW=12;
+            var palH=20;
+            if(palette.length<=8) palW=48;
+            if(palette.length==16) palW=24;
+
+            var px=0;
+            var py=220;
+            for(var i=0;i<palette.length;i++){
+                if(py>=380){
+                    px+=palW;
+                    py=220;
+                }
+                drawBox(px,py,palW,palH,palette[i]);
+                if(currentColor==i){
+                    drawBorder(px,py,palW,palH,uicolor[1]);
+                }else{
+                    drawBorder(px,py,palW,palH,uicolor[0]);                
+                }
+                py+=palH;
+            }
+            
+        }
+
+        function setup()
+        {
+        		var cc = document.getElementById("myCanvas");
+            ctx = cc.getContext("2d");
+
+            var pallen=palette.length;
+            for(var i=0;i<(screenW*screenH*4);i+=4){
+                var palindex=Math.floor(Math.random()*pallen);
+                mainbuffer[i]=palette[palindex][0];
+                mainbuffer[i+1]=palette[palindex][1];
+                mainbuffer[i+2]=palette[palindex][2];
+                mainbuffer[i+3]=255;
+            }
+
+            // Clear UI Buffer
+            for(var i=0;i<(uiW*uiH*4);i+=4){
+                uibuffer[i]=0;
+                uibuffer[i+1]=128;
+                uibuffer[i+2]=0;
+                uibuffer[i+3]=255;
+            }
+
+            // Draw UI components
+            updateUI();
+
+        		drawit();
+        }
+
+        function drawit()
+        {
+            // Iterate over each pixel and read from appropriate pixel layer
+            
+            const imageData = ctx.getImageData(0,0,screenW,screenH);
+            const buffer = imageData.data;
+
+            // Blit main buffer
+            for(var blitY=0;blitY<screenH;blitY++){
+                var ind=blitY*screenW*4;
+                for(var blitX=0;blitX<(screenW-uiW);blitX++){
+                    buffer[ind]=mainbuffer[ind];
+                    buffer[ind+1]=mainbuffer[ind+1];
+                    buffer[ind+2]=mainbuffer[ind+2];
+                    buffer[ind+3]=255;
+                    ind+=4;
+                }
+                var uiind=blitY*uiW*4;
+                for(var blitX=0;blitX<(uiW);blitX++){
+                    buffer[ind]=uibuffer[uiind];
+                    buffer[ind+1]=uibuffer[uiind+1];
+                    buffer[ind+2]=uibuffer[uiind+2];
+                    buffer[ind+3]=255;
+                    ind+=4;
+                    uiind+=4;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+    </script>
+</head>
+<!-- onkeydown="keydown(event);" onkeyup="keyup(event);" onmousedown="mouseDown(event)" onmouseup="mouseUp(event)" onmousemove="mouseMove(event)" -->
+<body onload="setup();" style="background-color:#000;" >
+ 	<canvas id="myCanvas" width="640" height="400" style="border:1px solid #000000;image-rendering:pixelated;width:1280px;height:800px;"></canvas>
+</body>
+</html>
