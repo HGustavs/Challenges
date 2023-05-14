@@ -26,10 +26,13 @@
 
 var mainctx,toolsctx,ctx;
 var mx=0,my=0,mb=0;
+var lx=0,ly=0;
 var consloe;
 var tileno=0;
 
 var targetid="";
+
+var processQueue=[];
 
 // Array of building blocks ( 0-10 )
 var blocks=[];
@@ -59,22 +62,22 @@ var blockTemplate=[
 
 
 var nlist=[];
-nlist[0]=null;
-nlist[1]={tile:1,nolist:[{x:1,y:0,items:[2,4,3,8,5,9]},{x:-1,y:0,items:[2,4,3,10,5,11]},{x:0,y:1,items:[1,5,2,10,8]},{x:0,y:-1,items:[4,2,9,11,1]}]};
-nlist[2]={tile:2,nolist:[{x:1,y:0,items:[2,7,10,11,1]},{x:-1,y:0,items:[2,6,8,9,1]},{x:0,y:1,items:[3,4,9,11,1]},{x:0,y:-1,items:[3,5,8,10,1]}]};
-nlist[3]={tile:3,nolist:[{x:1,y:0,items:[3,1,7,10,11]},{x:-1,y:0,items:[3,1,6,8,9]},{x:0,y:1,items:[3,2,5,8,10]},{x:0,y:-1,items:[3,2,4,9,11]},]};
-nlist[4]={tile:4,nolist:[{x:1,y:0,items:[1,7,10,11,4]},{x:-1,y:0,items:[1,6,8,9,4]},{x:0,y:1,items:[4,7,6,1,3,11,9]},{x:0,y:-1,items:[9,4,2,11]}]};
-nlist[5]={tile:5,nolist:[{x:1,y:0,items:[1,7,11,10,5]},{x:-1,y:0,items:[1,6,9,8,5]},{x:0,y:1,items:[5,2,7,8,10]},{x:0,y:-1,items:[3,5,8,10,6,7,1]}]};
-nlist[6]={tile:6,nolist:[{x:1,y:0,items:[2,3,6,5,8,4,9]},{x:-1,y:0,items:[1,6,8,9]},{x:0,y:1,items:[6,2,5,8,10]},{x:0,y:-1,items:[2,4,9,11,6]}]};
-nlist[7]={tile:7,nolist:[{x:1,y:0,items:[1,10,11,7]},{x:-1,y:0,items:[2,3,11,10,7,5,4]},{x:0,y:1,items:[2,5,8,10,7]},{x:0,y:-1,items:[2,4,11,9,7]},]};
-nlist[8]={tile:8,nolist:[{x:1,y:0,items:[3,8,9]},{x:-1,y:0,items:[1,10,11,8,9]},{x:0,y:1,items:[8,11,5,2,9]},{x:0,y:-1,items:[3,4,5,8,10]}]};
-nlist[9]={tile:9,nolist:[{x:1,y:0,items:[2,3,9]},{x:-1,y:0,items:[1,6,9,10,11,8]},{x:0,y:1,items:[9,11,3,4,6,7]},{x:0,y:-1,items:[9,8,2,4,11,10]}]};
-nlist[10]={tile:10,nolist:[{x:1,y:0,items:[1,7,10,8,9,11]},{x:-1,y:0,items:[2,7,3,10,5,4,11]},{x:0,y:1,items:[10,2,8,11]},{x:0,y:-1,items:[1,8,10]}]};
-nlist[11]={tile:11,nolist:[{x:1,y:0,items:[1,7,11,9,8]},{x:-1,y:0,items:[2,3,4,11,10]},{x:0,y:1,items:[11,4,1,3,7,6]},{x:0,y:-1,items:[8,10,11,4,2]}]};
+nlist[0]={tile:1,nolist:[{x:1,y:0,items:[2,3,4,5,6,8,9]},{x:-1,y:0,items:[2,3,4,5,7,10,11]},{x:0,y:1,items:[1,3,4,6,7,9,11]},{x:0,y:-1,items:[1,3,5,6,7,8,10]}]};
+nlist[1]={tile:1,nolist:[{x:1,y:0,items:[2,4,3,8,5,6,9]},{x:-1,y:0,items:[2,4,3,10,7,5,11]},{x:0,y:1,items:[0,1,5,2,10,8]},{x:0,y:-1,items:[0,4,2,9,11,1]}]};
+nlist[2]={tile:2,nolist:[{x:1,y:0,items:[0,2,7,10,11,1]},{x:-1,y:0,items:[0,2,6,8,9,1]},{x:0,y:1,items:[3,4,6,7,9,11,1]},{x:0,y:-1,items:[3,6,5,7,8,10,1]}]};
+nlist[3]={tile:3,nolist:[{x:1,y:0,items:[0,3,1,7,10,11]},{x:-1,y:0,items:[0,3,1,6,8,9]},{x:0,y:1,items:[0,3,2,5,8,10]},{x:0,y:-1,items:[0,3,2,4,9,11]}]};
+nlist[4]={tile:4,nolist:[{x:1,y:0,items:[0,1,7,10,11,4]},{x:-1,y:0,items:[0,1,6,8,9,4]},{x:0,y:1,items:[4,7,6,1,3,11,9]},{x:0,y:-1,items:[0,9,4,2,11]}]};
+nlist[5]={tile:5,nolist:[{x:1,y:0,items:[0,1,7,11,10,5]},{x:-1,y:0,items:[0,1,6,9,8,5]},{x:0,y:1,items:[0,5,2,7,8,10]},{x:0,y:-1,items:[3,5,8,10,6,7,1]}]};
+nlist[6]={tile:6,nolist:[{x:1,y:0,items:[2,3,6,5,8,4,9]},{x:-1,y:0,items:[0,1,6,8,9]},{x:0,y:1,items:[0,6,2,5,8,10]},{x:0,y:-1,items:[0,2,4,9,11,6]}]};
+nlist[7]={tile:7,nolist:[{x:1,y:0,items:[0,1,10,11,7]},{x:-1,y:0,items:[2,3,11,10,7,5,4]},{x:0,y:1,items:[0,2,5,8,10,7]},{x:0,y:-1,items:[0,2,4,11,9,7]}]};
+nlist[8]={tile:8,nolist:[{x:1,y:0,items:[2,3,4,5,6,8,9]},{x:-1,y:0,items:[0,1,6,10,8,9]},{x:0,y:1,items:[0,8,10,5,2,9]},{x:0,y:-1,items:[1,3,7,4,5,6,8,10]}]};
+nlist[9]={tile:9,nolist:[{x:1,y:0,items:[2,4,5,6,8,3,9]},{x:-1,y:0,items:[0,1,6,9,11,8]},{x:0,y:1,items:[1,9,11,3,4,6,7]},{x:0,y:-1,items:[0,1,9,8,2,4,11]}]};
+nlist[10]={tile:10,nolist:[{x:1,y:0,items:[0,1,7,10,8,11]},{x:-1,y:0,items:[2,7,3,10,5,4,11]},{x:0,y:1,items:[0,10,2,5,8,11]},{x:0,y:-1,items:[0,3,6,7,5,1,8,10]}]};
+nlist[11]={tile:11,nolist:[{x:1,y:0,items:[0,1,7,10,11,9]},{x:-1,y:0,items:[2,3,4,5,7,11,10]},{x:0,y:1,items:[11,9,4,1,3,7,6]},{x:0,y:-1,items:[0,9,10,11,4,2]}]};
 
 var bw=64;
 var bh=64;
-var blockno=19;
+var blockno=14;
 
 //----------------------------------------------------------------------------------
 // Canvas Setup
@@ -101,7 +104,10 @@ function setup()
                 no:-1,
                 xk:j*bw,
                 yk:i*bw,
-                allowed:arr
+                tx:j,
+                ty:i,
+                allowed:arr,
+                done:false
             };
         }
     }
@@ -127,7 +133,15 @@ function updateTools()
             ctx.stroke();
             ctx.lineWidth=1.0;
         }
-        drawTile(yk)
+        drawTile(yk);
+
+        ctx.beginPath();
+        ctx.fillStyle="Black";
+        ctx.textBaseline="top";
+        ctx.font="14px AppleII";
+        ctx.fillText(yk,2,2);
+        ctx.fill();
+        
         ctx.restore();
     }
     ctx=mainctx;
@@ -159,6 +173,11 @@ function drawTile(tileno)
         TurnDownRight();
     }else if(tileno==11){
         TurnUpRight();
+    }else if(tileno==12){
+        ctx.fillStyle="#888";
+        ctx.beginPath();
+        ctx.rect(2,2,bw-4,bw-4);
+        ctx.fill();
     }
 
     if(tileno==11||tileno==9||tileno==7||tileno==6||tileno==4||tileno==3||tileno==1){
@@ -227,13 +246,73 @@ function drawitDraw()
 
 function update(tx,ty)
 {
+    lx=tx;
+    ly=ty;
     var block=blocks[ty][tx];
+    console.log("Len",processQueue);
+    if(block.allowed.length==0){
+        block.no=12;
+        currentno=0;
+    }else{
+        var currentno=block.allowed[Math.floor(Math.random()*block.allowed.length)];
+        if(block.no==-1) block.no=currentno;    
+    }
 
-    console.log(block.allowed);
-    var currentno=block.allowed[Math.floor(Math.random()*block.allowed.length)];
+    // Use not allowed lists to reduce entropy in surrounding cells
+    notallowed=nlist[currentno];
+    for(offset of notallowed.nolist){
+        var cx=offset.x+tx;
+        var cy=offset.y+ty;
+        // If offset point is inside block area
+        if(cx>=0&&cx<blockno&&cy>=0&&cy<blockno){
+            var block=blocks[cy][cx];
+            // We only handle un-processed blocks
+            if(block.no==-1){
+                for(curr of offset.items){
+                    var index=block.allowed.indexOf(curr);
+                    if(index>-1){
+                        block.allowed.splice(index,1);
+                    }
+                }
+                // Add block to queue
+                processQueue.push(block);
+            }
+        }
+    }
+    
+    if(processQueue.length>0){
+        setTimeout(nextstepLower,30);
+    }
 
-    console.log(currentno);
+}
 
+// Naive NextStep - Stack based - No priority
+function nextstepLower()
+{
+        var item=-1
+        var lowest=100000;
+        for(var i=0;i<processQueue.length;i++){
+            next=processQueue[i];
+            if((next.allowed.length<=lowest)){
+                lowest=next.allowed.length;
+                item=i;
+            }
+        }
+        
+        if(item!=-1){
+            var theitem=processQueue[item];
+            processQueue.splice(item,1);
+            update(theitem.tx,theitem.ty);
+        }else{
+            console.log(item,lowest,processQueue.length);
+        }
+}
+
+// Naive NextStep - Stack based - No priority
+function nextstepNaive()
+{
+        var item=processQueue.pop();
+        update(item.tx,item.ty);
 }
 
 function drawit()
@@ -250,7 +329,16 @@ function drawit()
             ctx.save();
             ctx.translate(xk*bw,yk*bw);
             var tile=blocks[yk][xk].no;
-            drawTile(tile);
+            if(tile>=0){
+                drawTile(tile);
+            }
+            if(xk==lx&&yk==ly){
+                ctx.beginPath();
+                ctx.lineWidth=3;
+                ctx.strokeStyle="#8d3";
+                ctx.rect(2,2,bw-4,bw-4);
+                ctx.stroke();
+            }
             ctx.restore();
         }
     }
