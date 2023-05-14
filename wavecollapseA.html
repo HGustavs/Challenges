@@ -1,42 +1,76 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+<meta charset="utf-8">
+    <style>
+    
+    @font-face {
+        font-family: 'AppleII';
+        src: url('../Fonts/AppleII.ttf')  format('truetype'); /* Safari, Android, iOS */
+    }
+
+    </style>
     <script src="helperFunction/pipes.js"></script>
+    <script src="helperFunction/console.js"></script>
 		<script>
 
 //------------------------------------=======############==========----------------------------------------
 //                                 Canvas Slide Constants and Variables
 //------------------------------------=======############==========----------------------------------------
 
-// Virrvarr
-// Biosphere https://en.wikipedia.org/wiki/Montreal_Biosphere
+// Wave function collapse and model synthesis
 
-var ctx;
-var mx,my,mb=0;
+// https://www.youtube.com/watch?v=dFYMOzoSDNE
+// https://www.youtube.com/watch?v=zIRTOgfsjl0
+// https://www.youtube.com/watch?v=2SuvO4Gi7uY
+
+var mainctx,toolsctx,ctx;
+var mx=0,my=0,mb=0;
+var consloe;
+var tileno=0;
+
+var targetid="";
 
 // Array of building blocks ( 0-10 )
 var blocks=[];
 
 var blockTemplate=[
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,1 ,1 ,1 ,1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-    [0 ,0 , 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ],
-]
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+];
+
+
+var nlist=[];
+nlist[0]=null;
+nlist[1]={tile:1,nolist:[{x:1,y:0,items:[2,4,3,8,5,9]},{x:-1,y:0,items:[2,4,3,10,5,11]},{x:0,y:1,items:[1,5,2,10,8]},{x:0,y:-1,items:[4,2,9,11,1]}]};
+nlist[2]={tile:2,nolist:[{x:1,y:0,items:[2,7,10,11,1]},{x:-1,y:0,items:[2,6,8,9,1]},{x:0,y:1,items:[3,4,9,11,1]},{x:0,y:-1,items:[3,5,8,10,1]}]};
+nlist[3]={tile:3,nolist:[{x:1,y:0,items:[3,1,7,10,11]},{x:-1,y:0,items:[3,1,6,8,9]},{x:0,y:1,items:[3,2,5,8,10]},{x:0,y:-1,items:[3,2,4,9,11]},]};
+nlist[4]={tile:4,nolist:[{x:1,y:0,items:[1,7,10,11,4]},{x:-1,y:0,items:[1,6,8,9,4]},{x:0,y:1,items:[4,7,6,1,3,11,9]},{x:0,y:-1,items:[9,4,2,11]}]};
+nlist[5]={tile:5,nolist:[{x:1,y:0,items:[1,7,11,10,5]},{x:-1,y:0,items:[1,6,9,8,5]},{x:0,y:1,items:[5,2,7,8,10]},{x:0,y:-1,items:[3,5,8,10,6,7,1]}]};
+nlist[6]={tile:6,nolist:[{x:1,y:0,items:[2,3,6,5,8,4,9]},{x:-1,y:0,items:[1,6,8,9]},{x:0,y:1,items:[6,2,5,8,10]},{x:0,y:-1,items:[2,4,9,11,6]}]};
+nlist[7]={tile:7,nolist:[{x:1,y:0,items:[1,10,11,7]},{x:-1,y:0,items:[2,3,11,10,7,5,4]},{x:0,y:1,items:[2,5,8,10,7]},{x:0,y:-1,items:[2,4,11,9,7]},]};
+nlist[8]={tile:8,nolist:[{x:1,y:0,items:[3,8,9]},{x:-1,y:0,items:[1,10,11,8,9]},{x:0,y:1,items:[8,11,5,2,9]},{x:0,y:-1,items:[3,4,5,8,10]}]};
+nlist[9]={tile:9,nolist:[{x:1,y:0,items:[2,3,9]},{x:-1,y:0,items:[1,6,9,10,11,8]},{x:0,y:1,items:[9,11,3,4,6,7]},{x:0,y:-1,items:[9,8,2,4,11,10]}]};
+nlist[10]={tile:10,nolist:[{x:1,y:0,items:[1,7,10,8,9,11]},{x:-1,y:0,items:[2,7,3,10,5,4,11]},{x:0,y:1,items:[10,2,8,11]},{x:0,y:-1,items:[1,8,10]}]};
+nlist[11]={tile:11,nolist:[{x:1,y:0,items:[1,7,11,9,8]},{x:-1,y:0,items:[2,3,4,11,10]},{x:0,y:1,items:[11,4,1,3,7,6]},{x:0,y:-1,items:[8,10,11,4,2]}]};
 
 var bw=64;
 var bh=64;
@@ -48,89 +82,269 @@ var blockno=19;
 
 function setup()
 {
-    var cc = document.getElementById("myCanvas");
-    ctx = cc.getContext("2d");
+    consloe=new Conio(40,8,"console");
 
+    mainctx = document.getElementById("myCanvas").getContext("2d");
+    toolctx = document.getElementById("toolCanvas").getContext("2d");
+    ctx=mainctx;
+
+    // We make tile array and set to initial entropy
     for(var i=0;i<blockno;i++){
         blocks[i]=[];
         for(var j=0;j<blockno;j++){
             var tileno=blockTemplate[i][j];
+            var arr=[];
+            for(var k=0;k<12;k++){
+                arr.push(k);
+            }
             blocks[i][j]={
-                no:tileno,
+                no:-1,
                 xk:j*bw,
-                yk:i*bw
+                yk:i*bw,
+                allowed:arr
             };
         }
     }
 
+    updateTools();
+    update(8,8);
     drawit();
 }
+
+function updateTools()
+{
+    // Update drawing canvas and draw all possible tiles
+    ctx=toolctx;
+    ctx.clearRect(0,0,64,900);
+    for(var yk=0;yk<12;yk++){
+        ctx.save();
+        ctx.translate(0,yk*bw);
+        if(tileno==yk){
+            ctx.lineWidth=3.0;
+            ctx.strokeStyle="#cc4";
+            ctx.beginPath();
+            ctx.rect(0,0,bw,bw);
+            ctx.stroke();
+            ctx.lineWidth=1.0;
+        }
+        drawTile(yk)
+        ctx.restore();
+    }
+    ctx=mainctx;
+}
+
+function drawTile(tileno)
+{
+    if(tileno==0){
+
+    }else if(tileno==1){ 
+        Vertical();           
+    }else if(tileno==2){
+        Horizontal();
+    }else if(tileno==3){
+        Cross4();
+    }else if(tileno==4){
+        Cross3Up();
+    }else if(tileno==5){
+        Cross3Down();
+    }else if(tileno==6){
+        Cross3Left();
+    }else if(tileno==7){                    
+        Cross3Right();
+    }else if(tileno==8){   
+        TurnDownLeft();
+    }else if(tileno==9){                  
+        TurnUpLeft();
+    }else if(tileno==10){   
+        TurnDownRight();
+    }else if(tileno==11){
+        TurnUpRight();
+    }
+
+    if(tileno==11||tileno==9||tileno==7||tileno==6||tileno==4||tileno==3||tileno==1){
+        UpperEnd();
+    }
+    if(tileno==10||tileno==7||tileno==6||tileno==5||tileno==8||tileno==3||tileno==1){
+        LowerEnd();
+    }            
+    if(tileno==9||tileno==8||tileno==6||tileno==5||tileno==4||tileno==3||tileno==2){
+        LeftEnd();
+    }
+    if(tileno==11||tileno==10||tileno==7||tileno==5||tileno==4||tileno==3||tileno==2){
+        RightEnd();
+    }
+}
         
-function drawit()
+function drawitDraw()
 {	
+    ctx=mainctx;
+
+    var tx=Math.floor(mx/bw);
+    var ty=Math.floor(my/bw);
+
+    var hovertile=blockTemplate[ty][tx];
+
     ctx.clearRect(0,0,900,900);
     ctx.fillStyle="#888";
     ctx.strokeStyle="#000";
 
+    // Draw tiles and highlight hoverint tiles.
     for(var yk=0;yk<blockno;yk++){
         for(var xk=0;xk<blockno;xk++){
-            block=blocks[yk][xk];
-
             ctx.save();
             ctx.translate(xk*bw,yk*bw);
-            
-            if(block.no==0){
-
-            }else if(block.no==1){ 
-                Vertical();           
-            }else if(block.no==2){
-                Horizontal();
-            }else if(block.no==3){
-                Cross4();
-            }else if(block.no==4){
-                Cross3Up();
-            }else if(block.no==5){
-                Cross3Down();
-            }else if(block.no==6){
-                Cross3Left();
-            }else if(block.no==7){                    
-                Cross3Right();
-            }else if(block.no==8){   
-                TurnDownLeft();
-            }else if(block.no==9){                  
-                TurnUpLeft();
-            }else if(block.no==10){   
-                TurnDownRight();
-            }else if(block.no==11){
-                TurnUpRight();
-            }else if(block.no==12){
-            }else if(block.no==13){
-            }else if(block.no==14){
+            var tile=blockTemplate[yk][xk];
+            if(tile>0&&tile==hovertile){
+                ctx.beginPath();
+                ctx.fillStyle="#fed";
+                ctx.rect(2,2,bw-4,bw-4);
+                ctx.fill();                
             }
-
-            if(block.no==11||block.no==9||block.no==7||block.no==6||block.no==4||block.no==3||block.no==1){
-                UpperEnd();
-            }
-            if(block.no==10||block.no==7||block.no==6||block.no==5||block.no==4||block.no==3||block.no==1){
-                LowerEnd();
-            }            
-            if(block.no==9||block.no==8||block.no==6||block.no==5||block.no==4||block.no==3||block.no==2){
-                LeftEnd();
-            }
-            if(block.no==11||block.no==10||block.no==7||block.no==5||block.no==4||block.no==3||block.no==2){
-                RightEnd();
-            }
-
+            drawTile(blockTemplate[yk][xk]);
             ctx.restore();
         }
     }
 
+    if(targetid=="myCanvas"){
+        ctx.beginPath();
+        ctx.lineWidth=3.0;
+        ctx.strokeStyle="#cc4";
+        ctx.beginPath();
+        ctx.rect(tx*bw,ty*bw,bw,bw);
+        ctx.stroke();
+        ctx.lineWidth=1.0;
+    }
 
     window.requestAnimationFrame(drawit);
-} 			
+}
+
+//--------------------------------------------------------------------------
+// update
+// ---------------
+//  Updates one tile at tx,ty and changes the entropy of surrounding tiles
+//  Also adds surrounding tiles to queue
+//--------------------------------------------------------------------------
+
+function update(tx,ty)
+{
+    var block=blocks[ty][tx];
+
+    console.log(block.allowed);
+    var currentno=block.allowed[Math.floor(Math.random()*block.allowed.length)];
+
+    console.log(currentno);
+
+}
+
+function drawit()
+{	
+    ctx=mainctx;
+
+    ctx.clearRect(0,0,900,900);
+    ctx.fillStyle="#888";
+    ctx.strokeStyle="#000";
+
+    // Draw tiles and highlight hoverint tiles.
+    for(var yk=0;yk<blockno;yk++){
+        for(var xk=0;xk<blockno;xk++){
+            ctx.save();
+            ctx.translate(xk*bw,yk*bw);
+            var tile=blocks[yk][xk].no;
+            drawTile(tile);
+            ctx.restore();
+        }
+    }
+
+    window.requestAnimationFrame(drawit);
+}
+
+function mouseMove(e){
+    var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element. 
+    targetid=e.target.id;       
+}
+
+function clickCanvas(e)
+{
+    var tx=Math.floor(mx/bw);
+    var ty=Math.floor(my/bw);
+    
+    if(e.button==0){
+        blockTemplate[ty][tx]=tileno;    
+    }else if(e.button=2){
+        blockTemplate[ty][tx]=0;        
+    }
+
+    consloe.log(tx+" "+ty+" "+e.button);    
+    
+    return false;
+}
+
+function clickTools(e)
+{
+    tileno=Math.floor(my/bw);
+
+    if(e.button==2){
+        if(tileno==0){
+            str="var blockTemplate=[\n";
+            for(var i=0;i<blockTemplate.length;i++){
+                str+="[";
+                for(var j=0;j<blockTemplate[i].length;j++){
+                    str+=blockTemplate[i][j]+" ";
+                    if(j<(blockTemplate[i].length-1)) str+=",";
+                }
+                str+="]";
+                if(i<(blockTemplate.length-1)) str+=",";
+                str+="\n";
+            }
+            str+="];\n"
+            alert(str); 
+        }else{
+            // Create no-list for the selected tile -- assumes all no-listed items are drawn
+            var nolists=[{x:1,y:0,items:[]},{x:-1,y:0,items:[]},{x:0,y:1,items:[]},{x:0,y:-1,items:[]}];
+
+            // Collate no-list for all instances of selected tile
+            for(i=0;i<blockno;i++){
+                for(j=0;j<blockno;j++){
+                    if(blockTemplate[i][j]==tileno){
+                        for(nolist of nolists){
+                            var tx=nolist.x+j;
+                            var ty=nolist.y+i;
+                            if(tx>=0&&tx<blockno&&ty>=0&&ty<blockno){
+                                var tile=blockTemplate[ty][tx];
+                                if(tile>0&&nolist.items.indexOf(tile)==-1) nolist.items.push(tile);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            str="{tile:"+tileno+",nolist:[\n";
+            for(nolist of nolists){
+                str+="{";
+                str+="x:"+nolist.x+",y:"+nolist.y+",items:[";
+                for(var i=0;i<nolist.items.length;i++){
+                    str+=nolist.items[i];
+                    if(i<(nolist.items.length-1)) str+=",";
+                }
+                str+="]},";
+            }
+            str+="]}";
+            alert(str);
+        }
+    }else{
+        updateTools();
+        consloe.log("Tools"+tileno);    
+    }
+
+}
 
 		</script>
 </head>
 <body onload="setup();">
- 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;" onmousemove="mouseMove(event)" onclick="clickCanvas(event)" oncontextmenu="clickCanvas(event); event.preventDefault();" ></canvas>
+ 	<canvas id="toolCanvas" width="64" height="900" style="border:1px solid #8000f0;" onmousemove="mouseMove(event)" onclick="clickTools(event)" oncontextmenu="clickTools(event); event.preventDefault();"></canvas>
+  <div id="console" style="font-family:AppleII;border:1px solid #381;width:964px;height:200px;white-space:pre;"></div>
 </body>
