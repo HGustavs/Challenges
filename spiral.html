@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>  
+<head>
+ <meta charset="UTF-8">
+<!-- Include css file and VM data -->
+<link rel="stylesheet" type="text/css" href="examples.css">	
+	
+<script>
+
+colarr=[[0,39,65],[1,89,127],[11,136,161],[128,191,183],[211,236,213],[235,255,245],[235,255,245],[211,236,213],[128,191,183],[11,136,161],[1,89,127],[0,39,65]];	
+colars=["RGB(0,39,65)","RGB(1,89,127)","RGB(11,136,161)","RGB(128,191,183)","RGB(211,236,213)","RGB(235,255,245)","RGB(235,255,245)","RGB(211,236,213)","RGB(128,191,183)","RGB(11,136,161)","RGB(1,89,127)","RGB(0,39,65)"];	
+
+// Rectangle grid parameters
+var boxcnty=45;
+var boxcntx=10;
+var gridsize=Math.ceil(750/boxcnty);
+var rectsize=Math.ceil(gridsize*0.8);
+
+var xmax=1430;
+var ymax=780;
+var grd=null;
+
+function drawCirc(x,y,r,fill)
+{
+	c.beginPath();
+	c.arc(x, y, r, 0, 2 * 3.1415, false);
+	if(fill==true){
+			c.fill();	
+	}else{
+			c.stroke();	
+	}
+
+}
+
+var pointarr=[];
+
+function findclosest(arr,xk,yk)
+{
+		len=5000;
+		foundpos=-1;
+		for(var i=0;i<arr.length;i++){
+				var dx=arr[i].x-xk;
+				var dy=arr[i].y-yk;
+				flen=Math.sqrt((dx*dx)+(dy*dy));
+				if(flen<len){
+						len=flen;
+						foundpos=i;
+				}
+		}
+		return foundpos;
+}
+
+function addpoint(pnt)
+{
+		var dst=5000;
+		var ind=-1;
+		for(var i=0;i<pointarr.length;i++){
+				var dx=pnt.x-pointarr[i].x;
+				var dy=pnt.y-pointarr[i].y;
+				var len=Math.sqrt((dx*dx)+(dy*dy));
+				if(len<dst){
+						dst=len;
+						ind=i;
+				}
+		}
+		if(len==-1||dst>1.44){
+				pointarr.push(pnt);
+				return pointarr.length-1;
+		}else{
+				return ind;
+		}
+}
+	
+var triangles=[];
+var quads=[];
+var tribuff=[];
+	
+function createpoly(polyarr)
+{
+		currarr=[];
+		for(var i=0;i<polyarr.length;i++){
+				var ind=addpoint(polyarr[i]);
+				if(currarr.indexOf(ind)==-1){
+						currarr.push(ind);
+				}
+		}
+		if(currarr.length==3){
+				currarr.col=polyarr[0].col;
+				triangles.push(currarr);
+		}else if(currarr.length==4){
+				currarr.col=polyarr[0].col;
+				maxcnt=0;
+				maxind=-1;
+			  for(var i=0;i<quads.length;i++){
+						var cnt=0;
+						for(var j=0;j<currarr.length;j++){
+								if(quads[i].indexOf(currarr[j])!=-1) cnt++;
+						}
+						if(cnt>maxcnt){
+								maxcnt=cnt;
+								maxind=i;
+						}
+				}
+				if(maxcnt<3){
+						quads.push(currarr);
+				}else{
+						currarr.slice(0);
+						triangles.push(currarr);
+				}
+		}
+}
+	
+function drawObjects()
+{
+		for(var i=0;i<triangles.length;i++){
+				var tri=triangles[i];
+				c.fillStyle=colars[tri.col];
+				c.beginPath();
+				c.moveTo(pointarr[tri[0]].x,pointarr[tri[0]].y);
+				c.lineTo(pointarr[tri[1]].x,pointarr[tri[1]].y);
+				c.lineTo(pointarr[tri[2]].x,pointarr[tri[2]].y);
+				c.closePath();
+				c.fill();
+		}
+	
+		for(var i=0;i<quads.length;i++){
+				var quad=quads[i];
+				c.fillStyle=colars[quad.col];
+				c.beginPath();
+				c.moveTo(pointarr[quad[0]].x,pointarr[quad[0]].y);
+				c.lineTo(pointarr[quad[1]].x,pointarr[quad[1]].y);
+				c.lineTo(pointarr[quad[2]].x,pointarr[quad[2]].y);
+				c.lineTo(pointarr[quad[3]].x,pointarr[quad[3]].y);			
+				c.closePath();
+				c.fill();
+		}	
+	
+}
+	
+function jitterPoints(amt,cen)
+{
+		for(var i=0;i<pointarr.length;i++){
+				pointarr[i].x+=(Math.random()*amt)-cen;
+				pointarr[i].y+=(Math.random()*amt)-cen;			
+		}
+}
+
+function spiral()
+{
+		c.strokeStyle=colars[4];
+		c.fillStyle=colars[1];	
+	
+		var drad=36;
+	
+		var cx=700;
+		var cy=350;
+
+		// Segment starts for all segments
+		segarr=[];
+		tegarr=[];
+		oldsegarr=[];
+		oldtegarr=[];
+	
+		rowcnt=0;
+		var spiralcnt=0;
+		
+		for(rad=40;rad<250;rad+=drad){
+				var dst=2.0*3.1415*rad;
+				var cnt=Math.round(dst/50);
+				var offs=(2.0*3.1415)/cnt;
+			
+				for(var seg=0;seg<segarr.length;seg++){
+						oldsegarr[seg]=segarr[seg];
+				}
+			
+				for(var seg=0;seg<cnt;seg++){
+						ang=(seg/cnt)*2.0*3.1415;
+
+						xk1=cx+Math.cos(ang)*(rad);
+						yk1=cy+Math.sin(ang)*(rad);
+					
+						xk2=cx+Math.cos(ang+offs)*(rad);
+						yk2=cy+Math.sin(ang+offs)*(rad);
+
+						//xk1=cx+Math.cos(ang)*(rad+((seg/cnt)*drad));
+						//yk1=cy+Math.sin(ang)*(rad+((seg/cnt)*drad));
+					
+						//xk2=cx+Math.cos(ang+offs)*(rad+(((seg+1)/cnt)*drad));
+						//yk2=cy+Math.sin(ang+offs)*(rad+(((seg+1)/cnt)*drad));
+
+					
+						var col=4;
+						if(rowcnt>0){
+								pos=findclosest(oldsegarr,xk2,yk2);
+								xk4=oldsegarr[pos].x;
+								yk4=oldsegarr[pos].y;
+								if(pos>0){
+										xk3=oldsegarr[pos-1].x;
+										yk3=oldsegarr[pos-1].y;
+								}else{
+										xk3=oldsegarr[oldsegarr.length-1].x;
+										yk3=oldsegarr[oldsegarr.length-1].y;
+								}
+							
+								col=Math.round(Math.random()*4);
+								col=oldsegarr[pos].col;
+								col=spiralcnt%5;
+								col=(seg+rowcnt)%5;
+							
+								if(quads.length<200) createpoly([{x:xk1,y:yk1,col:col},{x:xk2,y:yk2,col:col},{x:xk4,y:yk4,col:col},{x:xk3,y:yk3,col:col}]);
+								
+						}else{
+								if((seg%2)==0){
+										col=0;
+								}else{
+										col=2;							
+								}								
+						}
+						segarr[seg]={x:xk1,y:yk1,col:col};
+						spiralcnt++;
+					
+				}
+				rowcnt++;
+		}
+	
+		jitterPoints(12,6);
+		drawObjects();
+	
+}		
+
+function spiralD()
+{
+		c.strokeStyle=colars[4];
+		c.fillStyle=colars[1];	
+	
+		var drad=24;
+	
+		var cx=700;
+		var cy=350;
+		var param=40; //document.getElementById("param").value;
+		var ccol=0;
+	
+		// Segment starts for all segments
+		segarr=[];
+		for(segcnt=0;segcnt<15;segcnt++){
+				segarr[segcnt]=[];
+			
+				var rad=28+(segcnt*drad);
+				var dst=2.0*3.1415*rad;
+				var cnt=Math.round(dst/param);
+				// cnt=16;
+			  // var offs=(3.1415*param)/cnt;
+				var offs=(3.1415*0.5)/cnt;
+			
+				for(var seg=0;seg<cnt;seg++){
+						ang=(seg/cnt)*2.0*3.1415;
+
+						if((segcnt%2)==0){
+								xk1=cx+Math.cos(ang)*(rad);
+								yk1=cy+Math.sin(ang)*(rad);
+						}else{
+								xk1=cx+Math.cos(ang+offs)*(rad);
+								yk1=cy+Math.sin(ang+offs)*(rad);
+						}
+
+						segarr[segcnt][seg]={x:xk1,y:yk1};
+				}
+		}
+	
+		// Find inner points
+		for(var segcnt=1;segcnt<(segarr.length);segcnt++){
+				for(var seg=0;seg<segarr[segcnt].length;seg++){
+						var oseg=segarr[segcnt-1];
+						var citem=segarr[segcnt][seg];
+						var innerind=findclosest(oseg,citem.x,citem.y);
+						citem.inner=innerind;
+						drawCirc(citem.x,citem.y,5,false);					
+				}
+		}
+
+		var drawnseg=[];
+		var oldseg=[];
+		for(var segcnt=(segarr.length-1);segcnt>1;segcnt--){
+				var theseg=segarr[segcnt];
+				oldseg=[];
+				for(var i=0;i<drawnseg.length;i++){
+						oldseg.push(drawnseg[i]);
+				}
+				drawnseg=[];
+				
+				// Start out!
+				i=0;
+				if((segcnt%2)==0){
+						c.fillStyle=colars[4];				
+				}else{
+						c.fillStyle=colars[2];									 
+				}
+					
+				conf=1;
+				for(var i=0;i<oldseg.length;i++){
+						// Assign current segment, next sgment or first segment
+						oseg=oldseg[i];
+						if(i<(oldseg.length-1)){
+								nseg=oldseg[i+1];						
+						}else{
+								nseg=oldseg[0];							
+						}
+						
+						// Normal situation vs Shrinked Situation
+						dst=nseg.s-oseg.s;					
+						if(dst<0) dst+=segarr[segcnt].length;
+						// console.log("compare:",dst,nseg.s,oseg.s);
+					
+						if(dst==2){
+						
+						}else{
+								// Shrinked situation
+								// console.log("shrink:",dst,nseg.e,oseg.e);
+						}
+					
+						// First
+						s1=segarr[segcnt][oseg.s];
+						// Scond
+						s2=segarr[segcnt][nseg.s];					
+						// Bottom
+						s4=segarr[segcnt+1][oseg.e];
+						innerpos = oseg.s+1;
+						if(innerpos>=segarr[segcnt].length) innerpos=0;
+						var inner=segarr[segcnt][innerpos].inner;
+						s3=segarr[segcnt-1][inner];
+					
+						drawnseg.push({s:inner,e:nseg.s});
+
+						if(conf==0){
+								if((segcnt%2)==0){
+										c.fillStyle=colars[2];	
+								}else{
+										c.fillStyle=colars[5];							
+								}
+								c.beginPath();
+								c.moveTo(s1.x,s1.y);
+								c.lineTo(s3.x,s3.y);
+								c.lineTo(s2.x,s2.y);
+								c.fill();
+								if((segcnt%2)==0){
+										c.fillStyle=colars[1];
+									
+								}else{
+										c.fillStyle=colars[3];							
+								}							
+								c.beginPath();
+								c.moveTo(s1.x,s1.y);							
+								c.lineTo(s4.x,s4.y);
+								c.lineTo(s2.x,s2.y);							
+								c.fill();						
+						}else if(conf==1){
+								ccol++;
+								
+								c.fillStyle=colars[ccol%5];
+								//c.fillStyle=colars[Math.round(Math.random()*5)];				
+								c.beginPath();
+								c.moveTo(s1.x,s1.y);
+								c.lineTo(s3.x,s3.y);
+								c.lineTo(s2.x,s2.y);
+								c.fill();
+							
+								c.fillStyle=colars[ccol%5];			
+								//c.fillStyle=colars[Math.round(Math.random()*5)];						
+								c.beginPath();
+								c.moveTo(s1.x,s1.y);							
+								c.lineTo(s4.x,s4.y);
+								c.lineTo(s2.x,s2.y);							
+								c.fill();									
+						}else{
+								if((segcnt%2)==0){
+										c.fillStyle=colars[2];	
+								}else{
+										c.fillStyle=colars[5];							
+								}
+								c.beginPath();
+								c.moveTo(s1.x,s1.y);
+								c.lineTo(s3.x,s3.y);
+								c.lineTo(s2.x,s2.y);
+								c.lineTo(s4.x,s4.y);						
+								c.fill();
+						}
+				}
+			
+				if(segcnt==(segarr.length-1)){
+						for(var seg=0;seg<theseg.length-1;seg++){
+						//drawCirc(theseg[seg].x,theseg[seg].y,4);
+						
+
+								c.strokeStyle=colars[5];
+								c.beginPath();	
+								spt=seg+2;
+								if(spt>=theseg.length){
+										spt=spt-theseg.length;
+								}
+								if((seg%2)==0&&((seg+2)<theseg.length)){
+										drawnseg.push({s:theseg[seg+1].inner,e:spt});
+										c.moveTo(theseg[seg].x,theseg[seg].y);
+										inneritem=segarr[segcnt-1][theseg[seg+1].inner];
+										c.lineTo(inneritem.x,inneritem.y);										
+										c.lineTo(theseg[spt].x,theseg[spt].y);
+										c.closePath();
+										c.stroke();								
+								}else if((seg+2)>=theseg.length){
+										drawnseg.push({s:theseg[seg].inner+1,e:spt});								
+								}
+						}
+						// console.log(drawnseg,theseg.length);
+				}
+		}
+}
+
+
+function drawHead()
+{
+		c.globalAlpha=1.0;
+		c.clearRect(0,0,xmax,ymax);
+
+		c.fillStyle = "RGB(0,59,85)";
+		//c.fillStyle = grd;		
+		c.fillRect(0,0,xmax,ymax);
+	
+		spiralD();
+
+}
+	
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+
+		setTimeout(drawHead,30);
+}
+
+</script>	
+</head>
+<body onload="setupSlides();">
+	
+<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+		
+</body>                                                                                                                                               
+</html>         

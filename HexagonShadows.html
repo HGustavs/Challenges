@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>  
+<head>
+ <meta charset="UTF-8">
+<!-- Include css file and VM data -->
+<link rel="stylesheet" type="text/css" href="examples.css">	
+	
+<script>
+
+colarr=[[0,39,65],[1,89,127],[11,136,161],[128,191,183],[211,236,213],[235,255,245],[235,255,245],[211,236,213],[128,191,183],[11,136,161],[1,89,127],[0,39,65]];	
+colars=["RGB(0,39,65)","RGB(1,89,127)","RGB(11,136,161)","RGB(128,191,183)","RGB(211,236,213)","RGB(235,255,245)","RGB(235,255,245)","RGB(211,236,213)","RGB(128,191,183)","RGB(11,136,161)","RGB(1,89,127)","RGB(0,39,65)"];	
+
+// Rectangle grid parameters
+var boxcnty=45;
+var boxcntx=10;
+var gridsize=Math.ceil(750/boxcnty);
+var rectsize=Math.ceil(gridsize*0.8);
+
+var xmax=1430;
+var ymax=780;
+var grd=null;
+
+function drawCirc(x,y,r,fill)
+{
+	c.beginPath();
+	c.arc(x, y, r, 0, 2 * 3.1415, false);
+	if(fill==true){
+			c.fill();	
+	}else{
+			c.stroke();	
+	}
+
+}
+
+function drawpointquad(p1,p2,p3,p4,col,fillstate)
+{
+		if(col>5) col=5;
+		if(col<0) col=0;
+		c.fillStyle=colars[col];
+		c.beginPath();
+		c.moveTo(p1.x,p1.y);
+		c.lineTo(p2.x,p2.y);
+		c.lineTo(p3.x,p3.y);	
+		c.lineTo(p4.x,p4.y);
+		c.closePath();
+		c.fill();
+}
+
+function drawHex(xk,yk,r,col,p1push,inner)
+{
+		xk+=200;
+		yk+=200;
+		var r1=1.7*r;
+		var r2=2.0*r;
+	
+		p2push=p1push;
+		p3push=p1push;
+		p4push=p1push;
+		p5push=p1push;
+		p6push=p1push;
+	
+		p1={x:xk-r,y:yk-r1};
+		p2={x:xk+r,y:yk-r1};
+		p3={x:xk+r2,y:yk};
+		p4={x:xk+r,y:yk+r1};
+		p5={x:xk-r,y:yk+r1};
+		p6={x:xk-r2,y:yk};	
+		q1={x:(p1.x+p1push),y:(p1.y+(p1push*1.7))}
+		q2={x:(p2.x-p2push),y:(p2.y+(p2push*1.7))}
+		q3={x:(p3.x-(p3push*2.0)),y:p3.y}
+		q4={x:p4.x-p4push,y:p4.y-(p4push*1.7)}	
+		q5={x:p5.x+p5push,y:p5.y-(p5push*1.7)}		
+		q6={x:p6.x+(p6push*2.0),y:p6.y};	
+		
+	  if(inner){
+
+				drawpointquad(p1,p2,q2,q1,col,true);
+				drawpointquad(p2,p3,q3,q2,col-1,true);
+				drawpointquad(p3,p4,q4,q3,col-2,true);
+				drawpointquad(p4,p5,q5,q4,col-1,true);
+				drawpointquad(p5,p6,q6,q5,col,true);
+				drawpointquad(p6,p1,q1,q6,col+1,true);
+		
+		}
+
+		//col--;
+		if(col<0)col=0;
+		c.beginPath();
+		c.fillStyle=colars[col];
+		c.moveTo(q1.x,q1.y);
+		c.lineTo(q2.x,q2.y);	
+		c.lineTo(q3.x,q3.y);
+		c.lineTo(q4.x,q4.y);
+		c.lineTo(q5.x,q5.y);
+		c.lineTo(q6.x,q6.y);
+		c.closePath();
+		c.fill();	
+	
+			  /*
+				c.beginPath();
+				c.fillStyle=colars[col];
+				c.moveTo(p1.x,p1.y);
+				c.lineTo(p2.x,p2.y);	
+				c.lineTo(p3.x,p3.y);
+				c.lineTo(p4.x,p4.y);
+				c.lineTo(p5.x,p5.y);
+				c.lineTo(p6.x,p6.y);
+				c.closePath();
+				c.fill();
+				*/		
+}
+
+function Hexo()
+{
+			arr=[];
+			for(i=0;i<10;i++){
+					arr[i]=[];
+					for(j=0;j<10;j++){
+							arr[i][j]=Math.round(Math.random()*5.0);
+					}
+			}
+			console.log(arr);
+	
+			xk=400;
+			yk=400;
+	
+			// Go through hex
+			level=1;
+			for(var level=1;level<6;level++){
+					// Draw objects
+					for(i=0;i<10;i++){
+							for(j=0;j<10;j++){
+									var currcol=arr[i][j];
+									if(currcol==level){
+											if((i%2)==0){
+													drawHex(i*44,j*51,15,currcol,1.0,true);								
+											}else{
+													drawHex((i*44),(j*51)+26,15,currcol,1.0,true);							
+											}
+
+									}
+
+							}
+					}
+					// Draw shadows
+					for(i=0;i<10;i++){
+							for(j=0;j<10;j++){
+									var currcol=arr[i][j];
+									if(currcol>level){
+											offs=-((currcol-level)*1);
+											if(offs==-4) c.globalAlpha=0.5;											
+											if(offs==-3) c.globalAlpha=0.3;										
+											if(offs==-2) c.globalAlpha=0.2;
+											if(offs==-1) c.globalAlpha=0.1;
+										
+											if((i%2)==0){
+													drawHex((i*44)-offs,(j*51)-offs,15,0,offs*2,false);								
+											}else{
+													drawHex((i*44)-offs,(j*51)+26-offs,15,0,offs*2,false);							
+											}
+											c.globalAlpha=1.0;
+									}
+
+							}
+					}
+		}			
+}
+
+function drawHead()
+{
+		c.globalAlpha=1.0;
+		c.clearRect(0,0,xmax,ymax);
+
+		c.fillStyle = "RGB(0,59,85)";
+		//c.fillStyle = grd;		
+		c.fillRect(0,0,xmax,ymax);
+	
+		Hexo();
+
+}
+	
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+
+		setTimeout(drawHead,30);
+}
+
+</script>	
+</head>
+<body onload="setupSlides();">
+	
+<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;' onmousemove='mousemove(event);' ></canvas>	
+		
+</body>                                                                                                                                               
+</html>         

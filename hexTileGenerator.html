@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+    <style>
+    
+    @font-face {
+        font-family: 'AppleII';
+        src: url('../Fonts/AppleII.ttf')  format('truetype'); /* Safari, Android, iOS */
+    }
+
+    </style>
+    <script src="helperFunction/pipes.js"></script>
+    <script src="helperFunction/console.js"></script>
+		<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Hexagon tile generator
+//------------------------------------=======############==========----------------------------------------
+
+var ctx;
+var mx,my;
+
+//----------------------------------------------------------------------------------
+// Canvas Setup
+//----------------------------------------------------------------------------------
+
+function setup()
+{
+    consloe=new Conio(40,8,"console");
+
+    mainctx = document.getElementById("myCanvas").getContext("2d");
+    ctx=mainctx;
+
+    drawit();
+}
+
+//--------------------------------------------------------------------------
+// update
+// ---------------
+//  Updates one tile at tx,ty and changes the entropy of surrounding tiles
+//  Also adds surrounding tiles to queue
+//--------------------------------------------------------------------------
+
+function drawit()
+{	
+    ctx=mainctx;
+
+    ctx.clearRect(0,0,900,900);
+    ctx.fillStyle="#888";
+    ctx.strokeStyle="#000";
+
+    var xk=0;
+    var yk=0;
+    for(var i=0;i<40;i++){
+        ctx.save();
+        ctx.translate(xk,yk);
+        genTile(i);
+        ctx.restore();
+        yk+=66;
+        if(yk>(66*12)){
+            yk=0;
+            xk+=76;
+        }        
+    }
+
+/*
+    ctx.save();
+    ctx.translate(200,200);
+    ctx.scale(2.0,2.0);
+    genTile(5);
+    ctx.restore();
+*/
+
+    //window.requestAnimationFrame(drawit);
+}
+
+function drawPoints(color,pointlist)
+{
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    ctx.moveTo(pointlist[0].x,pointlist[0].y);
+    for(var i=1;i<pointlist.length;i++){
+        ctx.lineTo(pointlist[i].x,pointlist[i].y);
+    }
+    ctx.lineTo(pointlist[0].x,pointlist[0].y);
+    ctx.fill();
+}
+
+function drawCirc(color,p)
+{
+    ctx.beginPath();
+    ctx.fillStyle=color;
+    ctx.arc(p.x, p.y, 1.5, 0, 2 * Math.PI);
+    ctx.fill();
+}
+
+function midpoint(p1,p2,kind)
+{
+    return {x:((p1.x+p2.x)*0.5),y:((p1.y+p2.y)*0.5),kind:kind};
+}
+
+function displace(p1,p2,jitter,kind)
+{
+    // Random displacement based on jitter value
+    var magnitude=(Math.random()*jitter)-(jitter*0.5);
+
+    // Compute normal of line segment
+    var dx=p1.y-p2.y;
+    var dy=-(p1.x-p2.x);
+    var len=Math.sqrt((dx*dx)+(dy*dy));
+    dx=(dx/len)*magnitude;
+    dy=(dy/len)*magnitude;
+
+    var mpx=((p1.x+p2.x)*0.5);
+    var mpy=((p1.y+p2.y)*0.5);  
+               
+    return {
+        x:mpx+dx,
+        y:mpy+dy,
+        kind:1
+      }
+}
+
+//--------------------------------------------------------------------------
+// smooth
+// ---------------
+//  We add jittered point between existing points that are not locked on
+//  either end of line
+//--------------------------------------------------------------------------
+
+function smooth(pointarr,jitter)
+{
+  var newarr=[];
+  for(var i=0;i<pointarr.length;i++){
+      var curr=pointarr[i];
+      var next=pointarr[(i+1)%pointarr.length];
+      newarr.push(curr);
+      if(curr.kind>0&&next.kind>0) newarr.push(displace(curr,next,jitter,1));
+  }
+  return newarr;
+}
+
+function drawLine(x1,y1,x2,y2)
+{
+      ctx.strokeStyle="#036";
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.stroke();
+}
+
+function intersect(x1, y1, x2, y2, x3, y3, x4, y4, kind) {
+
+  // Check if none of the lines are of length 0
+	if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
+		return false
+	}
+
+	denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1))
+
+  // Lines are parallel
+	if (denominator === 0) {
+		return false
+	}
+
+	let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator
+	let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator
+
+  // Return a object with the x and y coordinates of the intersection
+	let x = x1 + ua * (x2 - x1)
+	let y = y1 + ua * (y2 - y1)
+
+	return {x:x, y:y, kind:kind}
+}
+
+//--------------------------------------------------------------------------
+// offset
+// ---------------
+//  We move the movable points along the added vector direction. Reqires
+//  Normalized vector (after adding?) to account for magnitude
+//--------------------------------------------------------------------------
+
+function offset(pointarr,magnitude)
+{
+    var newpointarr=[];
+    for(var i=0;i<pointarr.length;i++){
+        var curr=pointarr[i];
+        var next=pointarr[(i+1)%pointarr.length];
+        if(i==0){
+            var prev=pointarr[pointarr.length-1];
+        }else{
+            var prev=pointarr[i-1];
+        }
+        if(curr.kind==1){
+            var dx=curr.y-next.y;
+            var dy=-(curr.x-next.x);
+            var len=Math.sqrt((dx*dx)+(dy*dy));
+            dx=(dx/len)*magnitude;
+            dy=(dy/len)*magnitude;
+
+            var ex=prev.y-curr.y;
+            var ey=-(prev.x-curr.x);
+            var len=Math.sqrt((ex*ex)+(ey*ey));
+            ex=(ex/len)*magnitude;
+            ey=(ey/len)*magnitude;
+
+            var p1=
+            newpointarr.push(intersect(curr.x+dx,curr.y+dy,next.x+dx,next.y+dy,curr.x+ex,curr.y+ey,prev.x+ex,prev.y+ey,1));
+        }else if(curr.kind==2){
+
+            if(next.kind==0){
+                var dy=next.y-curr.y;
+                var dx=next.x-curr.x;
+                var len=Math.sqrt((dx*dx)+(dy*dy));
+                dx=(dx/len)*magnitude;
+                dy=(dy/len)*magnitude;
+                newpointarr.push({x:curr.x+dx,y:curr.y+dy,kind:2});            
+            }else if(prev.kind==0){
+                var dy=prev.y-curr.y;
+                var dx=prev.x-curr.x;
+                var len=Math.sqrt((dx*dx)+(dy*dy));
+                dx=(dx/len)*magnitude;
+                dy=(dy/len)*magnitude;
+                newpointarr.push({x:curr.x+dx,y:curr.y+dy,kind:2});               
+            }
+        }else if(curr.kind==0){
+                newpointarr.push({x:curr.x,y:curr.y,kind:0});                      
+        }
+    }  
+    return newpointarr;  
+}
+
+function normalize(p1,p2)
+{
+    var dx=p2.x-p1.x;
+    var dy=p2.y-p1.y;
+
+    var len=Math.sqrt((dx*dx)+(dy*dy));
+    dx/=len;
+    dy/=len;
+
+    return {x:dx,y:dy};
+}
+
+function displacerand(p1,jitter,kind)
+{
+    // Random displacement based on jitter value
+    var magnitudex=(Math.random()*jitter)-(jitter*0.5);
+    var magnitudey=(Math.random()*jitter)-(jitter*0.5);
+
+    return {x:p1.x+magnitudex,y:p1.y+magnitudey,kind:kind};
+}
+
+function genTile(tileno)
+{
+    var jitter=22;
+
+    var p1={x:57,y:0,kind:0};
+    var p2={x:19,y:0,kind:0};
+    var p3={x:0,y:33,kind:0};
+    var p4={x:19,y:66,kind:0};
+    var p5={x:57,y:66,kind:0};
+    var p6={x:76,y:33,kind:0};
+
+    var p0=displacerand({x:38,y:33},jitter,1);
+
+    var h1=midpoint(p1,p2,2);
+    var h2=midpoint(p2,p3,2);
+    var h3=midpoint(p3,p4,2);
+    var h4=midpoint(p4,p5,2);
+    var h5=midpoint(p5,p6,2);
+    var h6=midpoint(p6,p1,2);
+
+    var arr=[p1,p2,p3,p4,p5,p6];
+    drawPoints("#29ABE2",arr);
+    
+    var arra;
+    if(tileno==0){
+        arra=[p1,p2,p3,p4,p5,p6];
+    }else if(tileno==1){
+        arra=[p1,p2,p3,p4,p5,p6];
+    }else if(tileno==2){
+        arra=[h1,p1,h6,p0];
+    }else if(tileno==3){
+        arra=[h6,p6,h5,p0];
+    }else if(tileno==4){
+        arra=[h5,p5,h4,p0];    
+    }else if(tileno==5){
+        arra=[h4,p4,h3,p0];
+    }else if(tileno==6){
+        arra=[h3,p3,h2,p0];
+    }else if(tileno==7){
+        arra=[h2,p2,h1,p0];
+    }else if(tileno==8){
+        arra=[h1,p1,p6,h5,p0];    
+    }else if(tileno==9){
+        arra=[h6,p6,p5,h4,p0];    
+    }else if(tileno==10){
+        arra=[h5,p5,p4,h3,p0];     
+    }else if(tileno==11){
+        arra=[h4,p4,p3,h2,p0];      
+    }else if(tileno==12){
+        arra=[h3,p3,p2,h1,p0];    
+    }else if(tileno==13){
+        arra=[h2,p2,p1,h6,p0];    
+    }else if(tileno==14){
+        arra=[h1,p1,p6,p5,h4,p0];
+    }else if(tileno==15){
+        arra=[h6,p6,p5,p4,h3,p0];
+    }else if(tileno==16){
+        arra=[h5,p5,p4,p3,h2,p0];    
+    }else if(tileno==17){
+        arra=[h4,p4,p3,p2,h1,p0];    
+    }else if(tileno==18){
+        arra=[h3,p3,p2,p1,h6,p0];    
+    }else if(tileno==19){
+        arra=[h2,p2,p1,p6,h5,p0];    
+    }else if(tileno==20){
+        arra=[h1,p1,p6,p5,p4,h3,p0];
+    }else if(tileno==21){
+       arra=[h6,p6,p5,p4,p3,h2,p0];
+    }else if(tileno==22){
+      arra=[h5,p5,p4,p3,p2,h1,p0];
+    }else if(tileno==23){
+      arra=[h4,p4,p3,p2,p1,h6,p0];    
+    }else if(tileno==24){
+      arra=[h3,p3,p2,p1,p6,h5,p0];
+    }else if(tileno==25){
+      arra=[h2,p2,p1,p6,p5,h4,p0];
+    }else if(tileno==26){
+      arra=[h1,p1,p6,p5,p4,p3,h2,p0];    
+    }else if(tileno==27){
+      arra=[h6,p6,p5,p4,p3,p2,h1,p0]   
+    }else if(tileno==28){
+      arra=[h5,p5,p4,p3,p2,p1,h6,p0];   
+    }else if(tileno==29){
+      arra=[h4,p4,p3,p2,p1,p6,h5,p0];   
+    }else if(tileno==30){
+      arra=[h3,p3,p2,p1,p6,p5,h4,p0]; 
+    }else if(tileno==31){
+      arra=[h2,p2,p1,p6,p5,p4,h3,p0];
+    }
+
+/*
+
+
+
+ 
+
+
+  
+
+  
+
+
+ 
+
+
+
+
+
+*/
+
+    if(tileno>1&&tileno<=40){
+        arra=smooth(arra,jitter*0.4);
+        arra=smooth(arra,jitter*0.3);
+    }
+
+    if(tileno>=1){
+        drawPoints("#A67C52",arra);            
+    }
+
+    if(tileno>=1){
+        var arro=offset(arra,5);
+        drawPoints("#C69C6D",arro);            
+    }
+
+    ctx.beginPath();
+    ctx.fillStyle="Black";
+    ctx.textBaseline="top";
+    ctx.font="14px AppleII";
+    ctx.fillText(tileno,2,2);
+    ctx.fill();
+
+/*
+    for(i=0;i<arra.length;i++){
+        var point=arra[i];
+        drawCirc("#d41",point);
+        ctx.beginPath();
+        ctx.fillStyle="Black";
+        ctx.textBaseline="top";
+        ctx.font="4px AppleII";
+        ctx.fillText(i,point.x,point.y);
+        ctx.fill();
+    }
+  */ 
+  
+}
+
+function clickCanvas(e)
+{
+    var tx=Math.floor(mx/bw);
+    var ty=Math.floor(my/bw);
+    
+    if(e.button==0){
+        blockTemplate[ty][tx]=tileno;    
+    }else if(e.button=2){
+        blockTemplate[ty][tx]=0;        
+    }
+
+    consloe.log(tx+" "+ty+" "+e.button);    
+    
+    return false;
+}
+
+function mouseMove(e){
+    var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element. 
+    targetid=e.target.id;       
+}
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;" onmousemove="mouseMove(event)" onclick="clickCanvas(event)" oncontextmenu="clickCanvas(event); event.preventDefault();" ></canvas>
+ 	<canvas id="toolCanvas" width="64" height="900" style="border:1px solid #8000f0;" onmousemove="mouseMove(event)" onclick="clickTools(event)" oncontextmenu="clickTools(event); event.preventDefault();"></canvas>
+  <div id="console" style="font-family:AppleII;border:1px solid #381;width:964px;height:200px;white-space:pre;"></div>
+</body>

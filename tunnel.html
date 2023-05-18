@@ -257,10 +257,10 @@ function peak(cx,cy,start,fact,segs,no,spin,offs)
 
             var tcol=checker(ant,cnt);
             mixval=offs-(ant/no);
-            quadimp(x4,y4,x1,y1,x2,y2,x3,y3,tcol,tcol-4,mixval);
-            //triangleimp(x5,y5,x1,y1,x4,y4,tcol-1,tcol-4,mixval);
-            //triangleimp(x5,y5,x2,y2,x3,y3,tcol,tcol-3,mixval);
-            //triangleimp(x5,y5,x3,y3,x4,y4,tcol+1,tcol-2,mixval);                                    
+            //quadimp(x4,y4,x1,y1,x2,y2,x3,y3,tcol,tcol-4,mixval);
+            triangleimp(x5,y5,x1,y1,x4,y4,tcol-1,tcol-4,mixval);
+            triangleimp(x5,y5,x2,y2,x3,y3,tcol,tcol-3,mixval);
+            triangleimp(x5,y5,x3,y3,x4,y4,tcol+1,tcol-2,mixval);                                    
         }
 		}
 }	
@@ -270,7 +270,7 @@ function setupSlides()
 		canvas = document.getElementById("mycanvas");
 		c = canvas.getContext("2d");
 
-	  // tunnel(600,400,80,1.5,10,7,0);
+	  //tunnel(600,400,80,1.5,10,7,0);
 		peak(600,400,80,1.4,14,9,0.2,0.6);
     //triangleimp(240,50,320,250,20,250,2,4,0.5,8.0);
 }
