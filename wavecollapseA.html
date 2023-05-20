@@ -10,7 +10,7 @@
     }
 
     </style>
-    <script src="helperFunction/pipes.js"></script>
+    <script src="helperFunction/hextiles.js"></script>
     <script src="helperFunction/console.js"></script>
 		<script>
 
@@ -75,8 +75,13 @@ nlist[9]={tile:9,weight:0.5,nolist:[{x:1,y:0,items:[2,4,5,6,8,3,9]},{x:-1,y:0,it
 nlist[10]={tile:10,weight:0.5,nolist:[{x:1,y:0,items:[0,1,7,10,8,11]},{x:-1,y:0,items:[2,7,3,10,5,4,11]},{x:0,y:1,items:[0,10,2,5,8,11]},{x:0,y:-1,items:[0,3,6,7,5,1,8,10]}]};
 nlist[11]={tile:11,weight:0.5,nolist:[{x:1,y:0,items:[0,1,7,10,11,9]},{x:-1,y:0,items:[2,3,4,5,7,11,10]},{x:0,y:1,items:[11,9,4,1,3,7,6]},{x:0,y:-1,items:[0,9,10,11,4,2]}]};
 
+// Tileset constants
 var bw=64;
 var bh=64;
+var hexw=57;
+var hexh=66;
+var hexhalf=33;
+
 var blockno=14;
 
 //----------------------------------------------------------------------------------
@@ -114,14 +119,13 @@ function setup()
 
     updateTools();
 
-    update(Math.floor(Math.random()*blockno),Math.floor(Math.random()*blockno));
-
-    nextstepLower();
+//    update(Math.floor(Math.random()*blockno),Math.floor(Math.random()*blockno));
+//    nextstepLower();
 
     drawit();
 }
 
-function updateTools()
+function updateTools(tileset)
 {
     // Update drawing canvas and draw all possible tiles
     ctx=toolctx;
@@ -137,7 +141,11 @@ function updateTools()
             ctx.stroke();
             ctx.lineWidth=1.0;
         }
-        drawTile(yk);
+        if(tileset==0){
+            drawTileHex(yk);        
+        }else if(tileset==1){
+            drawTile(yk);
+        }
 
         ctx.beginPath();
         ctx.fillStyle="Black";
@@ -150,6 +158,91 @@ function updateTools()
     }
     ctx=mainctx;
 }
+
+//--------------------------------------------------------------------------
+// drawTileHex
+// ---------------
+//  Updates one tile at tx,ty and changes the entropy of surrounding tiles
+//  Also adds surrounding tiles to queue
+//--------------------------------------------------------------------------
+
+function drawTileHex(tileno)
+{
+    ocean();
+    if(tileno==0){
+        tile0();
+    }else if(tileno==1){ 
+        tile1();
+    }else if(tileno==2){
+        tile2();
+    }else if(tileno==3){
+        tile3();
+    }else if(tileno==4){
+        tile4();
+    }else if(tileno==5){
+        tile5();
+    }else if(tileno==6){
+        tile6();
+    }else if(tileno==7){                    
+        tile7();
+    }else if(tileno==8){   
+        tile8();
+    }else if(tileno==9){                  
+        tile9();
+    }else if(tileno==10){   
+        tile10();
+    }else if(tileno==11){
+        tile11();
+    }else if(tileno==12){
+        tile12();
+    }else if(tileno==13){
+        tile13();
+    }else if(tileno==14){
+        tile14();
+    }else if(tileno==15){
+        tile15();
+    }else if(tileno==16){
+        tile16();
+    }else if(tileno==17){                    
+        tile17();
+    }else if(tileno==18){   
+        tile18();
+    }else if(tileno==19){                  
+        tile19();
+    }else if(tileno==20){   
+        tile20();
+    }else if(tileno==21){
+        tile21();
+    }else if(tileno==22){
+        tile22();
+    }else if(tileno==23){
+        tile23();
+    }else if(tileno==24){
+        tile24();
+    }else if(tileno==25){
+        tile25();
+    }else if(tileno==26){
+        tile26();
+    }else if(tileno==27){                    
+        tile27();
+    }else if(tileno==28){   
+        tile28();
+    }else if(tileno==29){                  
+        tile29();
+    }else if(tileno==30){   
+        tile30();
+    }else if(tileno==31){
+        tile31();
+    }
+
+}
+
+//--------------------------------------------------------------------------
+// drawTile
+// ---------------
+//  Updates one tile at tx,ty and changes the entropy of surrounding tiles
+//  Also adds surrounding tiles to queue
+//--------------------------------------------------------------------------
 
 function drawTile(tileno)
 {
@@ -330,7 +423,9 @@ function nextstepNaive()
 }
 
 function drawit()
-{	
+{
+    var tileset=0;
+
     ctx=mainctx;
 
     ctx.clearRect(0,0,900,900);
@@ -341,10 +436,22 @@ function drawit()
     for(var yk=0;yk<blockno;yk++){
         for(var xk=0;xk<blockno;xk++){
             ctx.save();
-            ctx.translate(xk*bw,yk*bw);
+            if(tileset==0){
+                if((xk%2)==1){
+                    ctx.translate(xk*hexw,(yk*hexh)+hexhalf);                                        
+                }else{
+                    ctx.translate(xk*hexw,yk*hexh);                
+                }
+            }else if(tileset==1){
+                ctx.translate(xk*bw,yk*bw);            
+            }
             var tile=blocks[yk][xk].no;
             if(tile>=0){
-                drawTile(tile);
+                if(tileset==0){
+                    drawTile(tile);
+                }else if(tileset==1){
+                    drawTileHex(tile);
+                }
             }
 
             ctx.beginPath();
