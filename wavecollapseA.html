@@ -42,8 +42,8 @@ var blockTemplate=[
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0,14,18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
@@ -78,7 +78,7 @@ nlist[11]={tile:11,weight:0.5,nolist:[{x:1,y:0,items:[0,1,7,10,11,9]},{x:-1,y:0,
 // Tileset constants
 var bw=64;
 var bh=64;
-var hexw=57;
+var hexw=56;
 var hexh=66;
 var hexhalf=33;
 
@@ -102,11 +102,11 @@ function setup()
         for(var j=0;j<blockno;j++){
             var tileno=blockTemplate[i][j];
             var arr=[];
-            for(var k=0;k<12;k++){
+            for(var k=0;k<32;k++){
                 arr.push(k);
             }
             blocks[i][j]={
-                no:-1,
+                no:tileno,
                 xk:j*bw,
                 yk:i*bw,
                 tx:j,
@@ -448,9 +448,9 @@ function drawit()
             var tile=blocks[yk][xk].no;
             if(tile>=0){
                 if(tileset==0){
-                    drawTile(tile);
-                }else if(tileset==1){
                     drawTileHex(tile);
+                }else if(tileset==1){
+                    drawTile(tile);
                 }
             }
 
@@ -552,7 +552,7 @@ function clickTools(e)
             alert(str);
         }
     }else{
-        updateTools();
+        updateTools(0);
         consloe.log("Tools"+tileno);    
     }
 
