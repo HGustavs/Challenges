@@ -38,26 +38,26 @@ var processQueue=[];
 var blocks=[];
 
 var blockTemplate=[
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
 ];
 
 // Tileset constants
@@ -68,6 +68,7 @@ var hexh=66;
 var hexhalf=33;
 
 var blockno=14;
+var blocknox=17;
 
 //----------------------------------------------------------------------------------
 // Canvas Setup
@@ -84,7 +85,7 @@ function setup()
     // We make tile array and set to initial entropy
     for(var i=0;i<blockno;i++){
         blocks[i]=[];
-        for(var j=0;j<blockno;j++){
+        for(var j=0;j<blocknox;j++){
             //var tileno=blockTemplate[i][j];
             var tileno=-1;
             var arr=[];
@@ -105,25 +106,7 @@ function setup()
 
     updateTools();
 
-    var updx=Math.floor(Math.random()*blockno);
-    var updy=Math.floor(Math.random()*blockno);
-    //update(updx,updy);
-
-    update(7,9,8);
-
-    /* 
-    
-    Error sequence
-
-Making 7 9 8 wavecollapseA.html:408:21
-Making 7 8 9 wavecollapseA.html:408:21
-Making 8 9 7 wavecollapseA.html:408:21
-Making 8 8 17    
-    
-    */
-
-//    console.log(updx,updy);
-//    nextstepLower();
+    update(Math.floor(Math.random()*blocknox),Math.floor(Math.random()*blockno));
 
     drawit();
 }
@@ -140,7 +123,7 @@ function drawit()
 
     // Draw tiles and highlight hoverint tiles.
     for(var yk=0;yk<blockno;yk++){
-        for(var xk=0;xk<blockno;xk++){
+        for(var xk=0;xk<blocknox;xk++){
             ctx.save();
             if(tileset==0){
                 if((xk%2)==1){
@@ -161,15 +144,15 @@ function drawit()
             }
 
             if(blocks[yk][xk].allowed.length<32){
-                ctx.strokeStyle='#4c5';
+                ctx.strokeStyle='#4e5';
                 ctx.beginPath();
-                ctx.moveTo(55,2);
-                ctx.lineTo(21,2);
-                ctx.lineTo(2,33);
-                ctx.lineTo(21,62);
-                ctx.lineTo(55,62);
-                ctx.lineTo(74,33);
-                ctx.lineTo(55,2);
+                ctx.moveTo(21,3);
+                ctx.lineTo(4,33);
+                ctx.lineTo(21,63);
+                ctx.lineTo(56,63);
+                ctx.lineTo(73,33);
+                ctx.lineTo(56,3);
+                ctx.lineTo(21,3);
                 ctx.stroke();
             }
 
@@ -177,8 +160,8 @@ function drawit()
             ctx.fillStyle="Black";
             ctx.textBaseline="top";
             ctx.font="14px AppleII";
-            if(blocks[yk][xk].allowed.length<32) ctx.fillText(blocks[yk][xk].allowed.length,32,22);
-            if(blocks[yk][xk].no>-1) ctx.fillText(blocks[yk][xk].no,32,30);
+            if(blocks[yk][xk].allowed.length<32) ctx.fillText(blocks[yk][xk].allowed.length,32,18);
+            if(blocks[yk][xk].no>-1) ctx.fillText(blocks[yk][xk].no,32,32);
             ctx.fill();
 
             if(xk==lx&&yk==ly){
@@ -379,7 +362,7 @@ function drawitDraw()
 
     // Draw tiles and highlight hoverint tiles.
     for(var yk=0;yk<blockno;yk++){
-        for(var xk=0;xk<blockno;xk++){
+        for(var xk=0;xk<blocknox;xk++){
             ctx.save();
             ctx.translate(xk*bw,yk*bw);
             var tile=blockTemplate[yk][xk];
@@ -428,12 +411,19 @@ function update(tx,ty,tilenr)
             return false;
         }else{
             var currentno=0;
-            do{
-                currentno=block.allowed[Math.floor(Math.random()*block.allowed.length)];
-                reject=Math.random();
-            }while(reject>nlist[currentno].weight);
+
+            // If ground is allowed we have 50% chance of ground
+            if((block.allowed.indexOf(1)!=-1)&&(Math.random()>0.2)){
+                currentno=1;
+            }else{
+                // we use rejection weights to choose between outcomes
+                do{
+                    currentno=block.allowed[Math.floor(Math.random()*block.allowed.length)];
+                    reject=Math.random();
+                }while(reject>nlist[currentno].weight);            
+            }
+
             if(tilenr!=null) currentno=tilenr;
-            console.log("Making",tx,ty,currentno);
             if(block.no==-1) block.no=currentno;    
         }
 
@@ -447,7 +437,7 @@ function update(tx,ty,tilenr)
                 var cy=offset.y+ty;            
             }
             // If offset point is inside block area
-            if(cx>=0&&cx<blockno&&cy>=0&&cy<blockno){
+            if(cx>=0&&cx<blocknox&&cy>=0&&cy<blockno){
                 var block=blocks[cy][cx];
                 // We only handle un-processed blocks
                 if(block.no==-1){
@@ -546,12 +536,12 @@ function clickTools(e)
 
             // Collate no-list for all instances of selected tile
             for(i=0;i<blockno;i++){
-                for(j=0;j<blockno;j++){
+                for(j=0;j<blocknox;j++){
                     if(blockTemplate[i][j]==tileno){
                         for(nolist of nolists){
                             var tx=nolist.x+j;
                             var ty=nolist.y+i;
-                            if(tx>=0&&tx<blockno&&ty>=0&&ty<blockno){
+                            if(tx>=0&&tx<blocknox&&ty>=0&&ty<blockno){
                                 var tile=blockTemplate[ty][tx];
                                 if(tile>0&&nolist.items.indexOf(tile)==-1) nolist.items.push(tile);
                             }

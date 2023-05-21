@@ -13,218 +13,216 @@ var nlist=[
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 2,weight:0.99,nolist:[
+    {no: 2,weight:0.25,nolist:[
         {x:0,y:-1,items:[0,1,2,3,5,6,7,8,10,11,12,13,15,16,17,18,19,20,21,22,23,24,26,27,28,29,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[0,1,2,3,4,5,7,8,9,10,11,13,14,15,16,17,19,20,21,22,23,25,26,27,28,29,31]}]},
-    {no: 3,weight:0.99,nolist:[
+    {no: 3,weight:0.25,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[0,1,2,3,4,5,6,8,9,10,11,12,14,15,16,17,18,20,21,22,23,24,26,27,28,29,30]},
         {x:1,y:-1,items:[0,1,2,3,4,6,7,8,9,11,12,13,14,16,17,18,19,21,22,23,24,25,26,27,28,29,30]}]},
-    {no: 4,weight:0.99,nolist:[
+    {no: 4,weight:0.25,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[0,1,3,4,5,6,7,9,10,11,12,13,15,16,17,18,19,21,22,23,24,25,27,28,29,30,31]},
         {x:1,y:0,items:[0,1,2,3,4,5,7,8,9,10,12,13,14,15,17,18,19,20,22,23,24,25,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 5,weight:0.99,nolist:[
+    {no: 5,weight:0.25,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[0,1,2,4,5,6,7,8,10,11,12,13,14,16,17,18,19,20,22,23,24,25,26,28,29,30,31]},
         {x:0,y:1,items:[0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19,20,21,23,24,25,26,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 6,weight:0.99,nolist:[
+    {no: 6,weight:0.25,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[0,1,2,3,5,6,7,8,9,11,12,13,14,15,17,18,19,20,21,23,24,25,26,27,29,30,31]},
         {x:-1,y:0,items:[0,1,3,4,5,6,7,8,9,10,11,12,14,15,16,17,19,20,21,22,24,25,26,27,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 7,weight:0.99,nolist:[
+    {no: 7,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19,20,21,22,24,25,26,27,28,30,31]},
         {x:-1,y:-1,items:[0,1,2,4,5,6,7,9,10,11,12,13,14,15,16,17,18,20,21,22,23,25,26,27,28,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 8,weight:0.99,nolist:[
+    {no: 8,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,1,2,3,5,6,7,8,10,11,12,13,15,16,17,18,19,20,21,22,23,24,26,27,28,29,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[0,1,2,3,4,5,6,8,9,10,11,12,14,15,16,17,18,20,21,22,23,24,26,27,28,29,30]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 9,weight:0.99,nolist:[
+    {no: 9,weight:0.5,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[0,1,3,4,5,6,7,9,10,11,12,13,15,16,17,18,19,21,22,23,24,25,27,28,29,30,31]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,1,2,3,4,6,7,8,9,11,12,13,14,16,17,18,19,21,22,23,24,25,26,27,28,29,30]}]},
-    {no: 10,weight:0.99,nolist:[
+    {no: 10,weight:0.5,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[0,1,2,4,5,6,7,8,10,11,12,13,14,16,17,18,19,20,22,23,24,25,26,28,29,30,31]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,1,2,3,4,5,7,8,9,10,12,13,14,15,17,18,19,20,22,23,24,25,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 11,weight:0.99,nolist:[
+    {no: 11,weight:0.5,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[0,1,2,3,5,6,7,8,9,11,12,13,14,15,17,18,19,20,21,23,24,25,26,27,29,30,31]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19,20,21,23,24,25,26,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 12,weight:0.99,nolist:[
+    {no: 12,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19,20,21,22,24,25,26,27,28,30,31]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,1,3,4,5,6,7,8,9,10,11,12,14,15,16,17,19,20,21,22,24,25,26,27,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 13,weight:0.99,nolist:[
+    {no: 13,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,1,2,4,5,6,7,9,10,11,12,13,14,15,16,17,18,20,21,22,23,25,26,27,28,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[0,1,2,3,4,5,7,8,9,10,11,13,14,15,16,17,19,20,21,22,23,25,26,27,28,29,31]}]},
-    {no: 14,weight:0.99,nolist:[
-        {x:0,y:-1,items:[0,1,2,3,5,6,7,8,10,11,12,13,15,16,17,18,19,20,21,22,23,24,26,27,28,29,31]},
+    {no: 14,weight:0.5,nolist:[
+        {x:0,y:-1,items:[0,1,2,3,5,6,7,8,10,11,12,13,15,16,17,18,19,20,21,22,23,24,26,27,28,29,31,14]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
-        {x:0,y:1,items:[0,1,3,4,5,6,7,9,10,11,12,13,15,16,17,18,19,21,22,23,24,25,27,28,29,30,31]},
+        {x:0,y:1,items:[0,1,3,4,5,6,7,9,10,11,12,13,15,16,17,18,19,21,22,23,24,25,27,28,29,30,31,14]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 15,weight:0.99,nolist:[
+    {no: 15,weight:0.5,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[0,1,2,4,5,6,7,8,10,11,12,13,14,16,17,18,19,20,22,23,24,25,26,28,29,30,31]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,1,2,3,4,6,7,8,9,11,12,13,14,16,17,18,19,21,22,23,24,25,26,27,28,29,30]}]},
-    {no: 16,weight:0.99,nolist:[
+    {no: 16,weight:0.5,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[0,1,2,3,5,6,7,8,9,11,12,13,14,15,17,18,19,20,21,23,24,25,26,27,29,30,31]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,1,2,3,4,5,7,8,9,10,12,13,14,15,17,18,19,20,22,23,24,25,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 17,weight:0.99,nolist:[
-        {x:0,y:-1,items:[0,1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19,20,21,22,24,25,26,27,28,30,31]},
+    {no: 17,weight:0.5,nolist:[
+        {x:0,y:-1,items:[0,1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19,20,21,22,24,25,26,27,28,30,31,17]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
-        {x:0,y:1,items:[0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19,20,21,23,24,25,26,28,29,30,31]},
+        {x:0,y:1,items:[0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19,20,21,23,24,25,26,28,29,30,31,17]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 18,weight:0.99,nolist:[
+    {no: 18,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,1,3,4,5,6,7,8,9,10,11,12,14,15,16,17,19,20,21,22,24,25,26,27,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[0,1,2,3,4,5,7,8,9,10,11,13,14,15,16,17,19,20,21,22,23,25,26,27,28,29,31]}]},
-    {no: 19,weight:0.99,nolist:[
+    {no: 19,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,1,2,4,5,6,7,9,10,11,12,13,14,15,16,17,18,20,21,22,23,25,26,27,28,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[0,1,2,3,4,5,6,8,9,10,11,12,14,15,16,17,18,20,21,22,23,24,26,27,28,29,30]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 20,weight:0.99,nolist:[
+    {no: 20,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,1,2,3,5,6,7,8,10,11,12,13,15,16,17,18,19,20,21,22,23,24,26,27,28,29,31]},
         {x:-1,y:-1,items:[1,3,4,8,9,10,14,15,16,19,20,21,22,24,25,26,27,28,29,30,31]},
         {x:-1,y:0,items:[0,1,2,4,5,6,7,8,10,11,12,13,14,16,17,18,19,20,22,23,24,25,26,28,29,30,31]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 21,weight:0.99,nolist:[
+    {no: 21,weight:0.5,nolist:[
         {x:0,y:-1,items:[1,4,5,9,10,11,14,15,16,17,20,21,22,23,25,26,27,28,29,30,31]},
         {x:-1,y:-1,items:[0,1,2,3,5,6,7,8,9,11,12,13,14,15,17,18,19,20,21,23,24,25,26,27,29,30,31]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,1,2,3,4,6,7,8,9,11,12,13,14,16,17,18,19,21,22,23,24,25,26,27,28,29,30]}]},
-    {no: 22,weight:0.99,nolist:[
+    {no: 22,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19,20,21,22,24,25,26,27,28,30,31]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,1,2,3,4,5,7,8,9,10,12,13,14,15,17,18,19,20,22,23,24,25,27,28,29,30,31]},
         {x:1,y:-1,items:[1,5,6,10,11,12,15,16,17,18,20,21,22,23,24,26,27,28,29,30,31]}]},
-    {no: 23,weight:0.99,nolist:[
+    {no: 23,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19,20,21,23,24,25,26,28,29,30,31]},
         {x:1,y:0,items:[1,6,7,11,12,13,16,17,18,19,21,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:-1,items:[0,1,2,3,4,5,7,8,9,10,11,13,14,15,16,17,19,20,21,22,23,25,26,27,28,29,31]}]},
-    {no: 24,weight:0.99,nolist:[
+    {no: 24,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,1,3,4,5,6,7,8,9,10,11,12,14,15,16,17,19,20,21,22,24,25,26,27,29,30,31]},
         {x:0,y:1,items:[1,2,7,8,12,13,14,17,18,19,20,22,23,24,25,26,27,28,29,30,31]},
         {x:1,y:0,items:[0,1,2,3,4,5,6,8,9,10,11,12,14,15,16,17,18,20,21,22,23,24,26,27,28,29,30]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 25,weight:0.99,nolist:[
+    {no: 25,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,1,2,4,5,6,7,9,10,11,12,13,14,15,16,17,18,20,21,22,23,25,26,27,28,30,31]},
         {x:-1,y:0,items:[1,2,3,8,9,13,14,15,18,19,20,21,23,24,25,26,27,28,29,30,31]},
         {x:0,y:1,items:[0,1,3,4,5,6,7,9,10,11,12,13,15,16,17,18,19,21,22,23,24,25,27,28,29,30,31]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 26,weight:0.99,nolist:[
+    {no: 26,weight:0.5,nolist:[
         {x:0,y:-1,items:[0,1,2,3,5,6,7,8,10,11,12,13,15,16,17,18,19,20,21,22,23,24,26,27,28,29,31]},
         {x:-1,y:-1,items:[0,1,2,3,5,6,7,8,9,11,12,13,14,15,17,18,19,20,21,23,24,25,26,27,29,30,31]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 27,weight:0.99,nolist:[
+    {no: 27,weight:0.25,nolist:[
         {x:0,y:-1,items:[0,1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19,20,21,22,24,25,26,27,28,30,31]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,1,2,3,4,6,7,8,9,11,12,13,14,16,17,18,19,21,22,23,24,25,26,27,28,29,30]}]},
-    {no: 28,weight:0.99,nolist:[
+    {no: 28,weight:0.25,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,1,2,3,4,5,7,8,9,10,12,13,14,15,17,18,19,20,22,23,24,25,27,28,29,30,31]},
         {x:1,y:-1,items:[0,1,2,3,4,5,7,8,9,10,11,13,14,15,16,17,19,20,21,22,23,25,26,27,28,29,31]}]},
-    {no: 29,weight:0.99,nolist:[
+    {no: 29,weight:0.25,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,2,3,4,5,6,7,9,10,11,12,13,15,16,17,18,21,22,23,27,28]},
         {x:0,y:1,items:[0,1,2,3,4,5,6,8,9,10,11,13,14,15,16,18,19,20,21,23,24,25,26,28,29,30,31]},
         {x:1,y:0,items:[0,1,2,3,4,5,6,8,9,10,11,12,14,15,16,17,18,20,21,22,23,24,26,27,28,29,30]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 30,weight:0.99,nolist:[
+    {no: 30,weight:0.25,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,2,3,4,5,6,7,8,10,11,12,13,16,17,18,19,22,23,24,28,29]},
         {x:-1,y:0,items:[0,1,3,4,5,6,7,8,9,10,11,12,14,15,16,17,19,20,21,22,24,25,26,27,29,30,31]},
         {x:0,y:1,items:[0,1,3,4,5,6,7,9,10,11,12,13,15,16,17,18,19,21,22,23,24,25,27,28,29,30,31]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
         {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]},
-    {no: 31,weight:0.99,nolist:[
+    {no: 31,weight:0.25,nolist:[
         {x:0,y:-1,items:[0,2,3,4,5,6,7,8,9,11,12,13,14,17,18,19,23,24,25,29,30]},
         {x:-1,y:-1,items:[0,1,2,4,5,6,7,9,10,11,12,13,14,15,16,17,18,20,21,22,23,25,26,27,28,30,31]},
         {x:-1,y:0,items:[0,1,2,4,5,6,7,8,10,11,12,13,14,16,17,18,19,20,22,23,24,25,26,28,29,30,31]},
         {x:0,y:1,items:[0,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,20,21,22,26,27]},
         {x:1,y:0,items:[0,2,3,4,5,6,7,8,9,10,11,13,14,15,16,19,20,21,25,26,31]},
-        {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]}
-];
-
+        {x:1,y:-1,items:[0,2,3,4,5,6,7,8,9,10,12,13,14,15,18,19,20,24,25,30,31]}]}];
 
 function ocean(){
    ctx.globalAlpha=1.0;
@@ -236,7 +234,6 @@ function ocean(){
    ctx.lineTo(19,66);
    ctx.lineTo(57,66);
    ctx.lineTo(76,33);
-   ctx.lineTo(57,0);
    ctx.lineTo(57,0);
    ctx.fill();
 }
@@ -263,7 +260,6 @@ function tile1(){
    ctx.lineTo(19,66);
    ctx.lineTo(57,66);
    ctx.lineTo(76,33);
-   ctx.lineTo(57,0);
    ctx.fill();
 }
 
@@ -273,13 +269,13 @@ function tile2(){
    ctx.moveTo(38,0);
    ctx.lineTo(57,0);
    ctx.lineTo(67,17);
-   ctx.lineTo(59,25);
-   ctx.lineTo(48,30);
-   ctx.lineTo(40,38);
-   ctx.lineTo(30,44);
-   ctx.lineTo(32,33);
-   ctx.lineTo(33,22);
-   ctx.lineTo(37,11);
+   ctx.lineTo(61,17);
+   ctx.lineTo(56,17);
+   ctx.lineTo(51,15);
+   ctx.lineTo(46,17);
+   ctx.lineTo(42,14);
+   ctx.lineTo(41,9);
+   ctx.lineTo(40,4);
    ctx.lineTo(38,0);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -287,13 +283,13 @@ function tile2(){
    ctx.moveTo(43,0);
    ctx.lineTo(57,0);
    ctx.lineTo(64,12);
-   ctx.lineTo(56,21);
-   ctx.lineTo(45,26);
-   ctx.lineTo(37,34);
-   ctx.lineTo(37,34);
-   ctx.lineTo(37,34);
-   ctx.lineTo(38,23);
-   ctx.lineTo(41,12);
+   ctx.lineTo(61,12);
+   ctx.lineTo(57,12);
+   ctx.lineTo(52,10);
+   ctx.lineTo(47,11);
+   ctx.lineTo(46,11);
+   ctx.lineTo(46,8);
+   ctx.lineTo(44,3);
    ctx.lineTo(43,0);
    ctx.fill();
 }
@@ -304,13 +300,13 @@ function tile3(){
    ctx.moveTo(67,17);
    ctx.lineTo(76,33);
    ctx.lineTo(67,50);
-   ctx.lineTo(60,41);
-   ctx.lineTo(52,33);
-   ctx.lineTo(43,27);
-   ctx.lineTo(32,24);
-   ctx.lineTo(40,19);
-   ctx.lineTo(49,19);
-   ctx.lineTo(58,15);
+   ctx.lineTo(65,45);
+   ctx.lineTo(65,39);
+   ctx.lineTo(61,34);
+   ctx.lineTo(56,33);
+   ctx.lineTo(61,31);
+   ctx.lineTo(61,25);
+   ctx.lineTo(62,20);
    ctx.lineTo(67,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -318,13 +314,13 @@ function tile3(){
    ctx.moveTo(69,21);
    ctx.lineTo(76,33);
    ctx.lineTo(69,45);
-   ctx.lineTo(63,38);
-   ctx.lineTo(55,29);
-   ctx.lineTo(45,23);
-   ctx.lineTo(44,22);
-   ctx.lineTo(42,24);
-   ctx.lineTo(50,24);
-   ctx.lineTo(58,20);
+   ctx.lineTo(70,44);
+   ctx.lineTo(70,38);
+   ctx.lineTo(64,30);
+   ctx.lineTo(74,31);
+   ctx.lineTo(66,35);
+   ctx.lineTo(66,26);
+   ctx.lineTo(67,23);
    ctx.lineTo(69,21);
    ctx.fill();
 }
@@ -335,13 +331,13 @@ function tile4(){
    ctx.moveTo(67,50);
    ctx.lineTo(57,66);
    ctx.lineTo(38,66);
-   ctx.lineTo(37,56);
-   ctx.lineTo(43,47);
-   ctx.lineTo(48,39);
-   ctx.lineTo(48,29);
-   ctx.lineTo(52,36);
-   ctx.lineTo(59,37);
-   ctx.lineTo(63,43);
+   ctx.lineTo(38,59);
+   ctx.lineTo(38,53);
+   ctx.lineTo(46,52);
+   ctx.lineTo(49,45);
+   ctx.lineTo(53,49);
+   ctx.lineTo(56,53);
+   ctx.lineTo(62,54);
    ctx.lineTo(67,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -349,13 +345,13 @@ function tile4(){
    ctx.moveTo(64,54);
    ctx.lineTo(57,66);
    ctx.lineTo(43,66);
-   ctx.lineTo(42,57);
-   ctx.lineTo(47,50);
-   ctx.lineTo(53,40);
-   ctx.lineTo(53,47);
-   ctx.lineTo(49,40);
-   ctx.lineTo(56,42);
-   ctx.lineTo(59,46);
+   ctx.lineTo(43,59);
+   ctx.lineTo(43,57);
+   ctx.lineTo(49,57);
+   ctx.lineTo(51,53);
+   ctx.lineTo(49,52);
+   ctx.lineTo(54,58);
+   ctx.lineTo(64,59);
    ctx.lineTo(64,54);
    ctx.fill();
 }
@@ -366,13 +362,13 @@ function tile5(){
    ctx.moveTo(38,66);
    ctx.lineTo(19,66);
    ctx.lineTo(10,50);
-   ctx.lineTo(17,45);
-   ctx.lineTo(22,37);
-   ctx.lineTo(28,31);
-   ctx.lineTo(32,23);
-   ctx.lineTo(35,34);
-   ctx.lineTo(38,44);
-   ctx.lineTo(37,55);
+   ctx.lineTo(14,54);
+   ctx.lineTo(19,51);
+   ctx.lineTo(24,49);
+   ctx.lineTo(28,46);
+   ctx.lineTo(31,51);
+   ctx.lineTo(30,57);
+   ctx.lineTo(32,63);
    ctx.lineTo(38,66);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -380,13 +376,13 @@ function tile5(){
    ctx.moveTo(33,66);
    ctx.lineTo(19,66);
    ctx.lineTo(12,54);
-   ctx.lineTo(20,48);
-   ctx.lineTo(26,41);
-   ctx.lineTo(32,34);
-   ctx.lineTo(30,38);
-   ctx.lineTo(30,35);
-   ctx.lineTo(33,45);
-   ctx.lineTo(32,55);
+   ctx.lineTo(13,60);
+   ctx.lineTo(22,55);
+   ctx.lineTo(26,53);
+   ctx.lineTo(26,53);
+   ctx.lineTo(26,52);
+   ctx.lineTo(25,58);
+   ctx.lineTo(28,67);
    ctx.lineTo(33,66);
    ctx.fill();
 }
@@ -397,13 +393,13 @@ function tile6(){
    ctx.moveTo(10,50);
    ctx.lineTo(0,33);
    ctx.lineTo(10,17);
-   ctx.lineTo(17,22);
-   ctx.lineTo(23,29);
-   ctx.lineTo(30,36);
-   ctx.lineTo(35,44);
-   ctx.lineTo(28,43);
-   ctx.lineTo(22,46);
-   ctx.lineTo(16,47);
+   ctx.lineTo(15,19);
+   ctx.lineTo(19,22);
+   ctx.lineTo(22,27);
+   ctx.lineTo(23,33);
+   ctx.lineTo(20,39);
+   ctx.lineTo(21,45);
+   ctx.lineTo(14,46);
    ctx.lineTo(10,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -411,13 +407,13 @@ function tile6(){
    ctx.moveTo(7,45);
    ctx.lineTo(0,33);
    ctx.lineTo(7,21);
-   ctx.lineTo(13,26);
-   ctx.lineTo(19,33);
-   ctx.lineTo(26,39);
-   ctx.lineTo(25,38);
-   ctx.lineTo(27,38);
-   ctx.lineTo(21,41);
-   ctx.lineTo(14,42);
+   ctx.lineTo(12,23);
+   ctx.lineTo(15,26);
+   ctx.lineTo(17,29);
+   ctx.lineTo(18,32);
+   ctx.lineTo(15,38);
+   ctx.lineTo(15,40);
+   ctx.lineTo(12,41);
    ctx.lineTo(7,45);
    ctx.fill();
 }
@@ -428,13 +424,13 @@ function tile7(){
    ctx.moveTo(10,17);
    ctx.lineTo(19,0);
    ctx.lineTo(38,0);
-   ctx.lineTo(42,5);
-   ctx.lineTo(42,11);
-   ctx.lineTo(45,16);
-   ctx.lineTo(46,23);
-   ctx.lineTo(36,22);
-   ctx.lineTo(28,18);
-   ctx.lineTo(19,20);
+   ctx.lineTo(33,4);
+   ctx.lineTo(36,10);
+   ctx.lineTo(30,11);
+   ctx.lineTo(27,16);
+   ctx.lineTo(23,15);
+   ctx.lineTo(18,13);
+   ctx.lineTo(14,14);
    ctx.lineTo(10,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -442,13 +438,13 @@ function tile7(){
    ctx.moveTo(12,12);
    ctx.lineTo(19,0);
    ctx.lineTo(33,0);
-   ctx.lineTo(37,7);
-   ctx.lineTo(37,13);
-   ctx.lineTo(40,18);
-   ctx.lineTo(40,17);
-   ctx.lineTo(38,17);
-   ctx.lineTo(29,12);
-   ctx.lineTo(19,14);
+   ctx.lineTo(27,3);
+   ctx.lineTo(29,6);
+   ctx.lineTo(26,7);
+   ctx.lineTo(25,10);
+   ctx.lineTo(25,10);
+   ctx.lineTo(19,7);
+   ctx.lineTo(12,10);
    ctx.lineTo(12,12);
    ctx.fill();
 }
@@ -460,13 +456,13 @@ function tile8(){
    ctx.lineTo(57,0);
    ctx.lineTo(76,33);
    ctx.lineTo(67,50);
-   ctx.lineTo(57,45);
-   ctx.lineTo(50,38);
-   ctx.lineTo(40,33);
-   ctx.lineTo(32,26);
-   ctx.lineTo(34,19);
-   ctx.lineTo(39,14);
-   ctx.lineTo(36,7);
+   ctx.lineTo(59,53);
+   ctx.lineTo(52,49);
+   ctx.lineTo(45,44);
+   ctx.lineTo(42,37);
+   ctx.lineTo(40,28);
+   ctx.lineTo(38,19);
+   ctx.lineTo(35,9);
    ctx.lineTo(38,0);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -475,13 +471,13 @@ function tile8(){
    ctx.lineTo(57,0);
    ctx.lineTo(76,33);
    ctx.lineTo(69,45);
-   ctx.lineTo(60,41);
-   ctx.lineTo(53,34);
-   ctx.lineTo(43,29);
-   ctx.lineTo(38,24);
-   ctx.lineTo(38,22);
-   ctx.lineTo(45,15);
-   ctx.lineTo(41,7);
+   ctx.lineTo(59,47);
+   ctx.lineTo(54,44);
+   ctx.lineTo(49,41);
+   ctx.lineTo(47,36);
+   ctx.lineTo(45,27);
+   ctx.lineTo(43,18);
+   ctx.lineTo(40,9);
    ctx.lineTo(43,0);
    ctx.fill();
 }
@@ -493,13 +489,13 @@ function tile9(){
    ctx.lineTo(76,33);
    ctx.lineTo(57,66);
    ctx.lineTo(38,66);
-   ctx.lineTo(36,59);
-   ctx.lineTo(38,53);
-   ctx.lineTo(34,47);
-   ctx.lineTo(29,43);
-   ctx.lineTo(40,38);
-   ctx.lineTo(49,31);
-   ctx.lineTo(57,23);
+   ctx.lineTo(38,55);
+   ctx.lineTo(35,44);
+   ctx.lineTo(33,33);
+   ctx.lineTo(28,23);
+   ctx.lineTo(38,24);
+   ctx.lineTo(48,25);
+   ctx.lineTo(58,21);
    ctx.lineTo(67,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -508,12 +504,12 @@ function tile9(){
    ctx.lineTo(76,33);
    ctx.lineTo(57,66);
    ctx.lineTo(43,66);
-   ctx.lineTo(41,59);
-   ctx.lineTo(43,52);
-   ctx.lineTo(38,44);
-   ctx.lineTo(38,44);
-   ctx.lineTo(43,43);
-   ctx.lineTo(53,35);
+   ctx.lineTo(43,54);
+   ctx.lineTo(40,43);
+   ctx.lineTo(37,32);
+   ctx.lineTo(36,29);
+   ctx.lineTo(38,29);
+   ctx.lineTo(49,30);
    ctx.lineTo(60,26);
    ctx.lineTo(69,21);
    ctx.fill();
@@ -526,13 +522,13 @@ function tile10(){
    ctx.lineTo(57,66);
    ctx.lineTo(19,66);
    ctx.lineTo(10,50);
-   ctx.lineTo(16,48);
-   ctx.lineTo(21,45);
-   ctx.lineTo(28,43);
-   ctx.lineTo(34,43);
-   ctx.lineTo(43,41);
-   ctx.lineTo(51,45);
-   ctx.lineTo(58,48);
+   ctx.lineTo(20,44);
+   ctx.lineTo(31,44);
+   ctx.lineTo(39,37);
+   ctx.lineTo(48,29);
+   ctx.lineTo(54,33);
+   ctx.lineTo(62,35);
+   ctx.lineTo(61,43);
    ctx.lineTo(67,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -541,13 +537,13 @@ function tile10(){
    ctx.lineTo(57,66);
    ctx.lineTo(19,66);
    ctx.lineTo(12,54);
-   ctx.lineTo(18,53);
-   ctx.lineTo(23,50);
-   ctx.lineTo(28,48);
-   ctx.lineTo(35,48);
-   ctx.lineTo(42,46);
-   ctx.lineTo(49,49);
-   ctx.lineTo(57,53);
+   ctx.lineTo(21,49);
+   ctx.lineTo(33,49);
+   ctx.lineTo(43,41);
+   ctx.lineTo(48,35);
+   ctx.lineTo(52,38);
+   ctx.lineTo(56,39);
+   ctx.lineTo(56,45);
    ctx.lineTo(64,54);
    ctx.fill();
 }
@@ -559,13 +555,13 @@ function tile11(){
    ctx.lineTo(19,66);
    ctx.lineTo(0,33);
    ctx.lineTo(10,17);
-   ctx.lineTo(19,19);
-   ctx.lineTo(29,21);
-   ctx.lineTo(39,25);
-   ctx.lineTo(49,24);
-   ctx.lineTo(48,35);
-   ctx.lineTo(47,46);
-   ctx.lineTo(44,57);
+   ctx.lineTo(17,20);
+   ctx.lineTo(26,21);
+   ctx.lineTo(30,29);
+   ctx.lineTo(38,33);
+   ctx.lineTo(38,41);
+   ctx.lineTo(37,49);
+   ctx.lineTo(36,58);
    ctx.lineTo(38,66);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -574,13 +570,13 @@ function tile11(){
    ctx.lineTo(19,66);
    ctx.lineTo(0,33);
    ctx.lineTo(7,21);
-   ctx.lineTo(18,24);
-   ctx.lineTo(28,26);
-   ctx.lineTo(38,30);
-   ctx.lineTo(43,29);
-   ctx.lineTo(43,35);
-   ctx.lineTo(42,45);
-   ctx.lineTo(39,54);
+   ctx.lineTo(16,25);
+   ctx.lineTo(23,26);
+   ctx.lineTo(26,33);
+   ctx.lineTo(33,36);
+   ctx.lineTo(33,41);
+   ctx.lineTo(32,49);
+   ctx.lineTo(30,58);
    ctx.lineTo(33,66);
    ctx.fill();
 }
@@ -592,13 +588,13 @@ function tile12(){
    ctx.lineTo(0,33);
    ctx.lineTo(19,0);
    ctx.lineTo(38,0);
-   ctx.lineTo(39,8);
-   ctx.lineTo(35,14);
-   ctx.lineTo(29,20);
-   ctx.lineTo(28,27);
-   ctx.lineTo(26,34);
-   ctx.lineTo(21,40);
-   ctx.lineTo(16,45);
+   ctx.lineTo(45,4);
+   ctx.lineTo(48,12);
+   ctx.lineTo(50,20);
+   ctx.lineTo(46,28);
+   ctx.lineTo(36,31);
+   ctx.lineTo(28,39);
+   ctx.lineTo(17,41);
    ctx.lineTo(10,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -607,13 +603,13 @@ function tile12(){
    ctx.lineTo(0,33);
    ctx.lineTo(19,0);
    ctx.lineTo(33,0);
-   ctx.lineTo(34,7);
-   ctx.lineTo(31,11);
-   ctx.lineTo(25,17);
-   ctx.lineTo(23,26);
-   ctx.lineTo(21,32);
-   ctx.lineTo(17,37);
-   ctx.lineTo(12,41);
+   ctx.lineTo(41,7);
+   ctx.lineTo(43,13);
+   ctx.lineTo(45,20);
+   ctx.lineTo(42,24);
+   ctx.lineTo(33,27);
+   ctx.lineTo(26,34);
+   ctx.lineTo(14,36);
    ctx.lineTo(7,45);
    ctx.fill();
 }
@@ -625,13 +621,13 @@ function tile13(){
    ctx.lineTo(19,0);
    ctx.lineTo(57,0);
    ctx.lineTo(67,17);
-   ctx.lineTo(57,20);
-   ctx.lineTo(49,27);
-   ctx.lineTo(41,34);
-   ctx.lineTo(34,42);
-   ctx.lineTo(28,36);
-   ctx.lineTo(21,30);
-   ctx.lineTo(14,24);
+   ctx.lineTo(61,24);
+   ctx.lineTo(54,28);
+   ctx.lineTo(45,27);
+   ctx.lineTo(37,28);
+   ctx.lineTo(29,27);
+   ctx.lineTo(22,25);
+   ctx.lineTo(14,23);
    ctx.lineTo(10,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -640,13 +636,13 @@ function tile13(){
    ctx.lineTo(19,0);
    ctx.lineTo(57,0);
    ctx.lineTo(64,12);
-   ctx.lineTo(54,16);
-   ctx.lineTo(46,23);
-   ctx.lineTo(37,30);
-   ctx.lineTo(34,34);
-   ctx.lineTo(31,32);
-   ctx.lineTo(24,26);
-   ctx.lineTo(18,21);
+   ctx.lineTo(58,20);
+   ctx.lineTo(53,22);
+   ctx.lineTo(45,21);
+   ctx.lineTo(36,23);
+   ctx.lineTo(30,22);
+   ctx.lineTo(23,20);
+   ctx.lineTo(17,19);
    ctx.lineTo(12,12);
    ctx.fill();
 }
@@ -659,13 +655,13 @@ function tile14(){
    ctx.lineTo(76,33);
    ctx.lineTo(57,66);
    ctx.lineTo(38,66);
-   ctx.lineTo(37,59);
-   ctx.lineTo(39,52);
-   ctx.lineTo(42,46);
-   ctx.lineTo(44,40);
-   ctx.lineTo(43,30);
-   ctx.lineTo(43,19);
-   ctx.lineTo(43,9);
+   ctx.lineTo(33,57);
+   ctx.lineTo(31,47);
+   ctx.lineTo(30,37);
+   ctx.lineTo(33,27);
+   ctx.lineTo(31,19);
+   ctx.lineTo(36,14);
+   ctx.lineTo(40,7);
    ctx.lineTo(38,0);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -675,13 +671,13 @@ function tile14(){
    ctx.lineTo(76,33);
    ctx.lineTo(57,66);
    ctx.lineTo(43,66);
-   ctx.lineTo(42,60);
-   ctx.lineTo(44,54);
-   ctx.lineTo(47,48);
-   ctx.lineTo(49,40);
-   ctx.lineTo(48,30);
-   ctx.lineTo(48,20);
-   ctx.lineTo(48,8);
+   ctx.lineTo(37,56);
+   ctx.lineTo(36,46);
+   ctx.lineTo(36,37);
+   ctx.lineTo(39,27);
+   ctx.lineTo(37,21);
+   ctx.lineTo(40,16);
+   ctx.lineTo(45,8);
    ctx.lineTo(43,0);
    ctx.fill();
 }
@@ -694,13 +690,13 @@ function tile15(){
    ctx.lineTo(57,66);
    ctx.lineTo(19,66);
    ctx.lineTo(10,50);
-   ctx.lineTo(12,42);
-   ctx.lineTo(19,38);
-   ctx.lineTo(24,31);
-   ctx.lineTo(32,28);
-   ctx.lineTo(41,26);
-   ctx.lineTo(48,19);
-   ctx.lineTo(58,21);
+   ctx.lineTo(19,43);
+   ctx.lineTo(29,40);
+   ctx.lineTo(40,38);
+   ctx.lineTo(50,32);
+   ctx.lineTo(56,30);
+   ctx.lineTo(57,23);
+   ctx.lineTo(63,22);
    ctx.lineTo(67,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -710,13 +706,13 @@ function tile15(){
    ctx.lineTo(57,66);
    ctx.lineTo(19,66);
    ctx.lineTo(12,54);
-   ctx.lineTo(16,45);
-   ctx.lineTo(23,41);
-   ctx.lineTo(28,35);
-   ctx.lineTo(33,33);
-   ctx.lineTo(43,30);
-   ctx.lineTo(50,24);
-   ctx.lineTo(58,26);
+   ctx.lineTo(21,48);
+   ctx.lineTo(31,45);
+   ctx.lineTo(42,43);
+   ctx.lineTo(52,37);
+   ctx.lineTo(61,34);
+   ctx.lineTo(62,27);
+   ctx.lineTo(66,26);
    ctx.lineTo(69,21);
    ctx.fill();
 }
@@ -729,13 +725,13 @@ function tile16(){
    ctx.lineTo(19,66);
    ctx.lineTo(0,33);
    ctx.lineTo(10,17);
-   ctx.lineTo(18,18);
-   ctx.lineTo(25,25);
-   ctx.lineTo(31,32);
-   ctx.lineTo(39,35);
-   ctx.lineTo(43,42);
-   ctx.lineTo(51,45);
-   ctx.lineTo(60,46);
+   ctx.lineTo(19,18);
+   ctx.lineTo(28,23);
+   ctx.lineTo(36,28);
+   ctx.lineTo(41,37);
+   ctx.lineTo(48,37);
+   ctx.lineTo(55,41);
+   ctx.lineTo(62,44);
    ctx.lineTo(67,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -745,13 +741,13 @@ function tile16(){
    ctx.lineTo(19,66);
    ctx.lineTo(0,33);
    ctx.lineTo(7,21);
-   ctx.lineTo(16,23);
-   ctx.lineTo(21,28);
-   ctx.lineTo(28,36);
-   ctx.lineTo(36,39);
-   ctx.lineTo(40,46);
-   ctx.lineTo(50,50);
-   ctx.lineTo(58,50);
+   ctx.lineTo(18,22);
+   ctx.lineTo(25,27);
+   ctx.lineTo(32,32);
+   ctx.lineTo(38,42);
+   ctx.lineTo(47,42);
+   ctx.lineTo(52,45);
+   ctx.lineTo(58,48);
    ctx.lineTo(64,54);
    ctx.fill();
 }
@@ -764,13 +760,13 @@ function tile17(){
    ctx.lineTo(0,33);
    ctx.lineTo(19,0);
    ctx.lineTo(38,0);
-   ctx.lineTo(34,8);
-   ctx.lineTo(33,16);
-   ctx.lineTo(35,26);
-   ctx.lineTo(30,33);
-   ctx.lineTo(34,41);
-   ctx.lineTo(33,50);
-   ctx.lineTo(35,58);
+   ctx.lineTo(40,11);
+   ctx.lineTo(36,22);
+   ctx.lineTo(34,33);
+   ctx.lineTo(27,43);
+   ctx.lineTo(34,45);
+   ctx.lineTo(36,53);
+   ctx.lineTo(36,59);
    ctx.lineTo(38,66);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -780,13 +776,13 @@ function tile17(){
    ctx.lineTo(0,33);
    ctx.lineTo(19,0);
    ctx.lineTo(33,0);
-   ctx.lineTo(30,7);
-   ctx.lineTo(28,17);
-   ctx.lineTo(29,24);
-   ctx.lineTo(24,33);
-   ctx.lineTo(29,42);
-   ctx.lineTo(28,50);
-   ctx.lineTo(30,59);
+   ctx.lineTo(35,11);
+   ctx.lineTo(31,21);
+   ctx.lineTo(29,31);
+   ctx.lineTo(19,45);
+   ctx.lineTo(30,49);
+   ctx.lineTo(31,53);
+   ctx.lineTo(31,60);
    ctx.lineTo(33,66);
    ctx.fill();
 }
@@ -799,13 +795,13 @@ function tile18(){
    ctx.lineTo(19,0);
    ctx.lineTo(57,0);
    ctx.lineTo(67,17);
-   ctx.lineTo(56,21);
-   ctx.lineTo(49,31);
-   ctx.lineTo(38,36);
-   ctx.lineTo(27,38);
-   ctx.lineTo(21,39);
-   ctx.lineTo(19,45);
-   ctx.lineTo(13,45);
+   ctx.lineTo(58,24);
+   ctx.lineTo(48,31);
+   ctx.lineTo(36,31);
+   ctx.lineTo(25,37);
+   ctx.lineTo(20,40);
+   ctx.lineTo(20,46);
+   ctx.lineTo(13,44);
    ctx.lineTo(10,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -815,13 +811,13 @@ function tile18(){
    ctx.lineTo(19,0);
    ctx.lineTo(57,0);
    ctx.lineTo(64,12);
-   ctx.lineTo(53,17);
-   ctx.lineTo(45,27);
-   ctx.lineTo(37,31);
-   ctx.lineTo(26,33);
-   ctx.lineTo(17,35);
-   ctx.lineTo(16,40);
-   ctx.lineTo(11,40);
+   ctx.lineTo(55,20);
+   ctx.lineTo(46,26);
+   ctx.lineTo(34,26);
+   ctx.lineTo(23,33);
+   ctx.lineTo(15,37);
+   ctx.lineTo(15,40);
+   ctx.lineTo(11,39);
    ctx.lineTo(7,45);
    ctx.fill();
 }
@@ -834,13 +830,13 @@ function tile19(){
    ctx.lineTo(57,0);
    ctx.lineTo(76,33);
    ctx.lineTo(67,50);
-   ctx.lineTo(57,48);
-   ctx.lineTo(49,42);
-   ctx.lineTo(42,35);
-   ctx.lineTo(36,27);
-   ctx.lineTo(30,23);
-   ctx.lineTo(22,25);
-   ctx.lineTo(16,21);
+   ctx.lineTo(62,49);
+   ctx.lineTo(57,47);
+   ctx.lineTo(53,45);
+   ctx.lineTo(48,46);
+   ctx.lineTo(40,37);
+   ctx.lineTo(29,30);
+   ctx.lineTo(19,24);
    ctx.lineTo(10,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -850,13 +846,13 @@ function tile19(){
    ctx.lineTo(57,0);
    ctx.lineTo(76,33);
    ctx.lineTo(69,45);
-   ctx.lineTo(59,43);
-   ctx.lineTo(52,38);
-   ctx.lineTo(46,31);
-   ctx.lineTo(40,23);
-   ctx.lineTo(30,18);
-   ctx.lineTo(23,19);
-   ctx.lineTo(18,17);
+   ctx.lineTo(63,44);
+   ctx.lineTo(59,42);
+   ctx.lineTo(53,40);
+   ctx.lineTo(50,41);
+   ctx.lineTo(43,33);
+   ctx.lineTo(32,26);
+   ctx.lineTo(22,20);
    ctx.lineTo(12,12);
    ctx.fill();
 }
@@ -870,13 +866,13 @@ function tile20(){
    ctx.lineTo(57,66);
    ctx.lineTo(19,66);
    ctx.lineTo(10,50);
-   ctx.lineTo(14,43);
-   ctx.lineTo(18,37);
-   ctx.lineTo(26,37);
-   ctx.lineTo(31,30);
-   ctx.lineTo(36,24);
-   ctx.lineTo(39,16);
-   ctx.lineTo(38,8);
+   ctx.lineTo(12,43);
+   ctx.lineTo(19,39);
+   ctx.lineTo(26,40);
+   ctx.lineTo(33,36);
+   ctx.lineTo(34,26);
+   ctx.lineTo(30,17);
+   ctx.lineTo(36,9);
    ctx.lineTo(38,0);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -887,13 +883,13 @@ function tile20(){
    ctx.lineTo(57,66);
    ctx.lineTo(19,66);
    ctx.lineTo(12,54);
-   ctx.lineTo(18,46);
-   ctx.lineTo(21,42);
-   ctx.lineTo(29,41);
-   ctx.lineTo(35,33);
-   ctx.lineTo(40,26);
-   ctx.lineTo(44,17);
-   ctx.lineTo(43,8);
+   ctx.lineTo(16,46);
+   ctx.lineTo(20,44);
+   ctx.lineTo(28,45);
+   ctx.lineTo(37,39);
+   ctx.lineTo(39,25);
+   ctx.lineTo(36,18);
+   ctx.lineTo(41,11);
    ctx.lineTo(43,0);
    ctx.fill();
 }
@@ -907,13 +903,13 @@ function tile21(){
    ctx.lineTo(19,66);
    ctx.lineTo(0,33);
    ctx.lineTo(10,17);
-   ctx.lineTo(12,25);
-   ctx.lineTo(19,30);
-   ctx.lineTo(24,38);
-   ctx.lineTo(30,43);
-   ctx.lineTo(38,35);
-   ctx.lineTo(48,29);
-   ctx.lineTo(59,25);
+   ctx.lineTo(18,17);
+   ctx.lineTo(25,23);
+   ctx.lineTo(28,32);
+   ctx.lineTo(36,36);
+   ctx.lineTo(44,30);
+   ctx.lineTo(48,22);
+   ctx.lineTo(58,22);
    ctx.lineTo(67,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -924,13 +920,13 @@ function tile21(){
    ctx.lineTo(19,66);
    ctx.lineTo(0,33);
    ctx.lineTo(7,21);
-   ctx.lineTo(8,28);
-   ctx.lineTo(16,34);
-   ctx.lineTo(20,41);
-   ctx.lineTo(31,50);
-   ctx.lineTo(41,39);
-   ctx.lineTo(50,34);
-   ctx.lineTo(62,29);
+   ctx.lineTo(16,22);
+   ctx.lineTo(20,26);
+   ctx.lineTo(24,35);
+   ctx.lineTo(36,42);
+   ctx.lineTo(48,34);
+   ctx.lineTo(51,27);
+   ctx.lineTo(60,27);
    ctx.lineTo(69,21);
    ctx.fill();
 }
@@ -944,13 +940,13 @@ function tile22(){
    ctx.lineTo(0,33);
    ctx.lineTo(19,0);
    ctx.lineTo(38,0);
-   ctx.lineTo(40,7);
-   ctx.lineTo(39,14);
-   ctx.lineTo(45,19);
-   ctx.lineTo(45,26);
-   ctx.lineTo(47,35);
-   ctx.lineTo(54,40);
-   ctx.lineTo(60,45);
+   ctx.lineTo(33,11);
+   ctx.lineTo(34,23);
+   ctx.lineTo(30,33);
+   ctx.lineTo(28,45);
+   ctx.lineTo(39,46);
+   ctx.lineTo(47,52);
+   ctx.lineTo(56,48);
    ctx.lineTo(67,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -961,13 +957,13 @@ function tile22(){
    ctx.lineTo(0,33);
    ctx.lineTo(19,0);
    ctx.lineTo(33,0);
-   ctx.lineTo(35,7);
-   ctx.lineTo(33,16);
-   ctx.lineTo(40,21);
-   ctx.lineTo(40,27);
-   ctx.lineTo(43,37);
-   ctx.lineTo(50,44);
-   ctx.lineTo(56,49);
+   ctx.lineTo(28,10);
+   ctx.lineTo(29,22);
+   ctx.lineTo(25,32);
+   ctx.lineTo(23,49);
+   ctx.lineTo(37,51);
+   ctx.lineTo(46,58);
+   ctx.lineTo(57,53);
    ctx.lineTo(64,54);
    ctx.fill();
 }
@@ -981,13 +977,13 @@ function tile23(){
    ctx.lineTo(19,0);
    ctx.lineTo(57,0);
    ctx.lineTo(67,17);
-   ctx.lineTo(58,22);
-   ctx.lineTo(47,22);
-   ctx.lineTo(38,26);
-   ctx.lineTo(31,32);
-   ctx.lineTo(33,41);
-   ctx.lineTo(37,49);
-   ctx.lineTo(38,57);
+   ctx.lineTo(59,22);
+   ctx.lineTo(52,29);
+   ctx.lineTo(45,35);
+   ctx.lineTo(38,42);
+   ctx.lineTo(41,48);
+   ctx.lineTo(42,54);
+   ctx.lineTo(41,60);
    ctx.lineTo(38,66);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -998,13 +994,13 @@ function tile23(){
    ctx.lineTo(19,0);
    ctx.lineTo(57,0);
    ctx.lineTo(64,12);
-   ctx.lineTo(56,17);
-   ctx.lineTo(46,17);
-   ctx.lineTo(36,22);
-   ctx.lineTo(25,31);
-   ctx.lineTo(29,43);
-   ctx.lineTo(32,50);
-   ctx.lineTo(33,58);
+   ctx.lineTo(56,18);
+   ctx.lineTo(49,25);
+   ctx.lineTo(41,31);
+   ctx.lineTo(32,41);
+   ctx.lineTo(36,49);
+   ctx.lineTo(37,54);
+   ctx.lineTo(36,59);
    ctx.lineTo(33,66);
    ctx.fill();
 }
@@ -1018,13 +1014,13 @@ function tile24(){
    ctx.lineTo(57,0);
    ctx.lineTo(76,33);
    ctx.lineTo(67,50);
-   ctx.lineTo(57,46);
-   ctx.lineTo(47,41);
-   ctx.lineTo(37,39);
-   ctx.lineTo(27,35);
-   ctx.lineTo(22,38);
-   ctx.lineTo(19,43);
-   ctx.lineTo(16,49);
+   ctx.lineTo(58,45);
+   ctx.lineTo(49,46);
+   ctx.lineTo(39,48);
+   ctx.lineTo(31,43);
+   ctx.lineTo(26,45);
+   ctx.lineTo(20,46);
+   ctx.lineTo(15,49);
    ctx.lineTo(10,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -1035,13 +1031,13 @@ function tile24(){
    ctx.lineTo(57,0);
    ctx.lineTo(76,33);
    ctx.lineTo(69,45);
-   ctx.lineTo(59,41);
-   ctx.lineTo(49,36);
-   ctx.lineTo(39,34);
-   ctx.lineTo(27,29);
-   ctx.lineTo(18,34);
-   ctx.lineTo(15,41);
-   ctx.lineTo(13,44);
+   ctx.lineTo(59,40);
+   ctx.lineTo(48,41);
+   ctx.lineTo(40,42);
+   ctx.lineTo(31,37);
+   ctx.lineTo(24,40);
+   ctx.lineTo(19,41);
+   ctx.lineTo(14,44);
    ctx.lineTo(7,45);
    ctx.fill();
 }
@@ -1055,13 +1051,13 @@ function tile25(){
    ctx.lineTo(76,33);
    ctx.lineTo(57,66);
    ctx.lineTo(38,66);
-   ctx.lineTo(37,54);
-   ctx.lineTo(30,45);
-   ctx.lineTo(26,34);
-   ctx.lineTo(28,22);
-   ctx.lineTo(24,19);
-   ctx.lineTo(20,17);
-   ctx.lineTo(15,16);
+   ctx.lineTo(33,60);
+   ctx.lineTo(36,53);
+   ctx.lineTo(37,46);
+   ctx.lineTo(35,39);
+   ctx.lineTo(30,32);
+   ctx.lineTo(24,26);
+   ctx.lineTo(17,21);
    ctx.lineTo(10,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -1072,13 +1068,13 @@ function tile25(){
    ctx.lineTo(76,33);
    ctx.lineTo(57,66);
    ctx.lineTo(43,66);
-   ctx.lineTo(42,53);
-   ctx.lineTo(35,43);
-   ctx.lineTo(31,34);
-   ctx.lineTo(34,21);
-   ctx.lineTo(27,15);
-   ctx.lineTo(21,12);
-   ctx.lineTo(15,10);
+   ctx.lineTo(39,59);
+   ctx.lineTo(41,54);
+   ctx.lineTo(42,45);
+   ctx.lineTo(40,37);
+   ctx.lineTo(34,29);
+   ctx.lineTo(27,22);
+   ctx.lineTo(20,17);
    ctx.lineTo(12,12);
    ctx.fill();
 }
@@ -1093,13 +1089,13 @@ function tile26(){
    ctx.lineTo(19,66);
    ctx.lineTo(0,33);
    ctx.lineTo(10,17);
-   ctx.lineTo(17,21);
-   ctx.lineTo(26,21);
-   ctx.lineTo(34,27);
-   ctx.lineTo(43,26);
-   ctx.lineTo(42,19);
-   ctx.lineTo(37,14);
-   ctx.lineTo(37,7);
+   ctx.lineTo(14,16);
+   ctx.lineTo(19,15);
+   ctx.lineTo(22,19);
+   ctx.lineTo(27,20);
+   ctx.lineTo(24,14);
+   ctx.lineTo(29,8);
+   ctx.lineTo(31,2);
    ctx.lineTo(38,0);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -1111,13 +1107,13 @@ function tile26(){
    ctx.lineTo(19,66);
    ctx.lineTo(0,33);
    ctx.lineTo(7,21);
-   ctx.lineTo(16,26);
-   ctx.lineTo(25,26);
-   ctx.lineTo(32,32);
-   ctx.lineTo(48,31);
-   ctx.lineTo(47,17);
-   ctx.lineTo(42,12);
-   ctx.lineTo(42,7);
+   ctx.lineTo(15,21);
+   ctx.lineTo(17,20);
+   ctx.lineTo(19,23);
+   ctx.lineTo(35,28);
+   ctx.lineTo(30,15);
+   ctx.lineTo(34,11);
+   ctx.lineTo(35,6);
    ctx.lineTo(43,0);
    ctx.fill();
 }
@@ -1132,13 +1128,13 @@ function tile27(){
    ctx.lineTo(0,33);
    ctx.lineTo(19,0);
    ctx.lineTo(38,0);
-   ctx.lineTo(41,7);
-   ctx.lineTo(45,13);
-   ctx.lineTo(43,20);
-   ctx.lineTo(46,27);
-   ctx.lineTo(51,24);
-   ctx.lineTo(56,21);
-   ctx.lineTo(61,18);
+   ctx.lineTo(40,5);
+   ctx.lineTo(39,10);
+   ctx.lineTo(42,13);
+   ctx.lineTo(46,17);
+   ctx.lineTo(51,14);
+   ctx.lineTo(56,12);
+   ctx.lineTo(63,11);
    ctx.lineTo(67,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -1150,13 +1146,13 @@ function tile27(){
    ctx.lineTo(0,33);
    ctx.lineTo(19,0);
    ctx.lineTo(33,0);
-   ctx.lineTo(37,9);
-   ctx.lineTo(40,14);
-   ctx.lineTo(37,21);
-   ctx.lineTo(44,34);
-   ctx.lineTo(54,29);
-   ctx.lineTo(58,25);
-   ctx.lineTo(63,23);
+   ctx.lineTo(35,5);
+   ctx.lineTo(34,11);
+   ctx.lineTo(39,17);
+   ctx.lineTo(44,23);
+   ctx.lineTo(53,19);
+   ctx.lineTo(57,17);
+   ctx.lineTo(60,16);
    ctx.lineTo(69,21);
    ctx.fill();
 }
@@ -1171,13 +1167,13 @@ function tile28(){
    ctx.lineTo(19,0);
    ctx.lineTo(57,0);
    ctx.lineTo(67,17);
-   ctx.lineTo(59,21);
-   ctx.lineTo(51,25);
-   ctx.lineTo(42,28);
-   ctx.lineTo(35,33);
-   ctx.lineTo(44,36);
-   ctx.lineTo(51,41);
-   ctx.lineTo(60,43);
+   ctx.lineTo(66,22);
+   ctx.lineTo(61,24);
+   ctx.lineTo(60,29);
+   ctx.lineTo(56,32);
+   ctx.lineTo(62,33);
+   ctx.lineTo(64,39);
+   ctx.lineTo(69,43);
    ctx.lineTo(67,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -1189,13 +1185,13 @@ function tile28(){
    ctx.lineTo(19,0);
    ctx.lineTo(57,0);
    ctx.lineTo(64,12);
-   ctx.lineTo(56,16);
-   ctx.lineTo(49,20);
-   ctx.lineTo(40,23);
-   ctx.lineTo(25,35);
-   ctx.lineTo(41,41);
-   ctx.lineTo(50,45);
-   ctx.lineTo(58,47);
+   ctx.lineTo(61,19);
+   ctx.lineTo(57,21);
+   ctx.lineTo(56,26);
+   ctx.lineTo(41,34);
+   ctx.lineTo(58,37);
+   ctx.lineTo(60,41);
+   ctx.lineTo(63,44);
    ctx.lineTo(64,54);
    ctx.fill();
 }
@@ -1210,13 +1206,13 @@ function tile29(){
    ctx.lineTo(57,0);
    ctx.lineTo(76,33);
    ctx.lineTo(67,50);
-   ctx.lineTo(61,42);
-   ctx.lineTo(53,38);
-   ctx.lineTo(48,30);
-   ctx.lineTo(40,26);
-   ctx.lineTo(40,37);
-   ctx.lineTo(42,46);
-   ctx.lineTo(42,57);
+   ctx.lineTo(61,47);
+   ctx.lineTo(56,43);
+   ctx.lineTo(51,46);
+   ctx.lineTo(45,49);
+   ctx.lineTo(44,54);
+   ctx.lineTo(46,59);
+   ctx.lineTo(43,64);
    ctx.lineTo(38,66);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -1228,13 +1224,13 @@ function tile29(){
    ctx.lineTo(57,0);
    ctx.lineTo(76,33);
    ctx.lineTo(69,45);
-   ctx.lineTo(65,39);
-   ctx.lineTo(57,34);
-   ctx.lineTo(51,27);
-   ctx.lineTo(35,18);
-   ctx.lineTo(35,37);
-   ctx.lineTo(37,47);
-   ctx.lineTo(37,56);
+   ctx.lineTo(64,43);
+   ctx.lineTo(57,37);
+   ctx.lineTo(49,42);
+   ctx.lineTo(41,45);
+   ctx.lineTo(38,55);
+   ctx.lineTo(40,59);
+   ctx.lineTo(40,60);
    ctx.lineTo(33,66);
    ctx.fill();
 }
@@ -1249,13 +1245,13 @@ function tile30(){
    ctx.lineTo(76,33);
    ctx.lineTo(57,66);
    ctx.lineTo(38,66);
-   ctx.lineTo(36,55);
-   ctx.lineTo(35,44);
-   ctx.lineTo(35,33);
-   ctx.lineTo(36,22);
-   ctx.lineTo(30,30);
-   ctx.lineTo(24,37);
-   ctx.lineTo(19,46);
+   ctx.lineTo(40,60);
+   ctx.lineTo(39,54);
+   ctx.lineTo(37,48);
+   ctx.lineTo(30,46);
+   ctx.lineTo(24,47);
+   ctx.lineTo(19,42);
+   ctx.lineTo(12,43);
    ctx.lineTo(10,50);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -1267,13 +1263,13 @@ function tile30(){
    ctx.lineTo(76,33);
    ctx.lineTo(57,66);
    ctx.lineTo(43,66);
-   ctx.lineTo(41,54);
-   ctx.lineTo(40,44);
-   ctx.lineTo(40,33);
-   ctx.lineTo(43,6);
-   ctx.lineTo(26,26);
-   ctx.lineTo(20,34);
-   ctx.lineTo(15,41);
+   ctx.lineTo(45,61);
+   ctx.lineTo(44,53);
+   ctx.lineTo(41,44);
+   ctx.lineTo(31,41);
+   ctx.lineTo(26,42);
+   ctx.lineTo(21,37);
+   ctx.lineTo(9,39);
    ctx.lineTo(7,45);
    ctx.fill();
 }
@@ -1288,13 +1284,13 @@ function tile31(){
    ctx.lineTo(57,66);
    ctx.lineTo(19,66);
    ctx.lineTo(10,50);
-   ctx.lineTo(16,47);
-   ctx.lineTo(22,44);
-   ctx.lineTo(28,43);
-   ctx.lineTo(35,41);
-   ctx.lineTo(29,33);
-   ctx.lineTo(25,25);
-   ctx.lineTo(16,23);
+   ctx.lineTo(11,43);
+   ctx.lineTo(11,37);
+   ctx.lineTo(15,32);
+   ctx.lineTo(21,30);
+   ctx.lineTo(19,26);
+   ctx.lineTo(16,22);
+   ctx.lineTo(15,17);
    ctx.lineTo(10,17);
    ctx.fill();
    ctx.fillStyle='#C69C6D';
@@ -1306,13 +1302,37 @@ function tile31(){
    ctx.lineTo(57,66);
    ctx.lineTo(19,66);
    ctx.lineTo(12,54);
-   ctx.lineTo(18,51);
-   ctx.lineTo(23,49);
-   ctx.lineTo(30,48);
-   ctx.lineTo(43,43);
-   ctx.lineTo(33,31);
-   ctx.lineTo(28,21);
-   ctx.lineTo(19,18);
+   ctx.lineTo(16,44);
+   ctx.lineTo(16,39);
+   ctx.lineTo(18,36);
+   ctx.lineTo(29,33);
+   ctx.lineTo(23,23);
+   ctx.lineTo(21,20);
+   ctx.lineTo(19,13);
    ctx.lineTo(12,12);
    ctx.fill();
+}
+
+function tile32(){
+}
+
+function tile33(){
+}
+
+function tile34(){
+}
+
+function tile35(){
+}
+
+function tile36(){
+}
+
+function tile37(){
+}
+
+function tile38(){
+}
+
+function tile39(){
 }

@@ -27,36 +27,42 @@ var mx,my;
 var bitrep=[
       {tile:0 ,bits:[0,0,0,0,0,0]},
       {tile:1 ,bits:[1,1,1,1,1,1]},
+
       {tile:2 ,bits:[0,0,0,0,0,1]},
       {tile:3 ,bits:[0,0,0,0,1,0]},
       {tile:4 ,bits:[0,0,0,1,0,0]},
       {tile:5 ,bits:[0,0,1,0,0,0]},
       {tile:6 ,bits:[0,1,0,0,0,0]},
       {tile:7 ,bits:[1,0,0,0,0,0]},
+
       {tile:8 ,bits:[0,0,0,0,1,1]},
       {tile:9 ,bits:[0,0,0,1,1,0]},
       {tile:10,bits:[0,0,1,1,0,0]},
       {tile:11,bits:[0,1,1,0,0,0]},
       {tile:12,bits:[1,1,0,0,0,0]},
       {tile:13,bits:[1,0,0,0,0,1]},
+
       {tile:14,bits:[0,0,0,1,1,1]},
       {tile:15,bits:[0,0,1,1,1,0]},
       {tile:16,bits:[0,1,1,1,0,0]},
       {tile:17,bits:[1,1,1,0,0,0]},
       {tile:18,bits:[1,1,0,0,0,1]},
       {tile:19,bits:[1,0,0,0,1,1]},
+
       {tile:20,bits:[0,0,1,1,1,1]},
       {tile:21,bits:[0,1,1,1,1,0]},
       {tile:22,bits:[1,1,1,1,0,0]},
       {tile:23,bits:[1,1,1,0,0,1]},
       {tile:24,bits:[1,1,0,0,1,1]},
       {tile:25,bits:[1,0,0,1,1,1]},
+
       {tile:26,bits:[0,1,1,1,1,1]},
       {tile:27,bits:[1,1,1,1,1,0]},
       {tile:28,bits:[1,1,1,1,0,1]},
       {tile:29,bits:[1,1,1,0,1,1]},
       {tile:30,bits:[1,1,0,1,1,1]},
       {tile:31,bits:[1,0,1,1,1,1]}
+
 ];
 
 // Across indices for each side point e.g. 2 is across from 0 and 3 is across from 5 
@@ -94,8 +100,6 @@ function setup()
     drawit();
 }
 
-// nlist[0]={tile:0,weight:0.95,nolist:[{x:1,y:0,items:[2,3,4,5,6,8,9]},{x:-1,y:0,items:[2,3,4,5,7,10,11]},{x:0,y:1,items:[1,3,4,6,7,9,11]},{x:0,y:-1,items:[1,3,5,6,7,8,10]}]};
-
 function computeallowed()
 {
     // For each tile
@@ -103,7 +107,16 @@ function computeallowed()
     for (var tileno=0;tileno<bitrep.length;tileno++){
         var tile={};
         tile.no=tileno;
-        tile.weight=0.99;
+        if(tileno>1&&tileno<7){
+            weight=0.25;
+        }else if(tileno>26&&tileno<32){
+            weight=0.25;
+        }else if(tileno>6&&tileno<27){
+            weight=0.5;
+        }else{
+            weight=0.99;
+        }
+        tile.weight=weight;
         tile.nolist=[];
         // For each side in each tile
         for(var side=0;side<6;side++){
@@ -117,10 +130,20 @@ function computeallowed()
                     lst.push(innertile);
                 }
             }
+
             // Move only disallowed pieces to nolist
             for(var allow=0;allow<bitrep.length;allow++){
                 if(lst.indexOf(allow)==-1) sideobj.items.push(allow);
             }
+
+            // Special case for tile 14-19 we do not allow repeats of these tiles
+            if(tileno==14&&(side==0||side==3)&&sideobj.items.indexOf(14)==-1) sideobj.items.push(14);
+            if(tileno==15&&(side==1||side==4)&&sideobj.items.indexOf(15)==-1) sideobj.items.push(15);
+            if(tileno==16&&(side==2||side==5)&&sideobj.items.indexOf(16)==-1) sideobj.items.push(16);
+            if(tileno==17&&(side==0||side==3)&&sideobj.items.indexOf(17)==-1) sideobj.items.push(17);
+            if(tileno==18&&(side==1||side==4)&&sideobj.items.indexOf(18)==-1) sideobj.items.push(18);
+            if(tileno==19&&(side==2||side==5)&&sideobj.items.indexOf(19)==-1) sideobj.items.push(19);
+
             tile.nolist.push(sideobj)
         }
         tilelist.push(tile);
@@ -148,7 +171,7 @@ function computeallowed()
         str+="}";
     }
     str+="];\n";
-    document.body.innerHTML="<textarea>"+str+"</textarea>";
+    document.body.innerHTML+="<textarea>"+str+"</textarea>";
  
 //    console.log(tilelist);
 }
@@ -399,7 +422,7 @@ function displacerand(p1,jitter,kind)
 
 function genTile(tileno)
 {
-    var jitter=22;
+    var jitter=26;
 
     var p1={x:57,y:0,kind:0};
     var p2={x:19,y:0,kind:0};
@@ -408,7 +431,34 @@ function genTile(tileno)
     var p5={x:57,y:66,kind:0};
     var p6={x:76,y:33,kind:0};
 
+    // we set p0 according to ruleset
     var p0=displacerand({x:38,y:33},jitter,1);
+
+    if((tileno>1&&tileno<8)){
+        var mod=(tileno-2)%6;
+        if(tileno==7) p0=displacerand({x:29,y:18},5,1);
+        if(tileno==6) p0=displacerand({x:21,y:32},5,1);
+        if(tileno==5) p0=displacerand({x:29,y:47},5,1);
+        if(tileno==4) p0=displacerand({x:47,y:47},5,1);
+        if(tileno==3) p0=displacerand({x:56,y:33},5,1);
+        if(tileno==2) p0=displacerand({x:47,y:18},5,1);
+        /*
+        if(tileno==7) p0=displacerand({x:24,y:8},0,1);
+        if(tileno==6) p0=displacerand({x:10,y:32},0,1);
+        if(tileno==5) p0=displacerand({x:24,y:56},0,1);
+        if(tileno==4) p0=displacerand({x:53,y:56},0,1);
+        if(tileno==3) p0=displacerand({x:66,y:32},0,1);
+        if(tileno==2) p0=displacerand({x:53,y:8},0,1);
+        */
+    }
+    if((tileno>25&&tileno<32)){
+        if(tileno==26) p0=displacerand({x:29,y:18},5,1);
+        if(tileno==31) p0=displacerand({x:21,y:32},5,1);
+        if(tileno==30) p0=displacerand({x:29,y:47},5,1);
+        if(tileno==29) p0=displacerand({x:47,y:47},5,1);
+        if(tileno==28) p0=displacerand({x:56,y:33},5,1);
+        if(tileno==27) p0=displacerand({x:47,y:18},5,1);
+    }
 
     var h1=midpoint(p1,p2,2);
     var h2=midpoint(p2,p3,2);
@@ -491,7 +541,7 @@ function genTile(tileno)
     }
 
     if(tileno>1&&tileno<=40){
-        arra=smooth(arra,jitter*0.4);
+        arra=smooth(arra,jitter*0.5);
         arra=smooth(arra,jitter*0.3);
     }
 
@@ -503,6 +553,8 @@ function genTile(tileno)
         var arro=offset(arra,5);
         drawPoints("#C69C6D",arro);            
     }
+
+    drawCirc("#d42",p0);
 
     ctx.beginPath();
     ctx.fillStyle="Black";
