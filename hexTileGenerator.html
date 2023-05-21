@@ -125,6 +125,31 @@ function computeallowed()
         }
         tilelist.push(tile);
     }
+    
+    var str="var nlist=[\n";
+    for(i=0;i<tilelist.length;i++){
+        var tile=tilelist[i];
+        if(i>0) str+=",\n";
+        str+="    {";
+        str+="no: "+tile.no;
+        str+=",weight:"+tile.weight;
+        str+=",nolist:[\n";
+        for(var j=0;j<tile.nolist.length;j++){
+            var item=tile.nolist[j];
+            if(j>0) str+=",\n"
+            str+="        {x:"+item.x+",y:"+item.y+",items:[";
+            for(var k=0;k<item.items.length;k++){
+                if(k>0) str+=",";
+                str+=item.items[k];
+            }
+            str+="]}";
+        }
+        str+="]";
+        str+="}";
+    }
+    str+="];\n";
+    document.body.innerHTML="<textarea>"+str+"</textarea>";
+ 
 //    console.log(tilelist);
 }
 
@@ -136,7 +161,7 @@ function computeallowed()
 //--------------------------------------------------------------------------
 
 var svgstr="";
-var generatesvg=true;
+var generatesvg=false;
 function drawit()
 {	
     ctx=mainctx;
