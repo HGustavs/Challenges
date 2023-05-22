@@ -61,8 +61,14 @@ var bitrep=[
       {tile:28,bits:[1,1,1,1,0,1]},
       {tile:29,bits:[1,1,1,0,1,1]},
       {tile:30,bits:[1,1,0,1,1,1]},
-      {tile:31,bits:[1,0,1,1,1,1]}
+      {tile:31,bits:[1,0,1,1,1,1]},
 
+      {tile:32,bits:[0,0,1,1,1,1]},
+      {tile:33,bits:[0,1,1,1,1,0]},
+      {tile:34,bits:[1,1,1,1,0,0]},
+      {tile:35,bits:[1,1,1,0,0,1]},
+      {tile:36,bits:[1,1,0,0,1,1]},
+      {tile:37,bits:[1,0,0,1,1,1]}
 ];
 
 // Across indices for each side point e.g. 2 is across from 0 and 3 is across from 5 
@@ -94,8 +100,6 @@ function setup()
 
     mainctx = document.getElementById("myCanvas").getContext("2d");
     ctx=mainctx;
-
-    computeallowed();
 
     drawit();
 }
@@ -137,12 +141,12 @@ function computeallowed()
             }
 
             // Special case for tile 14-19 we do not allow repeats of these tiles
+            if(tileno==16&&(side==1||side==4)&&sideobj.items.indexOf(16)==-1) sideobj.items.push(16);
+            if(tileno==19&&(side==1||side==4)&&sideobj.items.indexOf(19)==-1) sideobj.items.push(19);
             if(tileno==14&&(side==0||side==3)&&sideobj.items.indexOf(14)==-1) sideobj.items.push(14);
-            if(tileno==15&&(side==1||side==4)&&sideobj.items.indexOf(15)==-1) sideobj.items.push(15);
-            if(tileno==16&&(side==2||side==5)&&sideobj.items.indexOf(16)==-1) sideobj.items.push(16);
             if(tileno==17&&(side==0||side==3)&&sideobj.items.indexOf(17)==-1) sideobj.items.push(17);
-            if(tileno==18&&(side==1||side==4)&&sideobj.items.indexOf(18)==-1) sideobj.items.push(18);
-            if(tileno==19&&(side==2||side==5)&&sideobj.items.indexOf(19)==-1) sideobj.items.push(19);
+            if(tileno==15&&(side==2||side==5)&&sideobj.items.indexOf(15)==-1) sideobj.items.push(15);
+            if(tileno==18&&(side==2||side==5)&&sideobj.items.indexOf(18)==-1) sideobj.items.push(18);
 
             tile.nolist.push(sideobj)
         }
@@ -171,6 +175,7 @@ function computeallowed()
         str+="}";
     }
     str+="];\n";
+    
     document.body.innerHTML+="<textarea>"+str+"</textarea>";
  
 //    console.log(tilelist);
@@ -184,7 +189,7 @@ function computeallowed()
 //--------------------------------------------------------------------------
 
 var svgstr="";
-var generatesvg=false;
+var generatesvg=true;
 function drawit()
 {	
     ctx=mainctx;
@@ -459,7 +464,16 @@ function genTile(tileno)
         if(tileno==28) p0=displacerand({x:56,y:33},5,1);
         if(tileno==27) p0=displacerand({x:47,y:18},5,1);
     }
+    if((tileno>31&&tileno<38)){
+        if(tileno==32) p0=displacerand({x:47,y:47},0,1);
+        if(tileno==33) p0=displacerand({x:29,y:47},0,1);
+        if(tileno==34) p0=displacerand({x:21,y:32},0,1);
+        if(tileno==35) p0=displacerand({x:29,y:18},0,1);
+        if(tileno==36) p0=displacerand({x:47,y:18},0,1);
+        if(tileno==37) p0=displacerand({x:56,y:33},0,1);
+    }
 
+    // Midpoint where lines ends at middle of tile side
     var h1=midpoint(p1,p2,2);
     var h2=midpoint(p2,p3,2);
     var h3=midpoint(p3,p4,2);
@@ -538,6 +552,18 @@ function genTile(tileno)
       arra=[h3,p3,p2,p1,p6,p5,h4,p0]; 
     }else if(tileno==31){
       arra=[h2,p2,p1,p6,p5,p4,h3,p0];
+    }else if(tileno==32){
+        arra=[h1,p1,p6,p5,p4,h3,p0];
+    }else if(tileno==33){
+       arra=[h6,p6,p5,p4,p3,h2,p0];
+    }else if(tileno==34){
+      arra=[h5,p5,p4,p3,p2,h1,p0];
+    }else if(tileno==35){
+      arra=[h4,p4,p3,p2,p1,h6,p0];    
+    }else if(tileno==36){
+      arra=[h3,p3,p2,p1,p6,h5,p0];
+    }else if(tileno==37){
+      arra=[h2,p2,p1,p6,p5,h4,p0];
     }
 
     if(tileno>1&&tileno<=40){
@@ -593,6 +619,7 @@ function mouseMove(e){
 		</script>
 </head>
 <body onload="setup();">
+  <div style="width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="computeallowed();">
  	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;" onmousemove="mouseMove(event)" onclick="clickCanvas(event)" oncontextmenu="clickCanvas(event); event.preventDefault();" ></canvas>
  	<canvas id="toolCanvas" width="64" height="900" style="border:1px solid #8000f0;" onmousemove="mouseMove(event)" onclick="clickTools(event)" oncontextmenu="clickTools(event); event.preventDefault();"></canvas>
   <div id="console" style="font-family:AppleII;border:1px solid #381;width:964px;height:200px;white-space:pre;"></div>
