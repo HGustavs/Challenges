@@ -98,7 +98,7 @@ function setup()
             //var tileno=blockTemplate[i][j];
             var tileno=-1;
             var arr=[];
-            for(var k=0;k<32;k++){
+            for(var k=0;k<nlist.length;k++){
                 arr.push(k);
             }
             blocks[i][j]={
@@ -115,7 +115,7 @@ function setup()
 
     updateTools();
 
-    update(Math.floor(Math.random()*blocknox),Math.floor(Math.random()*blockno));
+    update(Math.floor(Math.random()*blocknox),Math.floor(Math.random()*blockno),36);
 
     drawit();
 }
@@ -152,7 +152,7 @@ function drawit()
                 }
             }
 
-            if(blocks[yk][xk].allowed.length<32){
+            if(blocks[yk][xk].allowed.length<38){
                 ctx.strokeStyle='#6f7';
                 ctx.beginPath();
                 ctx.moveTo(21,3);
@@ -162,16 +162,16 @@ function drawit()
                 ctx.lineTo(73,33);
                 ctx.lineTo(56,3);
                 ctx.lineTo(21,3);
-                ctx.stroke();
+                // ctx.stroke();
             }
 
             ctx.beginPath();
             ctx.fillStyle="Black";
             ctx.textBaseline="top";
             ctx.font="14px AppleII";
-            if(blocks[yk][xk].allowed.length<32) ctx.fillText(blocks[yk][xk].allowed.length,32,18);
-            if(blocks[yk][xk].no>-1) ctx.fillText(blocks[yk][xk].no,32,32);
-            ctx.fill();
+            //if(blocks[yk][xk].allowed.length<(nlist.length-1)) ctx.fillText(blocks[yk][xk].allowed.length,32,18);
+            //if(blocks[yk][xk].no>-1) ctx.fillText(blocks[yk][xk].no,32,32);
+            //ctx.fill();
 
             if(xk==lx&&yk==ly){
                 ctx.beginPath();
@@ -295,6 +295,18 @@ function drawTileHex(tileno)
         tile30();
     }else if(tileno==31){
         tile31();
+    }else if(tileno==32){
+        tile32();
+    }else if(tileno==33){
+        tile33();
+    }else if(tileno==34){                    
+        tile34();
+    }else if(tileno==35){   
+        tile35();
+    }else if(tileno==36){                  
+        tile36();
+    }else if(tileno==37){   
+        tile37();
     }
 
 }
@@ -513,9 +525,7 @@ function clickCanvas(e)
         blockTemplate[ty][tx]=tileno;    
     }else if(e.button=2){
         blockTemplate[ty][tx]=0;        
-    }
-
-    consloe.log(tx+" "+ty+" "+e.button);    
+    } 
     
     return false;
 }
@@ -583,7 +593,6 @@ function clickTools(e)
 		</script>
 </head>
 <body onload="setup();">
-  <div style="width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;">
  	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;" onmousemove="mouseMove(event)" onclick="clickCanvas(event)" oncontextmenu="clickCanvas(event); event.preventDefault();" ></canvas>
  	<canvas id="toolCanvas" width="64" height="900" style="border:1px solid #8000f0;" onmousemove="mouseMove(event)" onclick="clickTools(event)" oncontextmenu="clickTools(event); event.preventDefault();"></canvas>
   <div id="console" style="font-family:AppleII;border:1px solid #381;width:964px;height:200px;white-space:pre;"></div>

@@ -24,6 +24,9 @@
 var ctx;
 var mx,my;
 
+var svgstr="";
+var generatesvg=false;
+
 var bitrep=[
       {tile:0 ,bits:[0,0,0,0,0,0]},
       {tile:1 ,bits:[1,1,1,1,1,1]},
@@ -188,8 +191,6 @@ function computeallowed()
 //  Also adds surrounding tiles to queue
 //--------------------------------------------------------------------------
 
-var svgstr="";
-var generatesvg=true;
 function drawit()
 {	
     ctx=mainctx;
@@ -427,7 +428,7 @@ function displacerand(p1,jitter,kind)
 
 function genTile(tileno)
 {
-    var jitter=26;
+    var jitter=24;
 
     var p1={x:57,y:0,kind:0};
     var p2={x:19,y:0,kind:0};
@@ -567,8 +568,9 @@ function genTile(tileno)
     }
 
     if(tileno>1&&tileno<=40){
+        arra=smooth(arra,jitter*0.8);
         arra=smooth(arra,jitter*0.5);
-        arra=smooth(arra,jitter*0.3);
+        arra=smooth(arra,jitter*0.2);        
     }
 
     if(tileno>=1){
@@ -619,7 +621,9 @@ function mouseMove(e){
 		</script>
 </head>
 <body onload="setup();">
-  <div style="width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="computeallowed();">
+  <div style="position:absolute;left:900px;top:8px;width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="computeallowed();">Tilelist</div>
+  <div style="position:absolute;left:900px;top:42px;width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="generatesvg=true;drawit();">Tile Image</div>
+ 
  	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;" onmousemove="mouseMove(event)" onclick="clickCanvas(event)" oncontextmenu="clickCanvas(event); event.preventDefault();" ></canvas>
  	<canvas id="toolCanvas" width="64" height="900" style="border:1px solid #8000f0;" onmousemove="mouseMove(event)" onclick="clickTools(event)" oncontextmenu="clickTools(event); event.preventDefault();"></canvas>
   <div id="console" style="font-family:AppleII;border:1px solid #381;width:964px;height:200px;white-space:pre;"></div>
