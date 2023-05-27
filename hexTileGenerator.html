@@ -71,7 +71,14 @@ var bitrep=[
       {tile:34,bits:[1,1,1,1,0,0]},
       {tile:35,bits:[1,1,1,0,0,1]},
       {tile:36,bits:[1,1,0,0,1,1]},
-      {tile:37,bits:[1,0,0,1,1,1]}
+      {tile:37,bits:[1,0,0,1,1,1]},
+
+      {tile:38,bits:[0,0,0,1,1,1]},
+      {tile:39,bits:[0,0,1,1,1,0]},
+      {tile:40,bits:[0,1,1,1,0,0]},
+      {tile:41,bits:[1,1,1,0,0,0]},
+      {tile:42,bits:[1,1,0,0,0,1]},
+      {tile:43,bits:[1,0,0,0,1,1]}
 ];
 
 // Across indices for each side point e.g. 2 is across from 0 and 3 is across from 5 
@@ -210,7 +217,7 @@ function drawit()
 
     var xk=0;
     var yk=0;
-    for(var i=0;i<40;i++){
+    for(var i=0;i<bitrep.length;i++){
         ctx.save();
         ctx.translate(xk,yk);
         genTile(i);
@@ -260,11 +267,30 @@ function drawPoints(color,pointlist)
     if(generatesvg) svgstr+="' />\n";
 }
 
-function drawCirc(color,p)
+
+function drawLines(color,pnts)
+{
+    ctx.strokeStyle=color;
+    ctx.beginPath();
+    for(var i=0;i<pnts.length;i++){
+        if(i==0){
+            ctx.moveTo(pnts[i].x,pnts[i].y);
+        }else{
+            ctx.lineTo(pnts[i].x,pnts[i].y);
+        }
+    }
+    ctx.stroke();
+
+    for(var i=0;i<pnts.length;i++){
+        drawCirc("#6f4",pnts[i],2);
+    }
+}
+
+function drawCirc(color,p,rr)
 {
     ctx.beginPath();
     ctx.fillStyle=color;
-    ctx.arc(p.x, p.y, 1.5, 0, 2 * Math.PI);
+    ctx.arc(p.x, p.y, rr, 0, 2 * Math.PI);
     ctx.fill();
 }
 
@@ -309,8 +335,8 @@ function smooth(pointarr,jitter)
   for(var i=0;i<pointarr.length;i++){
       var curr=pointarr[i];
       var next=pointarr[(i+1)%pointarr.length];
-      newarr.push(curr);
-      if(curr.kind>0&&next.kind>0) newarr.push(displace(curr,next,jitter,1));
+      newarr.push(curr);      
+      if(next.kind>0&&i<(pointarr.length-1)) newarr.push(displace(curr,next,jitter,1));      
   }
   return newarr;
 }
@@ -426,6 +452,70 @@ function displacerand(p1,jitter,kind)
     return {x:p1.x+magnitudex,y:p1.y+magnitudey,kind:kind};
 }
 
+//--------------------------------------------------------------------------
+// thickLine
+// ---------------
+//  We take a smoothed line and make it thicker
+//--------------------------------------------------------------------------
+
+function thickLine(pnts,startwidth,endwidth,widthjitter,p0,p1,p2,coastarr)
+{
+    var p0dx=p0.x-p1.x;
+    var p0dy=p0.y-p1.y;
+    var len=Math.sqrt((p0dx*p0dx)+(p0dy*p0dy));
+    p0dx/=len;
+    p0dy/=len;
+
+    var l1={x:p1.x+(p0dx*endwidth),y:p1.y+(p0dy*endwidth),kind:0};
+    var l2={x:p1.x-(p0dx*endwidth),y:p1.y-(p0dy*endwidth),kind:0};
+
+    var nextpnt=null;
+    var prevpnt=null;
+
+    for(var i=0;i<coastarr.length-1;i++){
+        if(coastarr[i].x==p2.x&&coastarr[i].y==p2.y){
+            nextpnt=coastarr[i+1];
+        }
+    }
+
+    var p1dx=nextpnt.x-p2.x;
+    var p1dy=nextpnt.y-p2.y;
+    var len=Math.sqrt((p1dx*p1dx)+(p1dy*p1dy));
+    p1dx/=len;
+    p1dy/=len;
+    var l3={x:p2.x,y:p2.y,kind:0};
+    var l4={x:p2.x+(p1dx*startwidth),y:p2.y+(p1dy*startwidth),kind:0};
+ 
+    var tarr=[];
+    var uarr=[];
+
+    uarr.push(l4);
+    uarr.push(l3);
+ 
+    // Forward loop - we go to all except for last
+    var widthd=(endwidth-startwidth)/pnts.length;
+    var currw=startwidth;
+    for(var i=1;i<pnts.length-1;i++){
+        var dx=pnts[i].y-pnts[i+1].y;
+        var dy=-(pnts[i].x-pnts[i+1].x);
+        var len=Math.sqrt((dx*dx)+(dy*dy));
+        dx/=len;
+        dy/=len;
+        var pp={x:pnts[i].x+(dx*currw),y:pnts[i].y+(dy*currw),kind:0};
+        var pt={x:pnts[i].x-(dx*currw),y:pnts[i].y-(dy*currw),kind:0};
+        tarr.unshift(pt);
+        uarr.push(pp);
+        currw+=widthd;
+    }
+    uarr.push(l1);
+    uarr.push(l2);
+    for(var pnt of tarr) uarr.push(pnt);
+    uarr.push(l4);
+
+    return uarr;
+
+}
+
 function genTile(tileno)
 {
     var jitter=24;
@@ -493,96 +583,129 @@ function genTile(tileno)
         arra=[p1,p2,p3,p4,p5,p6];
     }else if(tileno==1){
         arra=[p1,p2,p3,p4,p5,p6];
+
     }else if(tileno==2){
-        arra=[h1,p1,h6,p0];
+        arra=[h6,p0,h1,p1];
     }else if(tileno==3){
-        arra=[h6,p6,h5,p0];
+        arra=[h5,p0,h6,p6];
     }else if(tileno==4){
-        arra=[h5,p5,h4,p0];    
+        arra=[h4,p0,h5,p5];    
     }else if(tileno==5){
-        arra=[h4,p4,h3,p0];
+        arra=[h3,p0,h4,p4];
     }else if(tileno==6){
-        arra=[h3,p3,h2,p0];
+        arra=[h2,p0,h3,p3];
     }else if(tileno==7){
-        arra=[h2,p2,h1,p0];
+        arra=[h1,p0,h2,p2];
+    
     }else if(tileno==8){
-        arra=[h1,p1,p6,h5,p0];    
+        arra=[h5,p0,h1,p1,p6];    
     }else if(tileno==9){
-        arra=[h6,p6,p5,h4,p0];    
+        arra=[h4,p0,h6,p6,p5];    
     }else if(tileno==10){
-        arra=[h5,p5,p4,h3,p0];     
+        arra=[h3,p0,h5,p5,p4];     
     }else if(tileno==11){
-        arra=[h4,p4,p3,h2,p0];      
+        arra=[h2,p0,h4,p4,p3];      
     }else if(tileno==12){
-        arra=[h3,p3,p2,h1,p0];    
+        arra=[h1,p0,h3,p3,p2];    
     }else if(tileno==13){
-        arra=[h2,p2,p1,h6,p0];    
+        arra=[h6,p0,h2,p2,p1];
+
     }else if(tileno==14){
-        arra=[h1,p1,p6,p5,h4,p0];
+        arra=[h4,p0,h1,p1,p6,p5];
     }else if(tileno==15){
-        arra=[h6,p6,p5,p4,h3,p0];
+        arra=[h3,p0,h6,p6,p5,p4];
     }else if(tileno==16){
-        arra=[h5,p5,p4,p3,h2,p0];    
+        arra=[h2,p0,h5,p5,p4,p3];    
     }else if(tileno==17){
-        arra=[h4,p4,p3,p2,h1,p0];    
+        arra=[h1,p0,h4,p4,p3,p2];    
     }else if(tileno==18){
-        arra=[h3,p3,p2,p1,h6,p0];    
+        arra=[h6,p0,h3,p3,p2,p1];    
     }else if(tileno==19){
-        arra=[h2,p2,p1,p6,h5,p0];    
+        arra=[h5,p0,h2,p2,p1,p6];
+
+
     }else if(tileno==20){
-        arra=[h1,p1,p6,p5,p4,h3,p0];
+        arra=[h3,p0,h1,p1,p6,p5,p4];
     }else if(tileno==21){
-       arra=[h6,p6,p5,p4,p3,h2,p0];
+       arra=[h2,p0,h6,p6,p5,p4,p3];
     }else if(tileno==22){
-      arra=[h5,p5,p4,p3,p2,h1,p0];
+      arra=[h1,p0,h5,p5,p4,p3,p2];
     }else if(tileno==23){
-      arra=[h4,p4,p3,p2,p1,h6,p0];    
+      arra=[h6,p0,h4,p4,p3,p2,p1];    
     }else if(tileno==24){
-      arra=[h3,p3,p2,p1,p6,h5,p0];
+      arra=[h5,p0,h3,p3,p2,p1,p6];
     }else if(tileno==25){
-      arra=[h2,p2,p1,p6,p5,h4,p0];
+      arra=[h4,p0,h2,p2,p1,p6,p5];
+
+
     }else if(tileno==26){
-      arra=[h1,p1,p6,p5,p4,p3,h2,p0];    
+      arra=[h2,p0,h1,p1,p6,p5,p4,p3];    
     }else if(tileno==27){
-      arra=[h6,p6,p5,p4,p3,p2,h1,p0]   
+      arra=[h1,p0,h6,p6,p5,p4,p3,p2];   
     }else if(tileno==28){
-      arra=[h5,p5,p4,p3,p2,p1,h6,p0];   
+      arra=[h6,p0,h5,p5,p4,p3,p2,p1];   
     }else if(tileno==29){
-      arra=[h4,p4,p3,p2,p1,p6,h5,p0];   
+      arra=[h5,p0,h4,p4,p3,p2,p1,p6];   
     }else if(tileno==30){
-      arra=[h3,p3,p2,p1,p6,p5,h4,p0]; 
+      arra=[h4,p0,h3,p3,p2,p1,p6,p5]; 
     }else if(tileno==31){
-      arra=[h2,p2,p1,p6,p5,p4,h3,p0];
+      arra=[h3,p0,h2,p2,p1,p6,p5,p4];
+
     }else if(tileno==32){
-        arra=[h1,p1,p6,p5,p4,h3,p0];
+        arra=[h3,p0,h1,p1,p6,p5,p4];
     }else if(tileno==33){
-       arra=[h6,p6,p5,p4,p3,h2,p0];
+       arra=[h2,p0,h6,p6,p5,p4,p3];
     }else if(tileno==34){
-      arra=[h5,p5,p4,p3,p2,h1,p0];
+      arra=[h1,p0,h5,p5,p4,p3,p2];
     }else if(tileno==35){
-      arra=[h4,p4,p3,p2,p1,h6,p0];    
+      arra=[h6,p0,h4,p4,p3,p2,p1];    
     }else if(tileno==36){
-      arra=[h3,p3,p2,p1,p6,h5,p0];
+      arra=[h5,p0,h3,p3,p2,p1,p6];
     }else if(tileno==37){
-      arra=[h2,p2,p1,p6,p5,h4,p0];
+      arra=[h4,p0,h2,p2,p1,p6,p5];
+
+   }else if(tileno==38){
+        arra=[h4,p0,h1,p1,p6,p5];
+    }else if(tileno==39){
+        arra=[h3,p0,h6,p6,p5,p4];
+    }else if(tileno==40){
+        arra=[h2,p0,h5,p5,p4,p3];    
+    }else if(tileno==41){
+        arra=[h1,p0,h4,p4,p3,p2];    
+    }else if(tileno==42){
+        arra=[h6,p0,h3,p3,p2,p1];    
+    }else if(tileno==43){
+        arra=[h5,p0,h2,p2,p1,p6];        
     }
 
-    if(tileno>1&&tileno<=40){
-        arra=smooth(arra,jitter*0.8);
+    if(tileno>1&&tileno<=bitrep.length){
+        arra=smooth(arra,jitter*1.0);
         arra=smooth(arra,jitter*0.5);
-        arra=smooth(arra,jitter*0.2);        
+        arra=smooth(arra,jitter*0.3);        
     }
 
+    // Draw Land
     if(tileno>=1){
         drawPoints("#A67C52",arra);            
     }
 
+    // Draw Shadow / Beach
     if(tileno>=1){
         var arro=offset(arra,5);
         drawPoints("#C69C6D",arro);            
     }
 
-    drawCirc("#d42",p0);
+    if(tileno==38){
+        var arrc=[p0,h6];
+        arrc=smooth(arrc,jitter*0.8);
+        arrc=smooth(arrc,jitter*0.4);
+
+        arrd=thickLine(arrc,8,5,0.4,p6,h6,p0,arra);
+        arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
+        drawPoints("#A67C52",arrd);
+        drawPoints("#29ABE2",arre);
+
+    }
 
     ctx.beginPath();
     ctx.fillStyle="Black";
