@@ -25,7 +25,6 @@ var ctx;
 var mx,my;
 
 var svgstr="";
-var generatesvg=false;
 
 var bitrep=[
       {tile:0 ,bits:[0,0,0,0,0,0]},
@@ -112,6 +111,11 @@ function setup()
     ctx=mainctx;
 
     drawit();
+}
+
+function exportsvg()
+{
+    document.body.innerHTML+="<textarea>"+svgstr+"</textarea>";
 }
 
 function computeallowed()
@@ -202,14 +206,12 @@ function drawit()
 {	
     ctx=mainctx;
 
-    if(generatesvg){
-        svgstr="<?xml version='1.0' encoding='utf-8'?>";
-        svgstr+="<svg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 1920 1080' xml:space='preserve'>\n";
+    svgstr="<?xml version='1.0' encoding='utf-8'?>";
+    svgstr+="<svg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 1920 1080' xml:space='preserve'>\n";
 
-        svgstr+="<g id='ocean'>\n";
-        svgstr+="    <polygon fill='#29ABE2' points='57,0 19,0 0,33 19,66 57,66 76,33 57,0' />\n";
-        svgstr+="</g>\n"
-    }
+    svgstr+="<g id='ocean'>\n";
+    svgstr+="    <polygon fill='#29ABE2' points='57,0 19,0 0,33 19,66 57,66 76,33 57,0' />\n";
+    svgstr+="</g>\n"
 
     ctx.clearRect(0,0,900,900);
     ctx.fillStyle="#888";
@@ -229,42 +231,31 @@ function drawit()
         }        
     }
 
-    if(generatesvg){
-        svgstr+="</svg>";
-        document.body.innerHTML="<textarea>"+svgstr+"</textarea>";
-    }
-
-/*
-    ctx.save();
-    ctx.translate(200,200);
-    ctx.scale(2.0,2.0);
-    genTile(5);
-    ctx.restore();
-*/
+    svgstr+="</svg>";
 
     //window.requestAnimationFrame(drawit);
 }
 
 // Polygon drawing that also generates SVG polygon
 
-function drawPoints(color,pointlist)
+function drawPoints(color,pointlist,state)
 {
     if(pointlist.length==0) return;
-    if(generatesvg) svgstr+="    <polygon fill='"+color+"' points='";
+    if(!state) svgstr+="    <polygon fill='"+color+"' points='";
     ctx.fillStyle=color;
     ctx.beginPath();
     ctx.moveTo(pointlist[0].x,pointlist[0].y);
     for(var i=1;i<pointlist.length;i++){
         ctx.lineTo(pointlist[i].x,pointlist[i].y);
     }
-    if(generatesvg){
+    if(!state){
         for(var i=0;i<pointlist.length;i++){
             svgstr+=(Math.floor(pointlist[i].x*10.0)/10.0)+","+(Math.floor(pointlist[i].y*10.0)/10.0)+" ";
         }
     }
     ctx.lineTo(pointlist[0].x,pointlist[0].y);
     ctx.fill();
-    if(generatesvg) svgstr+="' />\n";
+    if(!state) svgstr+="' />\n";
 }
 
 
@@ -572,11 +563,12 @@ function genTile(tileno)
     var h5=midpoint(p5,p6,2);
     var h6=midpoint(p6,p1,2);
 
-    if(generatesvg) svgstr+="<g id='tile"+tileno+"'>\n";
+    svgstr+="<g id='tile"+tileno+"'>\n";
 
     var arr=[p1,p2,p3,p4,p5,p6];
 
-    if(!generatesvg) drawPoints("#29ABE2",arr);
+    // Skip ocean
+    drawPoints("#29ABE2",arr,true);
     
     var arra;
     if(tileno==0){
@@ -666,22 +658,33 @@ function genTile(tileno)
 
    }else if(tileno==38){
         arra=[h4,p0,h1,p1,p6,p5];
-    }else if(tileno==39){
-        arra=[h3,p0,h6,p6,p5,p4];
+   }else if(tileno==39){
+        arra=[h4,p0,h1,p1,p6,p5];
     }else if(tileno==40){
-        arra=[h2,p0,h5,p5,p4,p3];    
+        arra=[h3,p0,h6,p6,p5,p4];
     }else if(tileno==41){
-        arra=[h1,p0,h4,p4,p3,p2];    
+        arra=[h3,p0,h6,p6,p5,p4];
     }else if(tileno==42){
-        arra=[h6,p0,h3,p3,p2,p1];    
+        arra=[h2,p0,h5,p5,p4,p3];    
     }else if(tileno==43){
+        arra=[h2,p0,h5,p5,p4,p3];    
+
+    }else if(tileno==44){
+        arra=[h1,p0,h4,p4,p3,p2];    
+    }else if(tileno==45){
+        arra=[h6,p0,h3,p3,p2,p1];    
+    }else if(tileno==46){
         arra=[h5,p0,h2,p2,p1,p6];        
     }
 
-    if(tileno>1&&tileno<=bitrep.length){
+    // The smallest tiles are smoothed less to get fewer artifacts
+    if((tileno>1&&tileno<8)||(tileno>25&&tileno<32)){
+        arra=smooth(arra,jitter*0.8);
+        arra=smooth(arra,jitter*0.4);    
+    }else if(tileno>1&&tileno<=bitrep.length){
         arra=smooth(arra,jitter*1.0);
         arra=smooth(arra,jitter*0.5);
-        arra=smooth(arra,jitter*0.3);        
+        arra=smooth(arra,jitter*0.3);            
     }
 
     // Draw Land
@@ -699,12 +702,44 @@ function genTile(tileno)
         var arrc=[p0,h6];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
-
         arrd=thickLine(arrc,8,5,0.4,p6,h6,p0,arra);
         arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
-        drawPoints("#A67C52",arrd);
-        drawPoints("#29ABE2",arre);
+    }else if(tileno==39){
+        var arrc=[p0,h5];
+        arrc=smooth(arrc,jitter*0.8);
+        arrc=smooth(arrc,jitter*0.4);
+        arrd=thickLine(arrc,8,5,0.4,p5,h5,p0,arra);
+        arre=thickLine(arrc,3,1.5,0.4,p5,h5,p0,arra);
+    }else if(tileno==40){
+        var arrc=[p0,h5];
+        arrc=smooth(arrc,jitter*0.8);
+        arrc=smooth(arrc,jitter*0.4);
+        arrd=thickLine(arrc,8,5,0.4,p5,h5,p0,arra);
+        arre=thickLine(arrc,3,1.5,0.4,p5,h5,p0,arra);
+    }else if(tileno==41){
+        var arrc=[p0,h4];
+        arrc=smooth(arrc,jitter*0.8);
+        arrc=smooth(arrc,jitter*0.4);
+        arrd=thickLine(arrc,8,5,0.4,p4,h4,p0,arra);
+        arre=thickLine(arrc,3,1.5,0.4,p4,h4,p0,arra);
+    }else if(tileno==42){
+        var arrc=[p0,h4];
+        arrc=smooth(arrc,jitter*0.8);
+        arrc=smooth(arrc,jitter*0.4);
+        arrd=thickLine(arrc,8,5,0.4,p4,h4,p0,arra);
+        arre=thickLine(arrc,3,1.5,0.4,p4,h4,p0,arra);
+    }else if(tileno==43){
+        var arrc=[p0,h3];
+        arrc=smooth(arrc,jitter*0.8);
+        arrc=smooth(arrc,jitter*0.4);
+        arrd=thickLine(arrc,8,5,0.4,p3,h3,p0,arra);
+        arre=thickLine(arrc,3,1.5,0.4,p3,h3,p0,arra);
+    }
 
+
+    if(tileno==38||tileno==39||tileno==40||tileno==41||tileno==42||tileno==43){
+        drawPoints("#A67C52",arrd);
+//        drawPoints("#29ABE2",arre);
     }
 
     ctx.beginPath();
@@ -745,7 +780,7 @@ function mouseMove(e){
 </head>
 <body onload="setup();">
   <div style="position:absolute;left:900px;top:8px;width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="computeallowed();">Tilelist</div>
-  <div style="position:absolute;left:900px;top:42px;width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="generatesvg=true;drawit();">Tile Image</div>
+  <div style="position:absolute;left:900px;top:42px;width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="exportsvg();">Tile Image</div>
  
  	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;" onmousemove="mouseMove(event)" onclick="clickCanvas(event)" oncontextmenu="clickCanvas(event); event.preventDefault();" ></canvas>
  	<canvas id="toolCanvas" width="64" height="900" style="border:1px solid #8000f0;" onmousemove="mouseMove(event)" onclick="clickTools(event)" oncontextmenu="clickTools(event); event.preventDefault();"></canvas>
