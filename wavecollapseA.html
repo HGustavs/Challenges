@@ -162,7 +162,7 @@ function drawit()
                 ctx.lineTo(73,33);
                 ctx.lineTo(56,3);
                 ctx.lineTo(21,3);
-                // ctx.stroke();
+                ctx.stroke();
             }
 
             ctx.beginPath();
@@ -170,8 +170,8 @@ function drawit()
             ctx.textBaseline="top";
             ctx.font="14px AppleII";
             //if(blocks[yk][xk].allowed.length<(nlist.length-1)) ctx.fillText(blocks[yk][xk].allowed.length,32,18);
-            //if(blocks[yk][xk].no>-1) ctx.fillText(blocks[yk][xk].no,32,32);
-            //ctx.fill();
+            if(blocks[yk][xk].no>-1) ctx.fillText(blocks[yk][xk].no,32,32);
+            ctx.fill();
 
             if(xk==lx&&yk==ly){
                 ctx.beginPath();

@@ -7,29 +7,148 @@
 			  // https://heredragonsabound.blogspot.com/2016/10/making-islands.html
 			  // http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/
         // https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0193350
+        // https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
 
+        // Cell list
 				var cells=[
-							[[0.41,0.66],[0.62,0.73],[0.11,0.21],[0.64,0.94],[0.38,0.29],[0.22,0.72],[0.53,0.65],[0.38,0.24],[0.66,0.37],[0.71,0.34],],
-							[[0.93,0.49],[0.21,0.61],[0.56,0.29],[0.17,0.56],[0.62,0.37],[0.6,0.68],[0.47,0.78],[0.53,0.1],[0.08,0.73],[0.38,0.11],],
-							[[0.47,0.86],[0.94,0.26],[0.97,0.95],[0.17,0.56],[0.97,0.59],[0.41,0.39],[0.56,0.36],[0.65,0.46],[0.38,0.35],[0.1,0.33],],
-							[[0.38,0.33],[0.25,0.04],[0.51,0.35],[0.26,0.32],[0.79,0.35],[0.76,0.48],[0.76,0.96],[0.92,0.52],[0.34,0.99],[0.24,0.11],],
-							[[0.55,0.85],[0.67,0.74],[0.48,0.78],[0.22,0.08],[0.62,0.43],[0.23,0.14],[0.91,0.36],[0.97,0.9],[0.94,0.43],[0.79,0.84],],
-							[[0.18,0.05],[0.53,0.23],[0.1,0.47],[0.47,0.79],[0.23,0.89],[0.71,0.92],[0.52,0.04],[0.62,0.69],[0.15,0.69],[0.34,0.94],],
-							[[0.31,0.45],[0.67,0.93],[0.63,0.2],[0.2,0.56],[0.8,0.59],[0.18,0.34],[0.5,0.82],[0.94,0.33],[0.17,0.8],[0.67,0.92],],
-							[[0.27,0.1],[0.13,0.11],[0.2,0.8],[0.74,0.54],[0.42,0.06],[0.81,0.63],[0.57,0.96],[0.5,0.76],[0.31,0.39],[0.63,0.02],],
-							[[0.74,0.01],[0.74,0.38],[0.06,0.22],[0.65,0.09],[0.2,0.07],[0.5,0.6],[0.49,0.57],[0.09,0.1],[0.11,0.03],[0.55,0.73],],
-							[[0.18,0.42],[0.43,0.68],[0.99,0.66],[0.54,0.04],[0.56,0.15],[0.84,0.7],[0.73,0.75],[0.65,0.03],[0.89,0.37],[0.44,0.1],],
-				];
+                    [{x:0,y:0,cellx:19.777906535314187,celly:31.935605494631876},{x:0,y:50,cellx:32.21179302566675,celly:21.55633292032346},{x:0,y:100,cellx:34.30906944812747,celly:29.534533236479792},{x:0,y:150,cellx:29.86647877884864,celly:22.439805002121062},{x:0,y:200,cellx:15.95531404128969,celly:35.41347641776015},{x:0,y:250,cellx:31.961161617094778,celly:36.980502441523754},{x:0,y:300,cellx:36.091218672525095,celly:25.333755724365975},{x:0,y:350,cellx:15.291478140548973,celly:24.545704887024158},{x:0,y:400,cellx:31.336685996002792,celly:35.610972983464784},{x:0,y:450,cellx:16.44000445456676,celly:36.30444194627768}],
+                    [{x:50,y:0,cellx:29.218721128527932,celly:36.143832644558934},{x:50,y:50,cellx:15.393803134433895,celly:35.63632470049537},{x:50,y:100,cellx:31.54372770441072,celly:13.409888040754838},{x:50,y:150,cellx:26.304053523113243,celly:34.34022015102347},{x:50,y:200,cellx:14.188343975870932,celly:18.892380766681885},{x:50,y:250,cellx:23.861409382380643,celly:18.96813461455298},{x:50,y:300,cellx:23.848998756948557,celly:36.63512191472155},{x:50,y:350,cellx:24.921026558504508,celly:23.787948437116782},{x:50,y:400,cellx:34.285871504060275,celly:23.596799124249458},{x:50,y:450,cellx:18.90129441242811,celly:34.96262602571077}],
+                    [{x:100,y:0,cellx:28.27046351947154,celly:22.828984395373503},{x:100,y:50,cellx:18.96137354764086,celly:20.01671581552782},{x:100,y:100,cellx:21.740667040290727,celly:21.492778109535102},{x:100,y:150,cellx:20.863618552870395,celly:21.34570392718015},{x:100,y:200,cellx:21.019302683939763,celly:19.585057601228854},{x:100,y:250,cellx:20.372980520903695,celly:32.688819369006495},{x:100,y:300,cellx:27.01982374981574,celly:14.904716736396498},{x:100,y:350,cellx:13.260451324140748,celly:31.477372647596713},{x:100,y:400,cellx:14.876630834793989,celly:22.80111216695493},{x:100,y:450,cellx:21.85733258518888,celly:25.864161640305692}],
+                    [{x:150,y:0,cellx:20.023740150237792,celly:21.56274020531042},{x:150,y:50,cellx:18.96872026524856,celly:35.035716590522455},{x:150,y:100,cellx:27.828214567303334,celly:35.131922374586516},{x:150,y:150,cellx:31.643130582241717,celly:33.97023336167714},{x:150,y:200,cellx:20.70983863625484,celly:20.823613362465025},{x:150,y:250,cellx:17.977037464013918,celly:17.634537546404626},{x:150,y:300,cellx:32.44823418768137,celly:27.98389532620637},{x:150,y:350,cellx:28.879960709388612,celly:16.644727158636375},{x:150,y:400,cellx:19.654323886550642,celly:25.877763577801037},{x:150,y:450,cellx:24.042028692893442,celly:21.851918047960286}],
+                    [{x:200,y:0,cellx:37.392339763382225,celly:28.45501867331737},{x:200,y:50,cellx:14.923897872134514,celly:19.711865784502386},{x:200,y:100,cellx:21.557037205986166,celly:29.345937533197944},{x:200,y:150,cellx:22.378297309025555,celly:15.605730567639903},{x:200,y:200,cellx:16.755324434787582,celly:20.025122111849058},{x:200,y:250,cellx:16.955509945938175,celly:34.89584928384786},{x:200,y:300,cellx:31.799398595408903,celly:35.18792362521939},{x:200,y:350,cellx:30.93046282931488,celly:33.51042183142084},{x:200,y:400,cellx:18.669402424521902,celly:17.487982669809888},{x:200,y:450,cellx:15.858456031042872,celly:29.52829074733653}],
+                    [{x:250,y:0,cellx:33.20975087763052,celly:25.1534626789174},{x:250,y:50,cellx:23.002228255613012,celly:20.509894564818552},{x:250,y:100,cellx:36.97668381561299,celly:13.694430690068627},{x:250,y:150,cellx:32.40209466787368,celly:23.692184993337563},{x:250,y:200,cellx:24.203088395612863,celly:15.659345060080554},{x:250,y:250,cellx:14.670566122365065,celly:32.60279309034711},{x:250,y:300,cellx:14.7452073487741,celly:20.72357953101246},{x:250,y:350,cellx:32.70216275172933,celly:16.96413244556885},{x:250,y:400,cellx:22.519449243942365,celly:28.128247450923123},{x:250,y:450,cellx:17.298041744528216,celly:32.387888660723725}],
+                    [{x:300,y:0,cellx:22.125058478128906,celly:31.456104852872254},{x:300,y:50,cellx:16.990018005835864,celly:34.19773964381021},{x:300,y:100,cellx:30.37599254304095,celly:17.093619923268637},{x:300,y:150,cellx:20.61880815057977,celly:13.168671142028243},{x:300,y:200,cellx:29.285843371644994,celly:23.609914407336657},{x:300,y:250,cellx:23.295759912959994,celly:26.6546778487145},{x:300,y:300,cellx:17.640789040523877,celly:22.608948317487453},{x:300,y:350,cellx:31.71116505315101,celly:16.923765467480834},{x:300,y:400,cellx:27.338720166446763,celly:32.50932668859916},{x:300,y:450,cellx:36.6635944395242,celly:20.529271934198196}],
+                    [{x:350,y:0,cellx:36.88093076232384,celly:18.665037467480374},{x:350,y:50,cellx:35.818953654266714,celly:25.325986572035138},{x:350,y:100,cellx:15.922729766671093,celly:23.074726218117465},{x:350,y:150,cellx:31.65805940398193,celly:16.33850362147102},{x:350,y:200,cellx:21.694781429324223,celly:15.557070507704346},{x:350,y:250,cellx:20.12517417600017,celly:32.36196442960738},{x:350,y:300,cellx:21.456515307891017,celly:36.45765419826024},{x:350,y:350,cellx:23.529216067574936,celly:19.32857949520272},{x:350,y:400,cellx:28.5123217747471,celly:23.111824005875125},{x:350,y:450,cellx:35.04068190948203,celly:34.774896277993626}],
+                    [{x:400,y:0,cellx:35.173916243137555,celly:36.34439732101441},{x:400,y:50,cellx:18.459361775360613,celly:16.61897479410468},{x:400,y:100,cellx:35.27702107905246,celly:35.05913200970389},{x:400,y:150,cellx:27.971639260325514,celly:21.482709377003935},{x:400,y:200,cellx:33.80575254238908,celly:13.933685712929861},{x:400,y:250,cellx:23.869200731837,celly:21.83681649248236},{x:400,y:300,cellx:23.36367943963309,celly:20.063344798176104},{x:400,y:350,cellx:32.74467650925148,celly:34.34055710305335},{x:400,y:400,cellx:33.64647970014795,celly:34.960271175018754},{x:400,y:450,cellx:22.567835889855793,celly:15.311439703878754}],
+                    [{x:450,y:0,cellx:21.653706204200294,celly:34.59477172250841},{x:450,y:50,cellx:22.09463596132377,celly:16.411315570151217},{x:450,y:100,cellx:27.970611000003302,celly:29.218601390868},{x:450,y:150,cellx:29.723711133853712,celly:29.777336006913373},{x:450,y:200,cellx:36.37701263351631,celly:19.60164910386951},{x:450,y:250,cellx:19.96923082741754,celly:13.349454119548291},{x:450,y:300,cellx:30.10639983805985,celly:17.024042965897877},{x:450,y:350,cellx:36.166975681616904,celly:30.71946986344654},{x:450,y:400,cellx:13.364338260900006,celly:36.01545071475603},{x:450,y:450,cellx:37.25953218222877,celly:36.85590301553291}]
+                  ];
+
+
+        var points=[];
+
+        var triangles=[];
+
+        var cellX=10;
+        var cellY=10;
+        var cellWidth=50;
+        var cellHalf=cellWidth*0.5;
+
+        function maketriangle(x1,y1,x2,y2,x3,y3)
+        {
+            var p1=-1;
+            var p2=-1;
+            var p3=-1;
+            for(var i=0;i<points.length;i++){
+                var point=points[i];
+                if(point.x==x1&&point.y==y1) p1=i;
+                if(point.x==x2&&point.y==y2) p2=i;
+                if(point.x==x3&&point.y==y3) p3=i;
+            }
+            if(p1==-1){
+                p1=points.length;
+                points.push({x:x1,y:y1,lines:[]});
+            }
+            if(p2==-1){
+                p2=points.length;
+                points.push({x:x2,y:y2,lines:[]});
+
+            }
+            if(p3==-1){
+                p3=points.length;
+                points.push({x:x3,y:y3,lines:[]});
+            }
+
+            triangles.push({p1:p1,p2:p2,p3:p3});
+
+            points[p1].lines.push({p1:p1,p2:p2});
+            points[p2].lines.push({p1:p2,p2:p3});
+            points[p3].lines.push({p1:p3,p2:p1});
+        }
+
+        function sortline(a,b)
+        {
+            // Compute vectors
+            dxa=points[a.p2].x-points[a.p1].x;
+            dya=points[a.p2].y-points[a.p1].y;
+            dxb=points[b.p2].x-points[b.p1].x;
+            dyb=points[b.p2].y-points[b.p1].y;
+
+            return (dxa*dyb) - (dya*dxb);
+        }
+
+        function intersect(x1, y1, x2, y2, x3, y3, x4, y4, kind) {
+
+          // Check if none of the lines are of length 0
+        	if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
+        		return false
+        	}
+
+        	denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1))
+
+          // Lines are parallel
+        	if (denominator === 0) {
+        		return false
+        	}
+
+        	let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator
+        	let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator
+
+          // Return a object with the x and y coordinates of the intersection
+        	let x = x1 + ua * (x2 - x1)
+        	let y = y1 + ua * (y2 - y1)
+
+        	return {x:x, y:y}
+        }        
 			
 				function setup()
 				{
 						var cc = document.getElementById("myCanvas");
 				    c = cc.getContext("2d");
+
+            // Generate cells - comment section out for default data
+            /*
+            for(var i=0;i<cellY;i++){
+                var cellrow=[];
+                for(var j=0;j<cellX;j++){
+                    var rx=Math.random()-0.5;
+                    var ry=Math.random()-0.5;
+                    cellrow.push({x:i*cellWidth,y:j*cellWidth,cellx:cellHalf+(cellHalf*rx),celly:cellHalf+(cellHalf*ry)});
+                }
+                cells.push(cellrow);
+            }
+            */
 					
+            // Generate triangles from cells
+						for(var i=0;i<(cells.length-1);i++){
+								for(var j=0;j<(cells[i].length-1);j++){
+
+                    var cell=cells[i][j];
+                    var cellRight=cells[i][j+1];
+                    var cellUnder=cells[i+1][j];
+                    var cellDiago=cells[i+1][j+1];
+
+                    maketriangle(cell.x+cell.cellx,cell.y+cell.celly,cellRight.x+cellRight.cellx,cellRight.y+cellRight.celly,cellUnder.x+cellUnder.cellx,cellUnder.y+cellUnder.celly);
+                    maketriangle(cellRight.x+cellRight.cellx,cellRight.y+cellRight.celly,cellDiago.x+cellDiago.cellx,cellDiago.y+cellDiago.celly,cellUnder.x+cellUnder.cellx,cellUnder.y+cellUnder.celly);
+
+								}
+						}
+
 						setInterval(updatestate,20);
 					
 						drawit();
 				}
+
+        function normal(p1,p2)
+        {
+                var dy=(-(p2.x-p1.x))*10;
+                var dx=(p2.y-p1.y)*10;
+
+                var midx=(p1.x+p2.x)*0.5;
+                var midy=(p1.y+p2.y)*0.5;
+
+                return {x1:midx-dx,y1:midy-dy,x2:midx+dx,y2:midy+dy};  
+        
+        }
 								
 				function updatestate()
 				{
@@ -58,71 +177,91 @@
 						c.clearRect(0,0,900,900);
 					
 						c.font="20px Arial Narrow";
-						c.fillText("Mb:"+mb+" "+mx+" "+my,100,50);
-					
-						for(var i=0;i<cells.length-1;i++){
-								for(var j=0;j<cells[i].length-1;j++){
-										c.strokeStyle="#000";
-										c.beginPath();
-										c.rect(50+(i*50),50+(j*50),50,50);
-										c.stroke();
-									
-										c.strokeStyle="#46A";
-
-//										c.arc(50+(i*50)+(cells[i][j][0]*50), 50+(j*50)+(cells[i][j][1]*50), 5, 0, 2 * Math.PI);
-									
-										p1={x:50+(i*50)+(cells[i][j][0]*50),y:50+(j*50)+(cells[i][j][1]*50)};
-										p2={x:50+((i+1)*50)+(cells[i+1][j][0]*50),y:50+(j*50)+(cells[i+1][j][1]*50)};
-										p3={x:50+((i+1)*50)+(cells[i+1][j+1][0]*50),y:50+((j+1)*50)+(cells[i+1][j+1][1]*50)};
-										p4={x:50+((i)*50)+(cells[i][j+1][0]*50),y:50+((j+1)*50)+(cells[i][j+1][1]*50)};
-									
-										if((i%2)==0){
-												/*
-												c.beginPath();											
-												c.moveTo(p1.x,p1.y);
-												c.lineTo(p2.x,p2.y);
-												c.lineTo(p3.x,p3.y);
-												c.lineTo(p1.x,p1.y);
-											
-												c.moveTo(p3.x,p3.y);
-												c.lineTo(p4.x,p4.y);
-												c.lineTo(p1.x,p1.y);
-												c.lineTo(p3.x,p3.y);											
-												c.stroke();
-												*/
-										}else{
-												c.beginPath();												
-												c.moveTo(p1.x,p1.y);
-												c.lineTo(p2.x,p2.y);
-												c.lineTo(p4.x,p4.y);
-												c.lineTo(p1.x,p1.y);
-												c.moveTo(p2.x,p2.y);
-												c.lineTo(p4.x,p4.y);
-												c.lineTo(p3.x,p3.y);
-												c.lineTo(p2.x,p2.y);											
-												c.stroke(); 										
-										}
+						c.textBaseline = 'middle';
+            c.fillText("Mb:"+mb+" "+mx+" "+my,100,50);
 										
-								}
-						}
-					
+            for(var i=0;i<points.length;i++){
+                    var point=points[i];
+										c.fillStyle="#A46";
+                    c.beginPath();
+										c.arc(point.x,point.y, 2, 0, 2 * Math.PI);
+                    c.fill();  
 
-						window.requestAnimationFrame(drawit);
+                    c.fillText(i,point.x+3,point.y);
+            }
+
+            /*
+            for(var i=0;i<triangles.length;i++){
+                var triangle=triangles[i];
+                c.beginPath();
+                c.moveTo(points[triangle.p1].x,points[triangle.p1].y);
+                c.lineTo(points[triangle.p2].x,points[triangle.p2].y);
+                c.lineTo(points[triangle.p3].x,points[triangle.p3].y);
+                c.lineTo(points[triangle.p1].x,points[triangle.p1].y);
+                c.fill();
+            }
+            */
+
+            for(var j=30;j<49;j++){
+                points[j].lines.sort(sortline);
+
+                var polygon=[];
+                for(var i=0;i<(points[j].lines.length-1);i++){
+                    var lines=points[j].lines;
+
+                    var line=normal(points[lines[i].p1],points[lines[i].p2]);
+                    if(i==(points[11].lines.length-1)){
+                        var next=normal(points[lines[0].p1],points[lines[0].p2]);                
+                    }else{
+                        var next=normal(points[lines[i+1].p1],points[lines[i+1].p2]);
+                    }
+
+                    var pnt=intersect(line.x1,line.y1,line.x2,line.y2,next.x1,next.y1,next.x2,next.y2);
+
+                    polygon.push(pnt);
+
+                }
+
+                c.beginPath();
+                var i=0;
+                for(point of polygon){
+                    if(i==0){
+                        c.moveTo(point.x,point.y);
+                    }else{
+                        c.lineTo(point.x,point.y);
+                    }
+                    i++;
+                }
+                c.closePath();
+                c.stroke();
+            }
+
+//						window.requestAnimationFrame(drawit);
 				} 			
 			
 				function generate(){
-						for(var i=0;i<10;i++){
-								str="[";
-								for(var j=0;j<10;j++){
-										str+="[";
-										str+=(Math.floor(Math.random()*100))/100;
-										str+=","+(Math.floor(Math.random()*100))/100;							
-										str+="]";
-										if(j<10) str+=",";
+						str="[";
+						for(var i=0;i<cellY;i++){
+                var cellrow=cells[i];
+                if(i>0) str+=",\n";
+								str+="[";
+								for(var j=0;j<cellX;j++){
+                    var cell=cellrow[j];
+                    if(j>0) str+=",";
+                    var k=0;
+                    str+="{";
+                    for (const property in cell) {
+                        if(k>0) str+=","
+                        str+=property+":"+cell[property];
+                        k++;
+                    }
+                    str+="}";
 								}
-								str+="]";
-								console.log(str);
+					      str+="]";
 						}
+					  str+="]\n";
+						alert(str);            
+
 				}
 			
 			
@@ -130,4 +269,5 @@
 </head>
 <body onload="setup();">
  	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+  <button onclick="generate();">Render</button>
 </body>

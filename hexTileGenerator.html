@@ -84,8 +84,9 @@ var bitrep=[
       {tile:46,bits:[1,1,0,0,0,1,0,2,0,0,0,0]},
       {tile:47,bits:[1,1,0,0,0,1,2,0,0,0,0,0]},
       {tile:48,bits:[1,0,0,0,1,1,2,0,0,0,0,0]},
-      {tile:49,bits:[1,0,0,0,1,1,0,0,0,0,0,2]}
+      {tile:49,bits:[1,0,0,0,1,1,0,0,0,0,0,2]},
 
+      {tile:50,bits:[1,1,1,1,1,1,0,0,2,0,0,2]}
 ];
 
 // Across indices for each side point e.g. 2 is across from 0 and 3 is across from 5 
@@ -163,8 +164,10 @@ function computeallowed()
                             lst.push(innertile);
                         }    
                     }else{
-                        // If inner tile matches on relevant side bits
-                        lst.push(innertile);                    
+                        // If inner tile matches on relevant side bits but not 
+                        if(inner.bits[item[5]]!=2){
+                            lst.push(innertile);
+                        }
                     }
                 }
             }
@@ -693,6 +696,8 @@ function genTile(tileno)
         arra=[h5,p0,h2,p2,p1,p6];        
     }else if(tileno==49){
         arra=[h5,p0,h2,p2,p1,p6]; 
+   }else if(tileno==50){
+        arra=[p1,p2,p3,p4,p5,p6];
     }
 
     // The smallest tiles are smoothed less to get fewer artifacts
@@ -788,11 +793,25 @@ function genTile(tileno)
         arrc=smooth(arrc,jitter*0.4);
         arrd=thickLine(arrc,8,5,0.4,p6,h6,p0,arra);
         arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
+    }else if(tileno==50){
+        var arrc=[h3,h6];
+        arrc=smooth(arrc,jitter*1.1);
+        arrc=smooth(arrc,jitter*0.8);
+        arrc=smooth(arrc,jitter*0.5);
+
+        //arrd=thickLine(arrc,8,5,0.4,p6,h6,h3,arra);
+        //arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
     }
 
+    // River start tiles
     if(tileno==38||tileno==39||tileno==40||tileno==41||tileno==42||tileno==43||tileno==44||tileno==45||tileno==46||tileno==47||tileno==48||tileno==49){
         drawPoints("#A67C52",arrd);
 //        drawPoints("#29ABE2",arre);
+    }
+    // Full river tiles
+    if(tileno==50){
+//        drawPoints("#A67C52",arrd);
+        drawLines("#fff",arrc);
     }
 
     ctx.beginPath();
@@ -832,8 +851,8 @@ function mouseMove(e){
 		</script>
 </head>
 <body onload="setup();">
-  <div style="position:absolute;left:900px;top:8px;width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="computeallowed();">Tilelist</div>
-  <div style="position:absolute;left:900px;top:42px;width:128px;height:32px;border-radius:6px;background:#15D;color:#000;font-family:AppleII;" onclick="exportsvg();">Tile Image</div>
+  <div style="position:absolute;left:900px;top:8px;width:128px;height:44px;border-radius:6px;background:#15D;color:#fff;font-family:AppleII;" onclick="computeallowed();">Tilelist</div>
+  <div style="position:absolute;left:900px;top:54px;width:128px;height:44px;border-radius:6px;background:#15D;color:#fff;font-family:AppleII;" onclick="exportsvg();">Tile Image</div>
  
  	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;" onmousemove="mouseMove(event)" onclick="clickCanvas(event)" oncontextmenu="clickCanvas(event); event.preventDefault();" ></canvas>
  	<canvas id="toolCanvas" width="64" height="900" style="border:1px solid #8000f0;" onmousemove="mouseMove(event)" onclick="clickTools(event)" oncontextmenu="clickTools(event); event.preventDefault();"></canvas>
