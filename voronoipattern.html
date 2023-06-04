@@ -8,6 +8,8 @@
 			  // http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/
         // https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0193350
         // https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
+        // https://www.youtube.com/watch?v=Y5X1TvN9TpM
+        // https://www.youtube.com/watch?v=jxOAU7YfypA
 
         // Cell list
 				var cells=[
@@ -23,6 +25,7 @@
                     [{x:450,y:0,cellx:21.653706204200294,celly:34.59477172250841},{x:450,y:50,cellx:22.09463596132377,celly:16.411315570151217},{x:450,y:100,cellx:27.970611000003302,celly:29.218601390868},{x:450,y:150,cellx:29.723711133853712,celly:29.777336006913373},{x:450,y:200,cellx:36.37701263351631,celly:19.60164910386951},{x:450,y:250,cellx:19.96923082741754,celly:13.349454119548291},{x:450,y:300,cellx:30.10639983805985,celly:17.024042965897877},{x:450,y:350,cellx:36.166975681616904,celly:30.71946986344654},{x:450,y:400,cellx:13.364338260900006,celly:36.01545071475603},{x:450,y:450,cellx:37.25953218222877,celly:36.85590301553291}]
                   ];
 
+        var spatial=[];
 
         var points=[];
 
@@ -32,6 +35,10 @@
         var cellY=10;
         var cellWidth=50;
         var cellHalf=cellWidth*0.5;
+
+        // Spatial hashing function
+        var hashheight=300;
+        var blocksize=30;
 
         function maketriangle(x1,y1,x2,y2,x3,y3)
         {
@@ -68,10 +75,10 @@
         function sortline(a,b)
         {
             // Compute vectors
-            dxa=points[a.p2].x-points[a.p1].x;
-            dya=points[a.p2].y-points[a.p1].y;
-            dxb=points[b.p2].x-points[b.p1].x;
-            dyb=points[b.p2].y-points[b.p1].y;
+            dxa=points[a.p1].x-points[a.p2].x;
+            dya=points[a.p1].y-points[a.p2].y;
+            dxb=points[b.p1].x-points[b.p2].x;
+            dyb=points[b.p1].y-points[b.p2].y;
 
             return (dxa*dyb) - (dya*dxb);
         }
@@ -99,43 +106,136 @@
 
         	return {x:x, y:y}
         }        
-			
+
+        function randomColor()
+        {
+            var R=Math.floor(Math.random()*255);
+            var G=Math.floor(Math.random()*255);
+            var B=Math.floor(Math.random()*255);
+
+            return "RGB("+R+","+G+","+B+")";
+        }
+
+        function getPoint(xk,yk,diagram)
+        {
+            if(xk<0||yk<0||xk>=hashheight||yk>=hashheight) return -1;
+
+            return diagram[yk][xk];
+        }
+
+        function addArr(xk,yk,diagram,arr)
+        {
+            var point=getPoint(xk,yk,diagram);
+            if(point!=-1){
+                if(arr.indexOf(point)==-1){
+                    arr.push(point);
+                }
+            }
+        }
+
+        function countSurround(xk,yk,diagram)
+        {
+            var arr=[];
+            addArr(xk+1,yk,diagram,arr);
+            addArr(xk-1,yk,diagram,arr);
+            
+            addArr(xk,yk+1,diagram,arr);
+            addArr(xk,yk-1,diagram,arr);
+            
+            addArr(xk+1,yk+1,diagram,arr);
+            addArr(xk+1,yk-1,diagram,arr);
+            addArr(xk-1,yk+1,diagram,arr);
+            addArr(xk-1,yk-1,diagram,arr);
+
+            return arr.length;
+        }
+
+        function makepoint(points,treshold,xk,yk)
+        {
+            for(point of points){
+                let dx=xk-point.x;
+                let dy=yk-point.y;
+                if(((dx*dx)+(dy*dy))<(treshold*treshold)) return point;
+            }
+            var newpoint={x:xk,y:yk,idlist:[]};
+            points.push(newpoint);
+            return newpoint;
+        }
+
+        var spatialhash=[];
+        var points=[];
+
 				function setup()
 				{
 						var cc = document.getElementById("myCanvas");
 				    c = cc.getContext("2d");
 
-            // Generate cells - comment section out for default data
-            /*
-            for(var i=0;i<cellY;i++){
-                var cellrow=[];
-                for(var j=0;j<cellX;j++){
-                    var rx=Math.random()-0.5;
-                    var ry=Math.random()-0.5;
-                    cellrow.push({x:i*cellWidth,y:j*cellWidth,cellx:cellHalf+(cellHalf*rx),celly:cellHalf+(cellHalf*ry)});
-                }
-                cells.push(cellrow);
+            // Generate pointlist
+            for(var i=0;i<20;i++){
+                var xk=Math.random()*hashheight;
+                var yk=Math.random()*hashheight;
+                var newpoint={x:xk,y:yk,id:i,col:randomColor()};
+                points.push(newpoint);
+
+                var hx=Math.round(xk/blocksize);
+                var hy=Math.round(yk/blocksize);
+                if(typeof spatialhash[hy]=="undefined") spatialhash[hy]=[];
+                if(typeof spatialhash[hy][hx]=="undefined") spatialhash[hy][hx]=[];
+                spatialhash[hy][hx].push(newpoint);
             }
-            */
+
+            // Draw approximate voronoi diagram
+            var diagram=[];
+            for(var yk=0;yk<hashheight;yk++){
+                diagram[yk]=[];
+                for(var xk=0;xk<hashheight;xk++){
+                    var hx=Math.round(xk/blocksize);
+                    var hy=Math.round(yk/blocksize);
+                    // Closest point
+                    var closest=10000000;
+                    var closestpnt=null
+                    for(var pnt of points){
+                        var dx=xk-pnt.x;
+                        var dy=yk-pnt.y;
+                        var len=(dx*dx)+(dy*dy);
+                        if(len<closest){
+                            closest=len;
+                            closestpnt=pnt;  
+                        }
+                    }
+                    diagram[yk][xk]=closestpnt.id;
+
+                    c.fillStyle=closestpnt.col;
+                    c.fillRect(xk,yk,1,1);
+                }
+            }
+
+            // Find corner points
+            var pointlist=[];
+            for(var yk=0;yk<hashheight;yk++){
+                for(var xk=0;xk<hashheight;xk++){
+                    var cnt=countSurround(xk,yk,diagram);
+                    var curr=getPoint(xk,yk,diagram);
+                    if(cnt>2){
+                        var pnt=makepoint(pointlist,3,xk,yk);
+                        pnt.idlist.push(curr);
+                    }
+                }
+            }
+
+            for(var i=0;i<pointlist.length;i++){
+                    var point=pointlist[i];
+										c.fillStyle="#FFF";
+                    c.beginPath();
+										c.arc(point.x,point.y, 1, 0, 2 * Math.PI);
+                    c.fill();  
+
+                    c.fillText(i,point.x+3,point.y);
+            }
+
+						// setInterval(updatestate,20);
 					
-            // Generate triangles from cells
-						for(var i=0;i<(cells.length-1);i++){
-								for(var j=0;j<(cells[i].length-1);j++){
-
-                    var cell=cells[i][j];
-                    var cellRight=cells[i][j+1];
-                    var cellUnder=cells[i+1][j];
-                    var cellDiago=cells[i+1][j+1];
-
-                    maketriangle(cell.x+cell.cellx,cell.y+cell.celly,cellRight.x+cellRight.cellx,cellRight.y+cellRight.celly,cellUnder.x+cellUnder.cellx,cellUnder.y+cellUnder.celly);
-                    maketriangle(cellRight.x+cellRight.cellx,cellRight.y+cellRight.celly,cellDiago.x+cellDiago.cellx,cellDiago.y+cellDiago.celly,cellUnder.x+cellUnder.cellx,cellUnder.y+cellUnder.celly);
-
-								}
-						}
-
-						setInterval(updatestate,20);
-					
-						drawit();
+						//drawit();
 				}
 
         function normal(p1,p2)
@@ -180,16 +280,6 @@
 						c.textBaseline = 'middle';
             c.fillText("Mb:"+mb+" "+mx+" "+my,100,50);
 										
-            for(var i=0;i<points.length;i++){
-                    var point=points[i];
-										c.fillStyle="#A46";
-                    c.beginPath();
-										c.arc(point.x,point.y, 2, 0, 2 * Math.PI);
-                    c.fill();  
-
-                    c.fillText(i,point.x+3,point.y);
-            }
-
             /*
             for(var i=0;i<triangles.length;i++){
                 var triangle=triangles[i];
@@ -202,10 +292,11 @@
             }
             */
 
-            for(var j=30;j<49;j++){
+            for(var j=23;j<24;j++){
                 points[j].lines.sort(sortline);
 
                 var polygon=[];
+                //for(var i=1;i<2;i++){
                 for(var i=0;i<(points[j].lines.length-1);i++){
                     var lines=points[j].lines;
 
@@ -216,7 +307,20 @@
                         var next=normal(points[lines[i+1].p1],points[lines[i+1].p2]);
                     }
 
+                    console.log(lines[i].p1,lines[i].p2);
+
+/*
+                    c.beginPath();
+                    c.moveTo(line.x1,line.y1);
+                    c.lineTo(line.x2,line.y2);
+                    c.moveTo(next.x1,next.y1);
+                    c.lineTo(next.x2,next.y2);
+                    c.stroke();
+*/
                     var pnt=intersect(line.x1,line.y1,line.x2,line.y2,next.x1,next.y1,next.x2,next.y2);
+
+                    c.fillStyle="#6A4";
+                    c.fillText(i,pnt.x+3,pnt.y);
 
                     polygon.push(pnt);
 
@@ -234,6 +338,14 @@
                 }
                 c.closePath();
                 c.stroke();
+            		
+                c.fillStyle="#A46";
+                for(point of polygon){
+                    c.beginPath();
+										c.arc(point.x,point.y, 2, 0, 2 * Math.PI);
+                    c.fill();                  
+                }
+
             }
 
 //						window.requestAnimationFrame(drawit);
