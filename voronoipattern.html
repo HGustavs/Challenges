@@ -10,26 +10,7 @@
         // https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
         // https://www.youtube.com/watch?v=Y5X1TvN9TpM
         // https://www.youtube.com/watch?v=jxOAU7YfypA
-
-        // Cell list
-				var cells=[
-                    [{x:0,y:0,cellx:19.777906535314187,celly:31.935605494631876},{x:0,y:50,cellx:32.21179302566675,celly:21.55633292032346},{x:0,y:100,cellx:34.30906944812747,celly:29.534533236479792},{x:0,y:150,cellx:29.86647877884864,celly:22.439805002121062},{x:0,y:200,cellx:15.95531404128969,celly:35.41347641776015},{x:0,y:250,cellx:31.961161617094778,celly:36.980502441523754},{x:0,y:300,cellx:36.091218672525095,celly:25.333755724365975},{x:0,y:350,cellx:15.291478140548973,celly:24.545704887024158},{x:0,y:400,cellx:31.336685996002792,celly:35.610972983464784},{x:0,y:450,cellx:16.44000445456676,celly:36.30444194627768}],
-                    [{x:50,y:0,cellx:29.218721128527932,celly:36.143832644558934},{x:50,y:50,cellx:15.393803134433895,celly:35.63632470049537},{x:50,y:100,cellx:31.54372770441072,celly:13.409888040754838},{x:50,y:150,cellx:26.304053523113243,celly:34.34022015102347},{x:50,y:200,cellx:14.188343975870932,celly:18.892380766681885},{x:50,y:250,cellx:23.861409382380643,celly:18.96813461455298},{x:50,y:300,cellx:23.848998756948557,celly:36.63512191472155},{x:50,y:350,cellx:24.921026558504508,celly:23.787948437116782},{x:50,y:400,cellx:34.285871504060275,celly:23.596799124249458},{x:50,y:450,cellx:18.90129441242811,celly:34.96262602571077}],
-                    [{x:100,y:0,cellx:28.27046351947154,celly:22.828984395373503},{x:100,y:50,cellx:18.96137354764086,celly:20.01671581552782},{x:100,y:100,cellx:21.740667040290727,celly:21.492778109535102},{x:100,y:150,cellx:20.863618552870395,celly:21.34570392718015},{x:100,y:200,cellx:21.019302683939763,celly:19.585057601228854},{x:100,y:250,cellx:20.372980520903695,celly:32.688819369006495},{x:100,y:300,cellx:27.01982374981574,celly:14.904716736396498},{x:100,y:350,cellx:13.260451324140748,celly:31.477372647596713},{x:100,y:400,cellx:14.876630834793989,celly:22.80111216695493},{x:100,y:450,cellx:21.85733258518888,celly:25.864161640305692}],
-                    [{x:150,y:0,cellx:20.023740150237792,celly:21.56274020531042},{x:150,y:50,cellx:18.96872026524856,celly:35.035716590522455},{x:150,y:100,cellx:27.828214567303334,celly:35.131922374586516},{x:150,y:150,cellx:31.643130582241717,celly:33.97023336167714},{x:150,y:200,cellx:20.70983863625484,celly:20.823613362465025},{x:150,y:250,cellx:17.977037464013918,celly:17.634537546404626},{x:150,y:300,cellx:32.44823418768137,celly:27.98389532620637},{x:150,y:350,cellx:28.879960709388612,celly:16.644727158636375},{x:150,y:400,cellx:19.654323886550642,celly:25.877763577801037},{x:150,y:450,cellx:24.042028692893442,celly:21.851918047960286}],
-                    [{x:200,y:0,cellx:37.392339763382225,celly:28.45501867331737},{x:200,y:50,cellx:14.923897872134514,celly:19.711865784502386},{x:200,y:100,cellx:21.557037205986166,celly:29.345937533197944},{x:200,y:150,cellx:22.378297309025555,celly:15.605730567639903},{x:200,y:200,cellx:16.755324434787582,celly:20.025122111849058},{x:200,y:250,cellx:16.955509945938175,celly:34.89584928384786},{x:200,y:300,cellx:31.799398595408903,celly:35.18792362521939},{x:200,y:350,cellx:30.93046282931488,celly:33.51042183142084},{x:200,y:400,cellx:18.669402424521902,celly:17.487982669809888},{x:200,y:450,cellx:15.858456031042872,celly:29.52829074733653}],
-                    [{x:250,y:0,cellx:33.20975087763052,celly:25.1534626789174},{x:250,y:50,cellx:23.002228255613012,celly:20.509894564818552},{x:250,y:100,cellx:36.97668381561299,celly:13.694430690068627},{x:250,y:150,cellx:32.40209466787368,celly:23.692184993337563},{x:250,y:200,cellx:24.203088395612863,celly:15.659345060080554},{x:250,y:250,cellx:14.670566122365065,celly:32.60279309034711},{x:250,y:300,cellx:14.7452073487741,celly:20.72357953101246},{x:250,y:350,cellx:32.70216275172933,celly:16.96413244556885},{x:250,y:400,cellx:22.519449243942365,celly:28.128247450923123},{x:250,y:450,cellx:17.298041744528216,celly:32.387888660723725}],
-                    [{x:300,y:0,cellx:22.125058478128906,celly:31.456104852872254},{x:300,y:50,cellx:16.990018005835864,celly:34.19773964381021},{x:300,y:100,cellx:30.37599254304095,celly:17.093619923268637},{x:300,y:150,cellx:20.61880815057977,celly:13.168671142028243},{x:300,y:200,cellx:29.285843371644994,celly:23.609914407336657},{x:300,y:250,cellx:23.295759912959994,celly:26.6546778487145},{x:300,y:300,cellx:17.640789040523877,celly:22.608948317487453},{x:300,y:350,cellx:31.71116505315101,celly:16.923765467480834},{x:300,y:400,cellx:27.338720166446763,celly:32.50932668859916},{x:300,y:450,cellx:36.6635944395242,celly:20.529271934198196}],
-                    [{x:350,y:0,cellx:36.88093076232384,celly:18.665037467480374},{x:350,y:50,cellx:35.818953654266714,celly:25.325986572035138},{x:350,y:100,cellx:15.922729766671093,celly:23.074726218117465},{x:350,y:150,cellx:31.65805940398193,celly:16.33850362147102},{x:350,y:200,cellx:21.694781429324223,celly:15.557070507704346},{x:350,y:250,cellx:20.12517417600017,celly:32.36196442960738},{x:350,y:300,cellx:21.456515307891017,celly:36.45765419826024},{x:350,y:350,cellx:23.529216067574936,celly:19.32857949520272},{x:350,y:400,cellx:28.5123217747471,celly:23.111824005875125},{x:350,y:450,cellx:35.04068190948203,celly:34.774896277993626}],
-                    [{x:400,y:0,cellx:35.173916243137555,celly:36.34439732101441},{x:400,y:50,cellx:18.459361775360613,celly:16.61897479410468},{x:400,y:100,cellx:35.27702107905246,celly:35.05913200970389},{x:400,y:150,cellx:27.971639260325514,celly:21.482709377003935},{x:400,y:200,cellx:33.80575254238908,celly:13.933685712929861},{x:400,y:250,cellx:23.869200731837,celly:21.83681649248236},{x:400,y:300,cellx:23.36367943963309,celly:20.063344798176104},{x:400,y:350,cellx:32.74467650925148,celly:34.34055710305335},{x:400,y:400,cellx:33.64647970014795,celly:34.960271175018754},{x:400,y:450,cellx:22.567835889855793,celly:15.311439703878754}],
-                    [{x:450,y:0,cellx:21.653706204200294,celly:34.59477172250841},{x:450,y:50,cellx:22.09463596132377,celly:16.411315570151217},{x:450,y:100,cellx:27.970611000003302,celly:29.218601390868},{x:450,y:150,cellx:29.723711133853712,celly:29.777336006913373},{x:450,y:200,cellx:36.37701263351631,celly:19.60164910386951},{x:450,y:250,cellx:19.96923082741754,celly:13.349454119548291},{x:450,y:300,cellx:30.10639983805985,celly:17.024042965897877},{x:450,y:350,cellx:36.166975681616904,celly:30.71946986344654},{x:450,y:400,cellx:13.364338260900006,celly:36.01545071475603},{x:450,y:450,cellx:37.25953218222877,celly:36.85590301553291}]
-                  ];
-
-        var spatial=[];
-
-        var points=[];
-
-        var triangles=[];
+        // https://www.youtube.com/watch?v=PdV7sCb0k3M
 
         var cellX=10;
         var cellY=10;
@@ -37,48 +18,24 @@
         var cellHalf=cellWidth*0.5;
 
         // Spatial hashing function
-        var hashheight=300;
+        var hashheight=500;
         var blocksize=30;
 
-        function maketriangle(x1,y1,x2,y2,x3,y3)
-        {
-            var p1=-1;
-            var p2=-1;
-            var p3=-1;
-            for(var i=0;i<points.length;i++){
-                var point=points[i];
-                if(point.x==x1&&point.y==y1) p1=i;
-                if(point.x==x2&&point.y==y2) p2=i;
-                if(point.x==x3&&point.y==y3) p3=i;
-            }
-            if(p1==-1){
-                p1=points.length;
-                points.push({x:x1,y:y1,lines:[]});
-            }
-            if(p2==-1){
-                p2=points.length;
-                points.push({x:x2,y:y2,lines:[]});
+        // Hitpoint array
+        var hits=[];
 
-            }
-            if(p3==-1){
-                p3=points.length;
-                points.push({x:x3,y:y3,lines:[]});
-            }
-
-            triangles.push({p1:p1,p2:p2,p3:p3});
-
-            points[p1].lines.push({p1:p1,p2:p2});
-            points[p2].lines.push({p1:p2,p2:p3});
-            points[p3].lines.push({p1:p3,p2:p1});
-        }
+        // List of polygons
+        var polygons=[];
+        var points=[];
+        var lines=[];
 
         function sortline(a,b)
         {
             // Compute vectors
-            dxa=points[a.p1].x-points[a.p2].x;
-            dya=points[a.p1].y-points[a.p2].y;
-            dxb=points[b.p1].x-points[b.p2].x;
-            dyb=points[b.p1].y-points[b.p2].y;
+            dxa=a.cx-a.x;
+            dya=a.cy-a.y;
+            dxb=b.cx-b.x;
+            dyb=b.cy-b.y;
 
             return (dxa*dyb) - (dya*dxb);
         }
@@ -105,7 +62,54 @@
         	let y = y1 + ua * (y2 - y1)
 
         	return {x:x, y:y}
-        }        
+        }     
+
+        function makepolygon(polydata,treshold,col,id)
+        {
+              var indexlist=[];
+              var polygon={col:col,id:id};
+              for(point of polydata){
+                  var found=-1;
+                  for(var i=0;i<points.length;i++){
+                      var innerpoint=points[i];
+                      dx=innerpoint.x-point.x;
+                      dy=innerpoint.y-point.y;
+                      if(Math.sqrt((dx*dx)+(dy*dy))<treshold){
+                          found=i;
+                          break;
+                      }
+                  }
+                  if(found==-1){
+                      found=points.length;
+                      points.push({x:point.x,y:point.y});
+                  }
+
+                  // Same point only appears once in polygon 
+                  if(indexlist.indexOf(found)==-1) indexlist.push(found);
+              }
+
+              // Add non duplicated lines
+              for(var i=0;i<indexlist.length;i++){
+                  var curr=indexlist[i];
+                  if(i<(indexlist.length-1)){
+                      var next=indexlist[i+1];
+                  }else{
+                      var next=indexlist[0];
+                  }
+                  var found=false;
+                  for(line of lines){
+                      if(line.p1==curr&&line.p2==next) found=true;
+                      if(line.p1==next&&line.p2==curr) found=true;
+                  }
+                  if(!found) lines.push({p1:curr,p2:next});
+              }
+
+              // Only three edged polygons or more are processed
+              if(indexlist.length>2){
+                  polygon.pointlist=indexlist;
+                  polygons.push(polygon);
+              }
+        }   
 
         function randomColor()
         {
@@ -150,20 +154,41 @@
             return arr.length;
         }
 
-        function makepoint(points,treshold,xk,yk)
+        function makehit(hits,treshold,xk,yk)
         {
-            for(point of points){
+            for(point of hits){
                 let dx=xk-point.x;
                 let dy=yk-point.y;
                 if(((dx*dx)+(dy*dy))<(treshold*treshold)) return point;
             }
             var newpoint={x:xk,y:yk,idlist:[]};
-            points.push(newpoint);
+            hits.push(newpoint);
             return newpoint;
         }
 
-        var spatialhash=[];
-        var points=[];
+        function polysmooth(polygon,offset)
+        {
+            var set=[];
+
+            // Check for wrong length
+            if(polygon.length<3) return set;
+
+            for(var i=0;i<polygon.length;i++){
+                if(i==0){
+                    var prev=polygon[(polygon.length-1)];
+                }else{
+                    var prev=polygon[i-1];
+                }
+                if(i==(polygon.length-1)){
+                    var next=polygon[0];
+                }else{
+                    next=polygon[i+1];
+                }
+                var curr=polygon[i];
+                
+            }
+            return set;
+        }
 
 				function setup()
 				{
@@ -171,17 +196,11 @@
 				    c = cc.getContext("2d");
 
             // Generate pointlist
-            for(var i=0;i<20;i++){
+            for(var i=0;i<30;i++){
                 var xk=Math.random()*hashheight;
                 var yk=Math.random()*hashheight;
                 var newpoint={x:xk,y:yk,id:i,col:randomColor()};
-                points.push(newpoint);
-
-                var hx=Math.round(xk/blocksize);
-                var hy=Math.round(yk/blocksize);
-                if(typeof spatialhash[hy]=="undefined") spatialhash[hy]=[];
-                if(typeof spatialhash[hy][hx]=="undefined") spatialhash[hy][hx]=[];
-                spatialhash[hy][hx].push(newpoint);
+                hits.push(newpoint);
             }
 
             // Draw approximate voronoi diagram
@@ -194,7 +213,7 @@
                     // Closest point
                     var closest=10000000;
                     var closestpnt=null
-                    for(var pnt of points){
+                    for(var pnt of hits){
                         var dx=xk-pnt.x;
                         var dy=yk-pnt.y;
                         var len=(dx*dx)+(dy*dy);
@@ -204,51 +223,73 @@
                         }
                     }
                     diagram[yk][xk]=closestpnt.id;
-
-                    c.fillStyle=closestpnt.col;
-                    c.fillRect(xk,yk,1,1);
                 }
             }
 
-            // Find corner points
+            // Find corner points and add current to point
             var pointlist=[];
             for(var yk=0;yk<hashheight;yk++){
                 for(var xk=0;xk<hashheight;xk++){
                     var cnt=countSurround(xk,yk,diagram);
                     var curr=getPoint(xk,yk,diagram);
                     if(cnt>2){
-                        var pnt=makepoint(pointlist,3,xk,yk);
+                        var pnt=makehit(pointlist,2,xk,yk);
                         pnt.idlist.push(curr);
                     }
                 }
             }
 
-            for(var i=0;i<pointlist.length;i++){
-                    var point=pointlist[i];
-										c.fillStyle="#FFF";
-                    c.beginPath();
-										c.arc(point.x,point.y, 1, 0, 2 * Math.PI);
-                    c.fill();  
+            // Iterate over polygons and collect voronoi points
+            for(var i=0;i<hits.length;i++){
+                var point=hits[i];
+                // Go over all points 
+                var polygon=[];
+                for(listpoint of pointlist){
+                    if(listpoint.idlist.indexOf(point.id)!=-1) polygon.push({x:listpoint.x,y:listpoint.y,cx:point.x,cy:point.y});
+                }
+                // Sort polygon clockwise
+                polygon.sort(sortline);
 
-                    c.fillText(i,point.x+3,point.y);
+                // Smooth polygon
+                polysmooth(polygon,0.2);
+
+                makepolygon(polygon,5,point.col,point.id);
             }
+
+            // Draw polygons
+            for(polygon of polygons){
+                // Draw polygon
+                c.fillStyle=polygon.col;
+                c.beginPath();
+                var lepoints=polygon.pointlist;
+                for(var j=0;j<lepoints.length;j++){
+                    var pointid=lepoints[j];
+                    if(j==0){
+                        c.moveTo(points[pointid].x,points[pointid].y);
+                    }else{
+                        c.lineTo(points[pointid].x,points[pointid].y);
+                    }
+                }
+                c.closePath();
+                c.fill();
+            }
+
+            c.lineWidth=3.0;
+            c.strokeStyle="#352";
+            c.beginPath();
+            for(line of lines){
+                c.moveTo(points[line.p1].x,points[line.p1].y);
+                c.lineTo(points[line.p2].x,points[line.p2].y);
+            }
+            c.stroke();
+
+
+
 
 						// setInterval(updatestate,20);
 					
 						//drawit();
 				}
-
-        function normal(p1,p2)
-        {
-                var dy=(-(p2.x-p1.x))*10;
-                var dx=(p2.y-p1.y)*10;
-
-                var midx=(p1.x+p2.x)*0.5;
-                var midy=(p1.y+p2.y)*0.5;
-
-                return {x1:midx-dx,y1:midy-dy,x2:midx+dx,y2:midy+dy};  
-        
-        }
 								
 				function updatestate()
 				{
@@ -279,74 +320,6 @@
 						c.font="20px Arial Narrow";
 						c.textBaseline = 'middle';
             c.fillText("Mb:"+mb+" "+mx+" "+my,100,50);
-										
-            /*
-            for(var i=0;i<triangles.length;i++){
-                var triangle=triangles[i];
-                c.beginPath();
-                c.moveTo(points[triangle.p1].x,points[triangle.p1].y);
-                c.lineTo(points[triangle.p2].x,points[triangle.p2].y);
-                c.lineTo(points[triangle.p3].x,points[triangle.p3].y);
-                c.lineTo(points[triangle.p1].x,points[triangle.p1].y);
-                c.fill();
-            }
-            */
-
-            for(var j=23;j<24;j++){
-                points[j].lines.sort(sortline);
-
-                var polygon=[];
-                //for(var i=1;i<2;i++){
-                for(var i=0;i<(points[j].lines.length-1);i++){
-                    var lines=points[j].lines;
-
-                    var line=normal(points[lines[i].p1],points[lines[i].p2]);
-                    if(i==(points[11].lines.length-1)){
-                        var next=normal(points[lines[0].p1],points[lines[0].p2]);                
-                    }else{
-                        var next=normal(points[lines[i+1].p1],points[lines[i+1].p2]);
-                    }
-
-                    console.log(lines[i].p1,lines[i].p2);
-
-/*
-                    c.beginPath();
-                    c.moveTo(line.x1,line.y1);
-                    c.lineTo(line.x2,line.y2);
-                    c.moveTo(next.x1,next.y1);
-                    c.lineTo(next.x2,next.y2);
-                    c.stroke();
-*/
-                    var pnt=intersect(line.x1,line.y1,line.x2,line.y2,next.x1,next.y1,next.x2,next.y2);
-
-                    c.fillStyle="#6A4";
-                    c.fillText(i,pnt.x+3,pnt.y);
-
-                    polygon.push(pnt);
-
-                }
-
-                c.beginPath();
-                var i=0;
-                for(point of polygon){
-                    if(i==0){
-                        c.moveTo(point.x,point.y);
-                    }else{
-                        c.lineTo(point.x,point.y);
-                    }
-                    i++;
-                }
-                c.closePath();
-                c.stroke();
-            		
-                c.fillStyle="#A46";
-                for(point of polygon){
-                    c.beginPath();
-										c.arc(point.x,point.y, 2, 0, 2 * Math.PI);
-                    c.fill();                  
-                }
-
-            }
 
 //						window.requestAnimationFrame(drawit);
 				} 			
