@@ -465,39 +465,10 @@ function offset(pointarr,magnitude)
 //  We take a smoothed line and make it thicker
 //--------------------------------------------------------------------------
 
-function thickLine(pnts,startwidth,endwidth,widthjitter,p0,p1,p2,coastarr)
+function thickLine(pnts,startwidth,endwidth,widthjitter)
 {
-    var p0dx=p0.x-p1.x;
-    var p0dy=p0.y-p1.y;
-    var len=Math.sqrt((p0dx*p0dx)+(p0dy*p0dy));
-    p0dx/=len;
-    p0dy/=len;
-
-    var l1={x:p1.x+(p0dx*endwidth),y:p1.y+(p0dy*endwidth),kind:0};
-    var l2={x:p1.x-(p0dx*endwidth),y:p1.y-(p0dy*endwidth),kind:0};
-
-    var nextpnt=null;
-    var prevpnt=null;
-
-    for(var i=0;i<coastarr.length-1;i++){
-        if(coastarr[i].x==p2.x&&coastarr[i].y==p2.y){
-            nextpnt=coastarr[i+1];
-        }
-    }
-
-    var p1dx=nextpnt.x-p2.x;
-    var p1dy=nextpnt.y-p2.y;
-    var len=Math.sqrt((p1dx*p1dx)+(p1dy*p1dy));
-    p1dx/=len;
-    p1dy/=len;
-    var l3={x:p2.x,y:p2.y,kind:0};
-    var l4={x:p2.x+(p1dx*startwidth),y:p2.y+(p1dy*startwidth),kind:0};
- 
     var tarr=[];
     var uarr=[];
-
-    uarr.push(l4);
-    uarr.push(l3);
  
     // Forward loop - we go to all except for last
     var widthd=(endwidth-startwidth)/pnts.length;
@@ -514,10 +485,7 @@ function thickLine(pnts,startwidth,endwidth,widthjitter,p0,p1,p2,coastarr)
         uarr.push(pp);
         currw+=widthd;
     }
-    uarr.push(l1);
-    uarr.push(l2);
     for(var pnt of tarr) uarr.push(pnt);
-    uarr.push(l4);
 
     return uarr;
 
@@ -720,8 +688,7 @@ function genTile(tileno)
         var arro=offset(arra,5);
         drawPoints("#C69C6D",arro);            
     }
-
-    if(tileno==38){
+    if(tileno==38){ 
         var arrc=[p0,h6];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
@@ -733,7 +700,7 @@ function genTile(tileno)
         arrc=smooth(arrc,jitter*0.4);
         arrd=thickLine(arrc,8,5,0.4,p5,h5,p0,arra);
         arre=thickLine(arrc,3,1.5,0.4,p5,h5,p0,arra);
-    }else if(tileno==40){
+    }/*else if(tileno==40){
         var arrc=[p0,h5];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
@@ -799,19 +766,39 @@ function genTile(tileno)
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.5);
 
+
+
         //arrd=thickLine(arrc,8,5,0.4,p6,h6,h3,arra);
         //arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
     }
+*/
 
     // River start tiles
     if(tileno==38||tileno==39||tileno==40||tileno==41||tileno==42||tileno==43||tileno==44||tileno==45||tileno==46||tileno==47||tileno==48||tileno==49){
-        drawPoints("#A67C52",arrd);
+       // drawPoints("#A67C52",arrd);
 //        drawPoints("#29ABE2",arre);
     }
     // Full river tiles
     if(tileno==50){
 //        drawPoints("#A67C52",arrd);
         drawLines("#fff",arrc);
+    }
+
+    if(tileno==38){
+        var mid=Math.floor(arra.length*0.5);
+        drawCirc("#fff",arra[mid-1],3);
+        drawCirc("#fff",arra[mid+1],3);
+
+        var arrc=[arra[mid],h6];
+        arrc=smooth(arrc,jitter*0.8);
+        arrc=smooth(arrc,jitter*0.4);
+        // drawLines("#fff",arrc);
+
+        arrd=thickLine(arrc,6,2,0.4);
+        drawLines("#fff",arrd);                
+        
+        //arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
+
     }
 
     ctx.beginPath();

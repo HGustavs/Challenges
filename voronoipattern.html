@@ -186,6 +186,18 @@
                 }
                 var curr=polygon[i];
                 
+                var dx=(prev.x-curr.x)*offset;
+                var dy=(prev.y-curr.y)*offset;
+                var ex=(next.x-curr.x)*offset;
+                var ey=(next.y-curr.y)*offset;
+
+                var mpx=((curr.x+ex)+(curr.y+dx))*0.5;
+                var mpy=((curr.y+ey)+(curr.y+dy))*0.5;
+
+                set.push({x:curr.x+dx,y:curr.y+dy});
+                set.push({x:curr.x+ex,y:curr.y+ey});
+
+
             }
             return set;
         }
@@ -251,9 +263,10 @@
                 polygon.sort(sortline);
 
                 // Smooth polygon
-                polysmooth(polygon,0.2);
+                other=polysmooth(polygon,0.2);
+                other=polysmooth(other,0.2);
 
-                makepolygon(polygon,5,point.col,point.id);
+                makepolygon(other,5,point.col,point.id);
             }
 
             // Draw polygons
@@ -274,7 +287,7 @@
                 c.fill();
             }
 
-            c.lineWidth=3.0;
+            c.lineWidth=1.0;
             c.strokeStyle="#352";
             c.beginPath();
             for(line of lines){
