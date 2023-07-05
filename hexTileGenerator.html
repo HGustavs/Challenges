@@ -284,19 +284,23 @@ function drawPoints(color,pointlist,state)
 
 function drawLines(color,pnts)
 {
-    ctx.strokeStyle=color;
-    ctx.beginPath();
-    for(var i=0;i<pnts.length;i++){
-        if(i==0){
-            ctx.moveTo(pnts[i].x,pnts[i].y);
-        }else{
-            ctx.lineTo(pnts[i].x,pnts[i].y);
+    if(pnts.length>2){
+        ctx.strokeStyle=color;
+        ctx.beginPath();
+        for(var i=0;i<pnts.length;i++){
+            if(i==0){
+                ctx.moveTo(pnts[i].x,pnts[i].y);
+            }else{
+                ctx.lineTo(pnts[i].x,pnts[i].y);
+            }
         }
-    }
-    ctx.stroke();
+        ctx.lineTo(pnts[0].x,pnts[0].y);
 
-    for(var i=0;i<pnts.length;i++){
-        drawCirc("#6f4",pnts[i],2);
+        ctx.stroke();
+
+        for(var i=0;i<pnts.length;i++){
+            drawCirc("#6f4",pnts[i],2);
+        }
     }
 }
 
@@ -331,6 +335,22 @@ function normalVec(p1,p2,magnitude,invert)
     dy=(dy/len)*magnitude;
 
     return {x:dx,y:dy};    
+}
+
+function offsetVec(p1,p2,magnitude,invert)
+{
+    var dx=p1.x-p2.x;
+    var dy=p1.y-p2.y;    
+    var len=Math.sqrt((dx*dx)+(dy*dy));
+    dx=(dx/len)*magnitude;
+    dy=(dy/len)*magnitude;
+
+    if(invert){
+        return {x:p1.x+dx,y:p1.y+dy};        
+    }else{
+        return {x:p1.x-dx,y:p1.y-dy};        
+    }
+
 }
 
 function normalize(p1,p2)
@@ -465,11 +485,13 @@ function offset(pointarr,magnitude)
 //  We take a smoothed line and make it thicker
 //--------------------------------------------------------------------------
 
-function thickLine(pnts,startwidth,endwidth,widthjitter)
+function thickLine(pnts,startwidth,endwidth,widthjitter,startpnt,endpnt)
 {
     var tarr=[];
     var uarr=[];
  
+    for(pnt of startpnt) uarr.push(pnt);
+
     // Forward loop - we go to all except for last
     var widthd=(endwidth-startwidth)/pnts.length;
     var currw=startwidth;
@@ -485,6 +507,7 @@ function thickLine(pnts,startwidth,endwidth,widthjitter)
         uarr.push(pp);
         currw+=widthd;
     }
+    for(var pnt of endpnt) uarr.push(pnt);    
     for(var pnt of tarr) uarr.push(pnt);
 
     return uarr;
@@ -688,25 +711,33 @@ function genTile(tileno)
         var arro=offset(arra,5);
         drawPoints("#C69C6D",arro);            
     }
+
+    var mid=Math.floor(arra.length*0.5);
     if(tileno==38){ 
-        var arrc=[p0,h6];
+        var arrc=[arra[mid],h6];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p6,h6,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
+        arrd=thickLine(arrc,8,2,0.4,[arra[mid+2],arra[mid],arra[mid-2]],[offsetVec(h6,p6,8,false),offsetVec(h6,p6,8,true)]);
+        arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h6,p6,3,false),offsetVec(h6,p6,3,true)]);               
+        drawPoints("#A67C52",arrd);            
+        drawPoints("#29ABE2",arre);            
     }else if(tileno==39){
-        var arrc=[p0,h5];
+        var arrc=[arra[mid],h5];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p5,h5,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p5,h5,p0,arra);
-    }/*else if(tileno==40){
-        var arrc=[p0,h5];
+        arrd=thickLine(arrc,8,2,0.4,[arra[mid+2],arra[mid],arra[mid-2]],[offsetVec(h5,p5,8,false),offsetVec(h5,p5,8,true)]);
+        arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h5,p5,3,false),offsetVec(h5,p5,3,true)]);               
+        drawPoints("#A67C52",arrd);            
+        drawPoints("#29ABE2",arre); 
+    }else if(tileno==40){
+        var arrc=[arra[mid],h5];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p5,h5,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p5,h5,p0,arra);
-    }else if(tileno==41){
+        arrd=thickLine(arrc,8,2,0.4,[arra[mid+2],arra[mid],arra[mid-2]],[offsetVec(h5,p5,8,false),offsetVec(h5,p5,8,true)]);
+        arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h5,p5,3,false),offsetVec(h5,p5,3,true)]);               
+        drawPoints("#A67C52",arrd);            
+        drawPoints("#29ABE2",arre); 
+    }/*else if(tileno==41){
         var arrc=[p0,h4];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
@@ -781,24 +812,7 @@ function genTile(tileno)
     // Full river tiles
     if(tileno==50){
 //        drawPoints("#A67C52",arrd);
-        drawLines("#fff",arrc);
-    }
-
-    if(tileno==38){
-        var mid=Math.floor(arra.length*0.5);
-        drawCirc("#fff",arra[mid-1],3);
-        drawCirc("#fff",arra[mid+1],3);
-
-        var arrc=[arra[mid],h6];
-        arrc=smooth(arrc,jitter*0.8);
-        arrc=smooth(arrc,jitter*0.4);
-        // drawLines("#fff",arrc);
-
-        arrd=thickLine(arrc,6,2,0.4);
-        drawLines("#fff",arrd);                
-        
-        //arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
-
+//        drawLines("#fff",arrc);
     }
 
     ctx.beginPath();
@@ -812,6 +826,7 @@ function genTile(tileno)
   
 }
 
+var bw=1;
 function clickCanvas(e)
 {
     var tx=Math.floor(mx/bw);
