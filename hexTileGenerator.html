@@ -721,7 +721,7 @@ function genTile(tileno)
         arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h6,p6,3,false),offsetVec(h6,p6,3,true)]);               
         drawPoints("#A67C52",arrd);            
         drawPoints("#29ABE2",arre);            
-    }else if(tileno==39){
+    }else if(tileno==39||tileno==40){
         var arrc=[arra[mid],h5];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
@@ -729,80 +729,39 @@ function genTile(tileno)
         arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h5,p5,3,false),offsetVec(h5,p5,3,true)]);               
         drawPoints("#A67C52",arrd);            
         drawPoints("#29ABE2",arre); 
-    }else if(tileno==40){
-        var arrc=[arra[mid],h5];
+    }else if(tileno==41||tileno==42){
+        var arrc=[arra[mid],h4];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,2,0.4,[arra[mid+2],arra[mid],arra[mid-2]],[offsetVec(h5,p5,8,false),offsetVec(h5,p5,8,true)]);
-        arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h5,p5,3,false),offsetVec(h5,p5,3,true)]);               
+        arrd=thickLine(arrc,8,2,0.4,[arra[mid+2],arra[mid],arra[mid-2]],[offsetVec(h4,p4,8,false),offsetVec(h4,p4,8,true)]);
+        arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h4,p4,3,false),offsetVec(h4,p4,3,true)]);               
         drawPoints("#A67C52",arrd);            
         drawPoints("#29ABE2",arre); 
-    }/*else if(tileno==41){
-        var arrc=[p0,h4];
+    }else if(tileno==43||tileno==44){
+        var arrc=[arra[mid],h3];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p4,h4,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p4,h4,p0,arra);
-    }else if(tileno==42){
-        var arrc=[p0,h4];
+        arrd=thickLine(arrc,8,2,0.4,[arra[mid+2],arra[mid],arra[mid-2]],[offsetVec(h3,p3,8,false),offsetVec(h3,p3,8,true)]);
+        arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h3,p3,3,false),offsetVec(h3,p3,3,true)]);               
+        drawPoints("#A67C52",arrd);            
+        drawPoints("#29ABE2",arre); 
+    }else if(tileno==45||tileno==46){
+        var arrc=[arra[mid],h2];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p4,h4,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p4,h4,p0,arra);
-    }else if(tileno==43){
-        var arrc=[p0,h3];
+        arrd=thickLine(arrc,8,2,0.4,[arra[mid+2],arra[mid],arra[mid-2]],[offsetVec(h2,p2,8,false),offsetVec(h2,p2,8,true)]);
+        arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h2,p2,3,false),offsetVec(h2,p2,3,true)]);               
+        drawPoints("#A67C52",arrd);            
+        drawPoints("#29ABE2",arre); 
+    }else if(tileno==47||tileno==48){
+        var arrc=[arra[mid],h1];
         arrc=smooth(arrc,jitter*0.8);
         arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p3,h3,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p3,h3,p0,arra);
-     }else if(tileno==44){
-        var arrc=[p0,h3];
-        arrc=smooth(arrc,jitter*0.8);
-        arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p3,h3,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p3,h3,p0,arra);
-    }else if(tileno==45){
-        var arrc=[p0,h2];
-        arrc=smooth(arrc,jitter*0.8);
-        arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p2,h2,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p2,h2,p0,arra);
-     }else if(tileno==46){
-        var arrc=[p0,h2];
-        arrc=smooth(arrc,jitter*0.8);
-        arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p2,h2,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p2,h2,p0,arra);
-    }else if(tileno==47){
-        var arrc=[p0,h1];
-        arrc=smooth(arrc,jitter*0.8);
-        arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p1,h1,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p1,h1,p0,arra);
-     }else if(tileno==48){
-        var arrc=[p0,h1];
-        arrc=smooth(arrc,jitter*0.8);
-        arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p1,h1,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p1,h1,p0,arra);
-    }else if(tileno==49){
-        var arrc=[p0,h6];
-        arrc=smooth(arrc,jitter*0.8);
-        arrc=smooth(arrc,jitter*0.4);
-        arrd=thickLine(arrc,8,5,0.4,p6,h6,p0,arra);
-        arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
-    }else if(tileno==50){
-        var arrc=[h3,h6];
-        arrc=smooth(arrc,jitter*1.1);
-        arrc=smooth(arrc,jitter*0.8);
-        arrc=smooth(arrc,jitter*0.5);
-
-
-
-        //arrd=thickLine(arrc,8,5,0.4,p6,h6,h3,arra);
-        //arre=thickLine(arrc,3,1.5,0.4,p6,h6,p0,arra);
+        arrd=thickLine(arrc,8,2,0.4,[arra[mid+2],arra[mid],arra[mid-2]],[offsetVec(h1,p1,8,false),offsetVec(h1,p1,8,true)]);
+        arre=thickLine(arrc,3,2,0.4,[arra[mid+1],arra[mid],arra[mid-1]],[offsetVec(h1,p1,3,false),offsetVec(h1,p1,3,true)]);               
+        drawPoints("#A67C52",arrd);            
+        drawPoints("#29ABE2",arre); 
     }
-*/
 
     // River start tiles
     if(tileno==38||tileno==39||tileno==40||tileno==41||tileno==42||tileno==43||tileno==44||tileno==45||tileno==46||tileno==47||tileno==48||tileno==49){
