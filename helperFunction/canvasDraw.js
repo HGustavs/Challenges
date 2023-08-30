@@ -59,6 +59,11 @@ function inside(xk,yk,path)
 //                                         Drawing Functions
 //------------------------------------=======############==========----------------------------------------
 
+function showRay(segment,color,linewidth)
+{
+    drawLine(segment.x1,segment.y1,segment.x2,segment.y2,linewidth,color);
+}
+
 function drawBox(x1,y1,w,h,opacity,fillcolor)
 {
   c.fillStyle=fillcolor;
