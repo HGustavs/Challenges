@@ -1,0 +1,125 @@
+<html>
+<head>
+		<script>
+				var ctx;
+			  var mx,my,mb=0;
+
+        const drawscale=5;
+
+        // Path consists of a number of curves
+        var pathA=[
+            [
+                {x:137,y:14,x2:18,y2:131},
+                {x:18,y:131,x2:77,y2:300},
+                {x:77,y:300,x2:271,y2:315},
+                {x:271,y:315,x2:383,y2:164},
+                {x:383,y:164,x2:331,y2:33},
+                {x:331,y:33,x2:137,y2:14}
+            ],
+            [
+                {x:169,y:41,x2:68,y2:171},
+                {x:68,y:171,x2:119,y2:267},
+                {x:119,y:267,x2:269,y2:207},
+                {x:269,y:208,x2:276,y2:95},
+                {x:276,y:95,x2:169,y2:41}
+            ]
+        ];
+
+        var pathB=[
+            [
+                {x:68,y:22,x2:200,y2:408},
+                {x:200,y:408,x2:485,y2:115},
+                {x:485,y:115,x2:215,y2:119},
+                {x:215,y:119,x2:68,y2:22}
+            ]
+        ];
+			
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    ctx = cc.getContext("2d");
+					
+						setInterval(updatestate,20);
+					
+						drawit();
+				}
+								
+				function updatestate()
+				{
+
+				}
+			
+				function mouseUp(e)
+				{
+						mb=0;
+				}
+			
+				function mouseDown(e)
+				{
+						mb=e.which;
+				}
+			
+				function mouseMove(e,t)
+				{
+						var rect = e.target.getBoundingClientRect();
+            mx = e.clientX - rect.left; //x position within the element.
+            my = e.clientY - rect.top;  //y position within the element
+				}
+
+        function circ(x,y)
+        {
+            ctx.beginPath();
+            ctx.arc(x*drawscale,y*drawscale, 5, 0, 6.28);
+            ctx.stroke();
+        }
+
+        function drawpath(thepath)
+        {
+            console.log(thepath);
+            ctx.beginPath();
+            for(var curve of thepath){
+                for(var segment of curve){
+                    console.log(segment);
+                    ctx.moveTo(segment.x,segment.y);
+                    ctx.lineTo(segment.x2,segment.y2);
+                }
+            }
+            ctx.stroke();
+        }
+			
+				function drawit()
+				{	
+						ctx.clearRect(0,0,900,900);
+						
+            ctx.font="20px Arial Narrow";
+
+            ctx.fillText(mx+" "+my,10,20);
+
+            /*
+            ctx.setLineDash([8,8]);
+            ctx.beginPath();
+            ctx.moveTo(pnt.p1.x*drawscale,pnt.p1.y*drawscale);
+            ctx.lineTo(pnt.p2.x*drawscale,pnt.p2.y*drawscale);
+            ctx.moveTo(pnt.p1.x*drawscale,pnt.p1.y*drawscale);
+            ctx.lineTo(pnt.p3.x*drawscale,pnt.p3.y*drawscale);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            for(var i=0;i<points.length;i++){
+                  //circ(points[i].x, points[i].y);
+                  ctx.fillText(i,(points[i].x*drawscale)+(2.0*drawscale), points[i].y*drawscale);										
+            }
+            */
+
+            // Draw Path
+            drawpath(pathA);
+            //drawpath(pathB);
+
+            window.requestAnimationFrame(drawit);
+				} 			
+						
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>
