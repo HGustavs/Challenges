@@ -1,6 +1,9 @@
 <html>
 <head>
 		<script>
+
+        // A freestyle relative of Brilliant's halfsies https://brilliant.org/challenges/halfsies/
+
 				var ctx;
 			  var mx,my,mb=0;
 
@@ -25,13 +28,17 @@
             ]
         ];
 
-        var pathB=[
+        var pathO=[
             [
-                {x:68,y:22,x2:200,y2:408},
-                {x:200,y:408,x2:485,y2:115},
-                {x:485,y:115,x2:215,y2:119},
-                {x:215,y:119,x2:68,y2:22}
+                {x:5,y:5,x2:132,y2:390},
+                {x:132,y:390,x2:420,y2:95},
+                {x:420,y:95,x2:160,y2:80},
+                {x:160,y:80,x2:5,y2:5}
             ]
+        ];
+
+        var pathB=[
+
         ];
 			
 				function setup()
@@ -69,51 +76,89 @@
         function circ(x,y)
         {
             ctx.beginPath();
-            ctx.arc(x*drawscale,y*drawscale, 5, 0, 6.28);
+            ctx.arc(x,y, 5, 0, 6.28);
             ctx.stroke();
+        }
+
+        // Performs slightly optimized even odd rule computation for a given point.
+        function evenodd(xk,yk,thepath)
+        {
+            var cnt=0;
+            for(var curve of thepath){
+                for(var segment of curve){
+                    if((yk>=segment.y&&yk<segment.y2)||(yk<segment.y&&yk>=segment.y2)){
+                        var dx=segment.x2-segment.x;
+                        var dy=segment.y2-segment.y;
+                        var k=dx/dy;
+                        var m=segment.x-(k*segment.y);
+                        if(((k*yk)+m)<=xk) cnt++
+                    }
+                }
+            }        
+            return cnt%2;
         }
 
         function drawpath(thepath)
         {
-            console.log(thepath);
             ctx.beginPath();
             for(var curve of thepath){
                 for(var segment of curve){
-                    console.log(segment);
                     ctx.moveTo(segment.x,segment.y);
                     ctx.lineTo(segment.x2,segment.y2);
                 }
-            }
+            }            
             ctx.stroke();
+                
         }
 			
 				function drawit()
 				{	
 						ctx.clearRect(0,0,900,900);
+
+            // Translate
+            pathB=[];
+            for(var curve of pathO){
+                var newcurve=[];
+                for(var segment of curve){
+                    newcurve.push({
+                        x:segment.x+mx,
+                        y:segment.y+my,
+                        x2:segment.x2+mx,
+                        y2:segment.y2+my
+                    });
+                }
+                pathB.push(newcurve);
+            }              
 						
-            ctx.font="20px Arial Narrow";
-
-            ctx.fillText(mx+" "+my,10,20);
-
-            /*
-            ctx.setLineDash([8,8]);
-            ctx.beginPath();
-            ctx.moveTo(pnt.p1.x*drawscale,pnt.p1.y*drawscale);
-            ctx.lineTo(pnt.p2.x*drawscale,pnt.p2.y*drawscale);
-            ctx.moveTo(pnt.p1.x*drawscale,pnt.p1.y*drawscale);
-            ctx.lineTo(pnt.p3.x*drawscale,pnt.p3.y*drawscale);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            for(var i=0;i<points.length;i++){
-                  //circ(points[i].x, points[i].y);
-                  ctx.fillText(i,(points[i].x*drawscale)+(2.0*drawscale), points[i].y*drawscale);										
+            // Compute Percentages
+            var areaA=0;
+            var both=0;
+            var delta=10;
+            var hdelta=delta/2;
+            for(var i=0;i<500;i+=delta){
+                for(var j=0;j<500;j+=delta){
+                    var pa=evenodd(i+hdelta,j+hdelta,pathA);
+                    var pb=evenodd(i+hdelta,j+hdelta,pathB);
+                    if(pa==1&&pb==1){
+                        both++;
+                        ctx.beginPath();
+                        ctx.rect(i+2,j+2,delta-4,delta-4);
+                        ctx.stroke();
+                    }
+                    if(pa==1){
+                        areaA++;
+                    }
+                }
             }
-            */
 
             // Draw Path
             drawpath(pathA);
-            //drawpath(pathB);
+            drawpath(pathB);
+
+            // Displace percentage
+            ctx.font="20px Arial Narrow";
+            ctx.fillText(Math.round((both/areaA)*100)/100,10,20);
+
 
             window.requestAnimationFrame(drawit);
 				} 			
