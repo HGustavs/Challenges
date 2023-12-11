@@ -1,0 +1,222 @@
+<html>
+<head>
+		<script>
+
+// BBC Circle Promo Animation (from youtube)
+
+var ctx;
+
+// Algorithm parameters
+const step=12;
+const cnt=25;
+const startradius=50;
+
+var v=0;
+const cx=450;
+const cy=450;
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+  
+    drawit();
+}
+
+// Make List of vectors
+// Reverse List of vectors
+
+function rotatevec(vec,rad)
+{
+    return {x:((Math.cos(rad)*vec.x)-(Math.sin(rad)*vec.y)),y:((Math.sin(rad)*vec.x)+(Math.cos(rad)*vec.y))};
+}
+
+function midvec(vecA,vecB)
+{
+    return {x:(vecA.x+vecB.x)*0.5,y:(vecA.y+vecB.y)*0.5}
+}
+
+function mulvec(vec,fact)
+{
+    return {x:vec.x*fact,y:vec.y*fact};
+}
+
+function reflectvec(vec)
+{
+    return {x:vec.y,y:-vec.x};
+}
+
+function addvec(vecA,vecB)
+{
+    return {x:vecA.x+vecB.x,y:vecA.y+vecB.y};
+}
+
+function subvec(vecA,vecB)
+{
+    return {x:vecA.x-vecB.x,y:vecA.y-vecB.y};
+}
+
+function makeFlower(cx,cy,radius,thickness,eccentricity,offset,vec)
+{
+    var pointlist=[];
+    for(var i=0;i<16.2828;i+=(1.5707)){
+        var rotvec=rotatevec(vec,i);
+        var reflvec=reflectvec(rotvec);
+        var longmid=mulvec(midvec(rotvec,reflvec),eccentricity);
+
+        pointlist.push(longmid);
+        pointlist.push(rotvec);
+    }
+    return pointlist;
+}
+
+function makeCircle(eccentricity,vec)
+{
+    var pointlist=[];
+    // 6.2828
+    for(var i=0;i<6.2828;i+=1.5707){
+        
+        //if(i>1.0) return pointlist;
+        var rotvec=rotatevec(vec,i);
+        var reflvec=reflectvec(rotvec);
+
+        var rotadd=addvec(rotvec,mulvec(reflvec,eccentricity));
+        var refladd=addvec(reflvec,mulvec(rotvec,eccentricity));
+ 
+        //pointlist.push(makepoint(cx,cy,rotvec,radius));
+        pointlist.push(reflvec);
+        pointlist.push(refladd);
+        pointlist.push(rotadd);
+        pointlist.push(rotvec);
+
+    }
+    return pointlist;
+}
+
+function drawCircles(cx,cy,radius,pointlist)
+{
+    for(var i=0;i<pointlist.length;i++){
+        var point=pointlist[i];    
+        ctx.beginPath();
+        ctx.arc(cx+(point.x*radius),cy+(point.y*radius),4, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillText(i,point.x+10,point.y);
+    }
+}
+
+function drawLines(pointlist)
+{
+    ctx.beginPath();
+    for(var i=0;i<pointlist.length;i++){
+        if(i==0){
+            ctx.moveTo(pointlist[i].x,pointlist[i].y);
+        }else{
+            ctx.lineTo(pointlist[i].x,pointlist[i].y);        
+        }    
+    }
+    ctx.stroke();
+}
+
+function drawCubic(pointlist)
+{
+    ctx.beginPath();
+    for(var i=1;i<(pointlist.length);i+=2){
+        if(i==1){
+            ctx.moveTo(pointlist[0].x,pointlist[0].y);
+        }
+        //ctx.quadraticCurveTo(pointlist[i].x,pointlist[i].y,pointlist[(i+1)%pointlist.length].x,pointlist[(i+1)%pointlist.length].y);        
+    }
+    ctx.stroke();
+}
+
+function drawBezier(cx,cy,radius,pointlist)
+{
+    for(var i=0;i<pointlist.length;i+=4){
+
+        p1=pointlist[i];
+        p2=pointlist[(i+1)%pointlist.length];
+        p3=pointlist[(i+2)%pointlist.length];
+        p4=pointlist[(i+3)%pointlist.length];
+
+        if(i==0){
+            ctx.moveTo(cx+(p1.x*radius),cy+(p1.y*radius));            
+        }
+        ctx.bezierCurveTo(cx+(p2.x*radius),cy+(p2.y*radius),cx+(p3.x*radius),cy+(p3.y*radius),cx+(p4.x*radius),cy+(p4.y*radius));
+    }
+}
+
+function drawHandles(cx,cy,radius,pointlist)
+{
+    ctx.setLineDash([5, 5]);
+    for(var i=0;i<pointlist.length;i+=4){
+        p1=pointlist[i];
+        p2=pointlist[(i+1)%pointlist.length];
+        p3=pointlist[(i+2)%pointlist.length];
+        p4=pointlist[(i+3)%pointlist.length];
+
+        ctx.beginPath();
+        ctx.moveTo(cx+(p1.x*radius),cy+(p1.y*radius));
+        ctx.lineTo(cx+(p2.x*radius),cy+(p2.y*radius));
+        ctx.moveTo(cx+(p3.x*radius),cy+(p3.y*radius));
+        ctx.lineTo(cx+(p4.x*radius),cy+(p4.y*radius));
+        ctx.stroke();
+    }
+
+    ctx.setLineDash([]);    
+
+}
+
+function drawit()
+{	
+    // We move our sine position
+    v+=0.01;
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, 900,900);
+
+    // ctx.clearRect(0,0,900,900);
+
+    // Compute radius list from inside out
+    var curr=startradius;
+    var currstep=step;
+    var circles=[];
+
+    // We only compute white circles
+    for(var i=0;i<cnt;i++){
+        var fact=(Math.sin(v+(i*0.5))+Math.sin((-v*2.5)+(i*0.73))+2.4)*0.25*(currstep*1.10);
+        currstep=currstep*1.10;
+        curr+=currstep*0.5;
+
+        circles.push({rad:curr,width:fact*0.5});
+    }
+    
+    // Reverse order draw from inside out
+    circles=circles.reverse();
+
+    ctx.fillStyle="#48F";
+    ctx.strokeStyle="#F48";
+
+    //v=0;
+    var va=0.0;
+    for(circle of circles){
+        va+=0.1;
+        var points=makeCircle(0.60,{x:Math.cos(v+va),y:Math.sin(v+va)});
+
+        ctx.beginPath();
+        drawBezier(cx,cy,circle.rad+circle.width,points);
+        points.reverse();
+        drawBezier(cx,cy,circle.rad-circle.width,points);
+        ctx.fill();
+
+        drawHandles(cx,cy,circle.rad,points);
+        drawCircles(cx,cy,circle.rad,points);    
+    }
+
+    window.requestAnimationFrame(drawit);
+} 			
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>
