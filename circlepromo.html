@@ -169,7 +169,7 @@ function drawHandles(cx,cy,radius,pointlist)
 function drawit()
 {	
     // We move our sine position
-    v+=0.01;
+    v+=0.005;
 
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, 900,900);
@@ -187,6 +187,8 @@ function drawit()
         currstep=currstep*1.10;
         curr+=currstep*0.5;
 
+        curr+=Math.cos(v*1.5)*2;
+
         circles.push({rad:curr,width:fact*0.5});
     }
     
@@ -199,7 +201,7 @@ function drawit()
     //v=0;
     var va=0.0;
     for(circle of circles){
-        va+=0.1;
+        va+=0.3;
         var points=makeCircle(0.60,{x:Math.cos(v+va),y:Math.sin(v+va)});
 
         ctx.beginPath();
@@ -208,8 +210,8 @@ function drawit()
         drawBezier(cx,cy,circle.rad-circle.width,points);
         ctx.fill();
 
-        drawHandles(cx,cy,circle.rad,points);
-        drawCircles(cx,cy,circle.rad,points);    
+        // drawHandles(cx,cy,circle.rad,points);
+        // drawCircles(cx,cy,circle.rad,points);    
     }
 
     window.requestAnimationFrame(drawit);

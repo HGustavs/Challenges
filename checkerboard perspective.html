@@ -1,0 +1,67 @@
+<html>
+<head>
+		<script>
+
+// Weak perspective
+// https://ryancsblog542440076.wordpress.com/2018/09/10/4-different-types-of-perspective/
+// https://en.wikipedia.org/wiki/3D_projection
+// https://gamedev.stackexchange.com/questions/167415/difference-between-two-perspective-projection-representations
+
+var ctx;
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+  
+    drawit();
+}
+
+function drawCircle(cx,cy)
+{
+        ctx.beginPath();
+        ctx.arc(cx,cy,4, 0, 2 * Math.PI);
+        ctx.fill();
+}
+
+function drawit()
+{	
+    // Store height values in array including perspectivized coordinate
+    var terrain=[];
+    for(var zk=60; zk<400; zk+=30){
+        var terrainrow=[];
+        for(var xk=-3200;xk<3200;xk+=150){
+            yk=-300;
+
+            // t=zc/(zc-z);
+            var t=50/(50-zk)
+            var nx=450+(xk*t);
+            var ny=500+(yk*t);
+
+            terrainrow.push({x:xk,y:yk,z:zk,px:nx,py:ny,pt:t});
+        }
+        terrain.push(terrainrow);
+    }
+
+    // Drawing and culling from array
+    for(i=0;i<terrain.length;i++){
+        var terrainrow=terrain[i];
+        for(j=0;j<terrainrow.length;j++){
+            if(j<(terrainrow.length-1)){
+                ctx.beginPath();
+                ctx.moveTo(terrainrow[j].px,terrainrow[j].py);
+                ctx.lineTo(terrainrow[j+1].px,terrainrow[j+1].py);
+                ctx.stroke();
+            }
+        }
+    }
+    console.log(terrain[0].length);
+
+    // window.requestAnimationFrame(drawit);
+} 			
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

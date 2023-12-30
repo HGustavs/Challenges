@@ -2,6 +2,7 @@
 <head>
 		<script>
 
+        // Rigid body physics
         // https://www.toptal.com/game/video-game-physics-part-iii-constrained-rigid-body-simulation
         // https://ubm-twvideo01.s3.amazonaws.com/o1/vault/gdc09/slides/04-GDC09_Catto_Erin_Solver.pdf
         // https://github.com/steschu77/box2d-js
@@ -14,6 +15,11 @@
         // https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects
         // www.dtecta.com/papers/gdc2001depth.pdf
         // https://www.youtube.com/watch?v=1L2g4ZqmFLQ
+
+
+        // Rotating in response to collision
+        // https://stackoverflow.com/questions/11915897/how-to-rotate-circle-in-response-to-collision
+        // https://gamedev.stackexchange.com/questions/103278/circle-collision-resolution-and-angular-momentum
 
 				var c;
 			  var mx,my,mb=0;
@@ -40,31 +46,35 @@
             //circles.push({x:120,y:110,r:40,vx:-0.5,vy:1.2,streak:[]});
             //circles.push({x:90,y:80,r:30,vx:0.8,vy:1.5,streak:[]});
 
+            // Bouncy ball test
+
             circles.push({x:70,y:100,r:30,vx:0.5,vy:0,streak:[]});
             circles.push({x:120,y:110,r:40,vx:-0.5,vy:0,streak:[]});
             circles.push({x:90,y:40,r:30,vx:0.8,vy:0,streak:[]});
 
+            lines.push({x1:20,y1:20,x2:20,y2:600});            
             lines.push({x1:20,y1:140,x2:300,y2:220});
             lines.push({x1:500,y1:270,x2:210,y2:370});
             lines.push({x1:20,y1:400,x2:300,y2:520});
+
+/*
+            circles.push({x:250,y:560,r:30,m:3,vx:0.0,vy:0,streak:[]});
+            circles.push({x:244,y:300,r:20,m:2,vx:0.0,vy:0,streak:[]});
+
+            lines.push({x1:0,y1:600,x2:500,y2:600});
+            lines.push({x1:20,y1:20,x2:20,y2:620});
+            lines.push({x1:480,y1:20,x2:480,y2:620});
+*/
 
             updatestate();
 					
 						drawit();
 				}
-								
-				function updatestate()
-				{
-            // Update fall parabola
-            for(var i=0;i<circles.length;i++){
-                var circle=circles[i];
-                circle.vy+=gravity;
-                circle.x+=circle.vx;
-                circle.y+=circle.vy;
-                circle.streak.push({x:circle.x,y:circle.y})
-            }            
 
+        function updateStatic()
+        {
             // Move circles to avoid stationary objects
+            var friction=0.90;
             for(var i=0;i<lines.length;i++){
                 var line=lines[i];
                 for(var j=0;j<circles.length;j++){
@@ -83,53 +93,73 @@
                         circle.vy=v.y*friction;
                     }
                 }
-            }
+            }                    
+        }
+								
+        var paused=false;
+				function updatestate()
+				{          
 
             // Compare circles to circles and push away according to center
             // https://web.archive.org/web/20160418004153/http://freespace.virgin.net/hugo.elias/models/m_snokr.htm
-            for(var i=0;i<circles.length;i++){
-                for(var j=0;j<circles.length;j++){
-                    if(j!=i){
-                        var c1=circles[i];
-                        var c2=circles[j];
-                        var tot=c1.r+c2.r;
-                        dx=c2.x-c1.x;
-                        dy=c2.y-c1.y;
-                        // This sqrt can be avoided
-                        len=Math.sqrt((dx*dx)+(dy*dy));
-                        if(len<tot){
-                            // Two spheres have collided we assume radius is mass Impact is difference in velocity vectors impulse is angle of hit
-                            var impactX=c2.vx-c1.vx;
-                            var impactY=c2.vy-c1.vy;
-                            var impulseX=dx/len;
-                            var impulseY=dy/len;
+            if(!paused){
 
-                            // Un-normalized Dot product of impact and impulse
-                            var impactSpeed=(impactX * impulseX) + (impactY * impulseY);
+                // Update fall parabola
+                for(var i=0;i<circles.length;i++){
+                    var circle=circles[i];
+                    circle.vy+=gravity;
+                    circle.x+=circle.vx;
+                    circle.y+=circle.vy;
+                    circle.streak.push({x:circle.x,y:circle.y})
+                }  
 
-                            // We compute impulse vector by multiplying Impact speed with masses
-                            // gamedev.stackexchange.com/questions/7862/is-there-an-algorithm-for-a-pool-game
-                            var  coefficient = 0.7;
-                            var impulseMag = (1 + coefficient) * impactSpeed * (1 / c1.r + 1 / c2.r)
-    
-                            impulseX=impulseX*impulseMag;
-                            impulseY=impulseY*impulseMag;
+                updateStatic();
+                for(var i=0;i<circles.length;i++){
+                    for(var j=0;j<circles.length;j++){
+                        if(j!=i){
+                            var c1=circles[i];
+                            var c2=circles[j];
+                            var tot=c1.r+c2.r;
+                            dx=c2.x-c1.x;
+                            dy=c2.y-c1.y;
+                            // This sqrt can be avoided
+                            len=Math.sqrt((dx*dx)+(dy*dy));
+                            if(len<tot){
 
-                            // Resulting velocities from impulse vector divided by mass
-                            c1.vx=c1.vx-(impulseX/c1.r);
-                            c1.vy=c1.vy-(impulseY/c1.r);
-                            c2.vx=c2.vx+(impulseX/c2.r);
-                            c2.vy=c2.vy+(impulseY/c2.r);
+                                // Multiply with size ratio
+                                var max=Math.max(c1.r,c2.r);
+                                var ratio1=c1.r/max;
+                                var ratio2=c2.r/max;
 
-                            var ox=dx*((len-c1.r-c2.r)/len/2);
-                            var oy=dy*((len-c1.r-c2.r)/len/2);
-                            c1.x+=ox;
-                            c1.y+=oy;
-                            c2.x-=ox;
-                            c2.y-=oy;
+                                // For each ball compute the speeds reflected around colision vector  
+                                var v1=reflect(0,0,dy,-dx,c1.vx,c1.vy);
+                                var v2=reflect(0,0,dy,-dx,c2.vx,c2.vy);
+                                var friction=0.8;
+                                c2.vx=(v2.x*friction*ratio1)+(-v1.x*friction*ratio2);
+                                c2.vy=(v2.y*friction*ratio1)+(-v1.y*friction*ratio2);
+                                c1.vx=(-v2.x*friction*ratio2)+(v1.x*friction*ratio1);
+                                c1.vy=(-v2.y*friction*ratio2)+(v1.x*friction*ratio1);
+
+                                // We move circles out of the way
+                                var ox=dx*((len-c1.r-c2.r)/len);
+                                var oy=dy*((len-c1.r-c2.r)/len);
+                                c1.x+=ox;
+                                c1.y+=oy;
+                                c2.x-=ox;
+                                c2.y-=oy;
+
+                                
+                                // From memory, the reduction of force in a point (to find a net force (or resultant) will give you a 
+                                // 2-components force, a force and a torque, directly. You "just" have to create a segment vector that 
+                                // links the center of mass to your contact point (subtract points A-B=BA) and then cross-product it 
+                                // with your contact force, you get the torque component. This is the "lever effect". You can see that 
+                                // the more orthogonal the force gets, the greater the torque, or the farther away the contact is, the 
+                                // greater the torque. The 1st component is just a copy of the linear force.
+                            }
                         }
-                    }
-                } 
+                    } 
+                }
+                updateStatic();
             }
 
             setTimeout(updatestate,20);
