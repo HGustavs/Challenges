@@ -10,16 +10,19 @@
         // http://allenchou.net/2013/12/game-physics-constraints-sequential-impulse/
         // https://www.youtube.com/watch?v=vQO_hPOE-1Y
         // https://www.youtube.com/watch?v=eFUuKE1d6Vg
-        // https://www.youtube.com/watch?v=VbvdoLQQUPs&t=1463s
         // https://www.youtube.com/watch?v=iVXN6Gqga8s
         // https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects
         // www.dtecta.com/papers/gdc2001depth.pdf
         // https://www.youtube.com/watch?v=1L2g4ZqmFLQ
-
+        // https://www.youtube.com/watch?v=MDusDn8oTSE
 
         // Rotating in response to collision
         // https://stackoverflow.com/questions/11915897/how-to-rotate-circle-in-response-to-collision
         // https://gamedev.stackexchange.com/questions/103278/circle-collision-resolution-and-angular-momentum
+        // https://www.youtube.com/watch?v=VbvdoLQQUPs
+        // https://www.youtube.com/watch?v=YpwLArBofkk
+        // https://www.youtube.com/watch?v=k-HF4qnvXq8
+        // https://www.youtube.com/watch?v=suaJz-zWt3A
 
 				var c;
 			  var mx,my,mb=0;
@@ -47,7 +50,7 @@
             //circles.push({x:90,y:80,r:30,vx:0.8,vy:1.5,streak:[]});
 
             // Bouncy ball test
-
+/*
             circles.push({x:70,y:100,r:30,vx:0.5,vy:0,streak:[]});
             circles.push({x:120,y:110,r:40,vx:-0.5,vy:0,streak:[]});
             circles.push({x:90,y:40,r:30,vx:0.8,vy:0,streak:[]});
@@ -56,15 +59,13 @@
             lines.push({x1:20,y1:140,x2:300,y2:220});
             lines.push({x1:500,y1:270,x2:210,y2:370});
             lines.push({x1:20,y1:400,x2:300,y2:520});
-
-/*
-            circles.push({x:250,y:560,r:30,m:3,vx:0.0,vy:0,streak:[]});
-            circles.push({x:244,y:300,r:20,m:2,vx:0.0,vy:0,streak:[]});
+*/
+            circles.push({x:250,y:560,r:30,m:3,vx:0.0,vy:0,ang:0,angv:0.05,streak:[]});
+            circles.push({x:244,y:300,r:20,m:2,vx:0.0,vy:0,ang:0,angv:-0.05,streak:[]});
 
             lines.push({x1:0,y1:600,x2:500,y2:600});
             lines.push({x1:20,y1:20,x2:20,y2:620});
             lines.push({x1:480,y1:20,x2:480,y2:620});
-*/
 
             updatestate();
 					
@@ -110,6 +111,7 @@
                     circle.vy+=gravity;
                     circle.x+=circle.vx;
                     circle.y+=circle.vy;
+                    circle.ang+=circle.angv;
                     circle.streak.push({x:circle.x,y:circle.y})
                 }  
 
@@ -225,15 +227,21 @@
             return {x:xk,y:yk,l:((dx*dx)+(dy*dy))}
     }
 
-        function drawCirc(x,y,r,fill)
+        function drawCirc(x,y,r,ang,fill)
         {
+            c.save();
+            c.translate(x,y);
+            c.rotate(ang);
             c.beginPath();
-            c.arc(x, y, r, 0, 2 * 3.1415, false);
+            c.moveTo(0,0);
+            c.lineTo(r,0);
+            c.arc(0, 0, r, 0, 2 * 3.1415, false);
             if(fill==true){
                 c.fill();	
             }else{
                 c.stroke();	
             }
+            c.restore();
         }
 
         function drawLine(x1,y1,x2,y2)
@@ -260,7 +268,7 @@
             c.strokeStyle="#a6a";
             for(var i=0;i<circles.length;i++){
                 var circ=circles[i];
-                drawCirc(circ.x,circ.y,circ.r);
+                drawCirc(circ.x,circ.y,circ.r,circ.ang,false);
             }
 
             c.strokeStyle="#d72";
