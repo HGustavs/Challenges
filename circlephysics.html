@@ -60,8 +60,8 @@
             lines.push({x1:500,y1:270,x2:210,y2:370});
             lines.push({x1:20,y1:400,x2:300,y2:520});
 */
-            circles.push({x:250,y:560,r:30,m:3,vx:0.0,vy:0,ang:0,angv:0.05,streak:[]});
-            circles.push({x:244,y:300,r:20,m:2,vx:0.0,vy:0,ang:0,angv:-0.05,streak:[]});
+            circles.push({x:250,y:560,r:30,m:3,vx:0.0,vy:0,ang:0,angv:0.02,streak:[]});
+            circles.push({x:244,y:300,r:20,m:2,vx:0.0,vy:0,ang:0,angv:-0.02,streak:[]});
 
             lines.push({x1:0,y1:600,x2:500,y2:600});
             lines.push({x1:20,y1:20,x2:20,y2:620});
@@ -88,10 +88,17 @@
                         var dy=(pnt.y-circle.y)*part;
                         circle.x-=dx;
                         circle.y-=dy;
+
+                        // rotational velocity
+                        var armx=(-(pnt.y-circle.y)/len)*circle.r;
+                        var army=((pnt.x-circle.x)/len)*circle.r;
                         
                         var v=reflect(line.x1,line.y1,line.x2,line.y2,circle.vx,circle.vy);
-                        circle.vx=v.x*friction;
-                        circle.vy=v.y*friction;
+                        circle.vx=(v.x*friction)-(armx*circle.angv);
+                        circle.vy=(v.y*friction)-(army*circle.angv);
+                        
+                        // Slow down angv through friction
+                        circle.angv*=0.99;
                     }
                 }
             }                    
@@ -133,14 +140,25 @@
                                 var ratio1=c1.r/max;
                                 var ratio2=c2.r/max;
 
+                                // Arm 2 is inverted compared to Arm 1
+                                var arm1x=(dx/len)*c1.r;
+                                var arm1y=(dy/len)*c1.r;
+                                var rotvel1x=-c1.angv*arm1y;
+                                var rotvel1y=c1.angv*arm1x;
+
+                                var arm2x=(-dx/len)*c2.r;
+                                var arm2y=(-dy/len)*c2.r;
+                                var rotvel2x=-c2.angv*arm2y;
+                                var rotvel2y=c2.angv*arm2x;
+
                                 // For each ball compute the speeds reflected around colision vector  
                                 var v1=reflect(0,0,dy,-dx,c1.vx,c1.vy);
                                 var v2=reflect(0,0,dy,-dx,c2.vx,c2.vy);
                                 var friction=0.8;
-                                c2.vx=(v2.x*friction*ratio1)+(-v1.x*friction*ratio2);
-                                c2.vy=(v2.y*friction*ratio1)+(-v1.y*friction*ratio2);
-                                c1.vx=(-v2.x*friction*ratio2)+(v1.x*friction*ratio1);
-                                c1.vy=(-v2.y*friction*ratio2)+(v1.x*friction*ratio1);
+                                c1.vx=(-v2.x*friction*ratio2)+(v1.x*friction*ratio1)-rotvel1x;
+                                c1.vy=(-v2.y*friction*ratio2)+(v1.x*friction*ratio1)-rotvel1y;
+                                c2.vx=(v2.x*friction*ratio1)+(-v1.x*friction*ratio2)-rotvel2x;
+                                c2.vy=(v2.y*friction*ratio1)+(-v1.y*friction*ratio2)-rotvel2y;
 
                                 // We move circles out of the way
                                 var ox=dx*((len-c1.r-c2.r)/len);
