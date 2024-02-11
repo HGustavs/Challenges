@@ -1,0 +1,100 @@
+<html>
+    <head>
+        <style>
+            body {
+                margin:0px;
+                padding:0px;
+            }
+            #gridcontainer{
+                position:absolute;
+                display: grid;
+                grid-template-areas:   
+                        "header header"
+                        "maingame highscore"
+                        "footer footer";
+                grid-template-columns: 1fr 200px; 
+                grid-template-rows: 32px 1fr 32px;                                        
+                width:100%;
+                height:100%;
+                background-color:#000;
+                color:#eee;
+            }
+            #highscore{
+                grid-area: highscore;            
+                border:2px solid #ccc;
+            }
+            #maingame{
+                grid-area: maingame;            
+                border:2px solid #ccc;
+
+            }
+            #header{
+                grid-area: header;            
+                background:#fed;
+                height:32px;
+            }            
+            #footer{
+                grid-area: footer;            
+                background:#def;
+                height:32px;
+            }            
+
+        </style>
+        <script>
+            function countup()
+            {
+                if(starttime!=null){
+                    var timepassed=new Date-starttime;
+                    document.getElementById("header").innerHTML="Time passed: "+timepassed;
+                }
+            }
+
+            function loadHigh()
+            {
+                var scores=[];
+                var scoretext=localStorage.getItem("score");
+                if(scoretext==""||scoretext==null){
+                    var hulk=[{start:"2023-01-01 03:15",total:400,times:[],level:4}];
+                    console.log(hulk);
+                    //scoretext=JSON.stringify(hulk));
+                }
+                //var scores=JSON.parse(scoretext);
+
+                counter=setInterval(countup,1000);
+            }
+
+            // timer callback
+            var counter=null;
+
+            // Game variables
+            var currentlevel=-1;
+            var levelcount=4;
+            var starttime=null;
+
+            function startGame()
+            {
+                var maingame=document.getElementById("maingame");
+                maingame.innerHTML="";
+                for(var i=1;i<=levelcount;i++){
+                    maingame.innerHTML+="<button onclick='startLevel('"+i+"')'>Start Level: "+i+"</button>";
+                }
+            }
+
+            function startLevel(levelno)
+            {
+                starttime=new Date;
+
+            }
+
+
+        </script>
+    </head>
+    <body onload="loadHigh();startGame();">
+        <div id="gridcontainer">
+            <div id="header"></div>
+            <div id="highscore"></div>
+            <div id="maingame"></div>
+            <div id="footer"></div>
+        </div>
+    </body>
+</html>

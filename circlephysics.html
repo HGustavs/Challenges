@@ -60,8 +60,8 @@
             lines.push({x1:500,y1:270,x2:210,y2:370});
             lines.push({x1:20,y1:400,x2:300,y2:520});
 */
-            circles.push({x:250,y:560,r:30,m:3,vx:0.0,vy:0,ang:0,angv:0.02,streak:[]});
-            circles.push({x:244,y:300,r:20,m:2,vx:0.0,vy:0,ang:0,angv:-0.02,streak:[]});
+            circles.push({x:201,y:560,r:30,m:3,vx:0.0,vy:0,ang:0,angv:0.0,streak:[]});
+            circles.push({x:250,y:300,r:20,m:2,vx:0.0,vy:0,ang:0,angv:0.0,streak:[]});
 
             lines.push({x1:0,y1:600,x2:500,y2:600});
             lines.push({x1:20,y1:20,x2:20,y2:620});
@@ -98,7 +98,7 @@
                         circle.vy=(v.y*friction)-(army*circle.angv);
                         
                         // Slow down angv through friction
-                        circle.angv*=0.99;
+                        circle.angv*=0.94;
                     }
                 }
             }                    
@@ -135,19 +135,22 @@
                             len=Math.sqrt((dx*dx)+(dy*dy));
                             if(len<tot){
 
+                                dx=dx/len;
+                                dy=dy/len;
+
                                 // Multiply with size ratio
                                 var max=Math.max(c1.r,c2.r);
                                 var ratio1=c1.r/max;
                                 var ratio2=c2.r/max;
 
                                 // Arm 2 is inverted compared to Arm 1
-                                var arm1x=(dx/len)*c1.r;
-                                var arm1y=(dy/len)*c1.r;
+                                var arm1x=dx*c1.r;
+                                var arm1y=dy*c1.r;
                                 var rotvel1x=-c1.angv*arm1y;
                                 var rotvel1y=c1.angv*arm1x;
 
-                                var arm2x=(-dx/len)*c2.r;
-                                var arm2y=(-dy/len)*c2.r;
+                                var arm2x=-dx*c2.r;
+                                var arm2y=-dy*c2.r;
                                 var rotvel2x=-c2.angv*arm2y;
                                 var rotvel2y=c2.angv*arm2x;
 
@@ -160,21 +163,32 @@
                                 c2.vx=(v2.x*friction*ratio1)+(-v1.x*friction*ratio2)-rotvel2x;
                                 c2.vy=(v2.y*friction*ratio1)+(-v1.y*friction*ratio2)-rotvel2y;
 
+                                // We compute new angular velocity from dot product of normal and velocity
+                                // Normal is same as dx,dy for sphere. 
+                                var v1l=Math.sqrt((c1.vx*c1.vx)+(c1.vy*c1.vy));
+                                var v2l=Math.sqrt((c2.vx*c2.vx)+(c2.vy*c2.vy));
+                                var dot1=(((c1.vx/v1l)*dx)+((c1.vy/v1l)*dy));
+                                var dot2=(((c2.vx/v2l)*dx)+((c2.vy/v2l)*dy));
+                                if(dot1>0){
+                                    dot1=1.0-dot1;
+                                    dot2=-1.0+dot2;
+                                }else{
+                                    dot1=-1-dot1;
+                                    dot2=1.0-dot2;
+                                }
+                                // c1.angv+=0.04*dot1;
+                                // c2.angv+=0.04*dot2;
+
+                                // Cross product of movement translates to rotation also
+                                // alert(dot1+" "+dot2);
+
                                 // We move circles out of the way
-                                var ox=dx*((len-c1.r-c2.r)/len);
-                                var oy=dy*((len-c1.r-c2.r)/len);
+                                var ox=dx*((len-c1.r-c2.r));
+                                var oy=dy*((len-c1.r-c2.r));
                                 c1.x+=ox;
                                 c1.y+=oy;
                                 c2.x-=ox;
                                 c2.y-=oy;
-
-                                
-                                // From memory, the reduction of force in a point (to find a net force (or resultant) will give you a 
-                                // 2-components force, a force and a torque, directly. You "just" have to create a segment vector that 
-                                // links the center of mass to your contact point (subtract points A-B=BA) and then cross-product it 
-                                // with your contact force, you get the torque component. This is the "lever effect". You can see that 
-                                // the more orthogonal the force gets, the greater the torque, or the farther away the contact is, the 
-                                // greater the torque. The 1st component is just a copy of the linear force.
                             }
                         }
                     } 
