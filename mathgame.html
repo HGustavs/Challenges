@@ -1,10 +1,28 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head>
+        <meta charset="utf-8">
         <style>
             body {
                 margin:0px;
                 padding:0px;
+                font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
             }
+            .numb{
+            width:32px;
+            display:inline-block;
+            text-align:center;
+            }
+            .sign{
+            width:16px;
+            display:inline-block;
+            text-align:center;
+            }
+            .tal{
+                border:none;
+                background:#222;
+                color:#eee;
+            }            
             #gridcontainer{
                 position:absolute;
                 display: grid;
@@ -26,12 +44,12 @@
             #maingame{
                 grid-area: maingame;            
                 border:2px solid #ccc;
-
             }
             #header{
                 grid-area: header;            
-                background:#fed;
+                background:#222;
                 height:32px;
+                line-height: 32px;
             }            
             #footer{
                 grid-area: footer;            
@@ -41,11 +59,26 @@
 
         </style>
         <script>
+            function pad(no)
+            {
+                if(no<1){
+                    return "00";
+                }else if(no<10){
+                    return "0"+no;
+                }else{
+                    return no;
+                }
+            }
+
             function countup()
             {
                 if(starttime!=null){
-                    var timepassed=new Date-starttime;
-                    document.getElementById("header").innerHTML="Time passed: "+timepassed;
+                    var timepassed=Date.now()-starttime;
+                    var seconds=Math.floor(timepassed / 1000);
+                    seconds=pad(seconds);
+                    var minutes=Math.floor(seconds/60);
+                    minutes=pad(minutes);
+                    document.getElementById("header").innerHTML="Time passed: "+minutes+":"+seconds;
                 }
             }
 
@@ -76,14 +109,48 @@
                 var maingame=document.getElementById("maingame");
                 maingame.innerHTML="";
                 for(var i=1;i<=levelcount;i++){
-                    maingame.innerHTML+="<button onclick='startLevel('"+i+"')'>Start Level: "+i+"</button>";
+                    maingame.innerHTML+=`<button onclick="startLevel(${i})">Start Level: ${i}</button>`;
                 }
+            }
+
+            function keywrite(pos)
+            {
+                console.log(pos);
+            }
+
+            function inputchange(pos)
+            {
+                //alert("change "+pos);
             }
 
             function startLevel(levelno)
             {
-                starttime=new Date;
+                starttime=Date.now();
+                countup();
 
+                var levelcnt=20;
+
+                var factors=[];
+
+                // Make
+                for(var i=0;i<levelcnt;i++){
+                    factors.push({a:Math.round(Math.random()*10),b:Math.round(Math.random()*10),no:i});
+                
+                }
+
+                // Render
+                var str="<div>Dina mattetal är:</div>";
+                for(factor of factors){
+                    str+=`<div>
+                              <span class='numb'>${factor.a}</span>
+                              <span class='sign'>x</span>
+                              <span class='numb'>${factor.b}</span>
+                              <span class='sign'>=</span>
+                              <input class='tal' type='text' onchange='keywrite(${factor.no})' onblur='inputchange(${factor.no})' onkeyup='keywrite(${factor.no})'>
+                          </div>`;
+                }
+                str+="<button onclick='klar'>Klar</button>";
+                document.getElementById("maingame").innerHTML=str;
             }
 
 
