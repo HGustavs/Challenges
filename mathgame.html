@@ -64,9 +64,9 @@
                 if(no<1){
                     return "00";
                 }else if(no<10){
-                    return "0"+no;
+                    return "0"+(no%60);
                 }else{
-                    return no;
+                    return (no%60);
                 }
             }
 
@@ -74,7 +74,7 @@
             {
                 if(starttime!=null){
                     var timepassed=Date.now()-starttime;
-                    var seconds=Math.floor(timepassed / 1000);
+                    var seconds=Math.floor(timepassed / 1000)%60;
                     seconds=pad(seconds);
                     var minutes=Math.floor(seconds/60);
                     minutes=pad(minutes);
@@ -84,16 +84,50 @@
 
             function loadHigh()
             {
-                var scores=[];
                 var scoretext=localStorage.getItem("score");
                 if(scoretext==""||scoretext==null){
-                    var hulk=[{start:"2023-01-01 03:15",total:400,times:[],level:4}];
-                    console.log(hulk);
-                    //scoretext=JSON.stringify(hulk));
+                    var hulk=[];
+                    scoretext=JSON.stringify(hulk);
                 }
-                //var scores=JSON.parse(scoretext);
-
+                scores=JSON.parse(scoretext);
+                renderHigh();
                 counter=setInterval(countup,1000);
+            }
+
+            function compareFunc(a, b)
+            {
+                if(a.level>b.level){
+                    return 1;
+                }else if(a.level<b.level){
+                    return -1;
+                }else{
+                    if(a.duration>b.duration){
+                        return 1;
+                    }else if(a.duration<b.duration){
+                        return -1;
+                    }else{
+                        return 0;
+                    }
+                }
+            }
+
+            function renderHigh()
+            {
+                // Sort scores, per level and per score
+                scores.sort(compareFunc);
+                str="";
+                for(var level=1;level<=levelcount;level++){
+                    str+=`<div>Level ${level}:</div>`;
+                    var cnt=0;
+                    for(score of scores){
+                        if((score.level==level)&&cnt<5){
+                            var minutes=pad(Math.floor(score.duration/60));
+                            str+=`<div class='score'>${minutes+":"+pad(score.duration%60)}</div>`;
+                            cnt++;
+                        }
+                    }
+                }
+                document.getElementById("highscore").innerHTML=str;
             }
 
             function klar()
@@ -108,6 +142,10 @@
                     }
                 }
                 if(klarade==factors.length){
+                    scores.push({level:currentlevel,duration:(Math.floor((Date.now()-starttime)/1000)),starttime:starttime,errors:fel,factors:factors});
+                    scoretext=JSON.stringify(scores);
+                    localStorage.setItem("score",scoretext);
+                    renderHigh();
                     alert("Bra jobbat! Vi sparar ditt high score på din dator!");
                 }else{
                     fel.push(error);
@@ -118,12 +156,16 @@
             // timer callback
             var counter=null;
 
+            // High Score List
+            var scores=[];
+
             // Game variables
             var currentlevel=-1;
             var levelcount=4;
             var starttime=null;
             var factors=[];
             var fel=[];
+            var lasttime=null;
 
             function startGame()
             {
@@ -141,8 +183,10 @@
 
             function inputchange(pos)
             {
+                  factors[pos].sincelast+=Math.floor((Date.now()-lasttime)/100);
+                  lasttime=Date.now();                 
                   factors[pos].answer=parseInt(event.target.value);
-                  if((factors[pos].a*factors[pos].b)!=factors[pos].answer){
+                  if(((factors[pos].a*factors[pos].b)!=factors[pos].answer)&&(currentlevel<4)){
                       document.getElementById("tal"+pos).style.backgroundColor="#522";
                   }else{
                       document.getElementById("tal"+pos).style.backgroundColor="#333";                  
@@ -152,13 +196,15 @@
             function startLevel(levelno)
             {
                 starttime=Date.now();
+                lasttime=Date.now();
                 countup();
+                currentlevel=levelno;
 
                 var levelcnt=20;
 
                 // Make
                 for(var i=0;i<levelcnt;i++){
-                    factors.push({a:Math.round(Math.random()*10),b:Math.round(Math.random()*10),no:i});
+                    factors.push({a:Math.round(Math.random()*10),b:Math.round(Math.random()*10),no:i,sincelast:0});
                 
                 }
 

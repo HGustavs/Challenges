@@ -1,0 +1,76 @@
+<html>
+<head>
+		<script>
+
+// Star generator for N sided stars with pseudo 3d effect
+// More complicated than it seems - naive version adds radius but a better versions needs to offset the outer polygon
+
+var ctx;
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+  
+    drawit();
+}
+
+function drawPoly(list)
+{
+    for(var i=0;i<list.length;i++){
+        if(i==0) ctx.moveTo(list[i].x,list[i].y);
+        ctx.lineTo(list[i].x,list[i].y);
+    }
+}
+
+function pseudoStar(sides,startangle,xcenter,ycenter,innerradius,outerradius,offs)
+{
+    var v=startangle;
+    var va=2*3.1415*(1.0/sides);
+
+    ctx.strokeStyle="#48F";
+    ctx.beginPath();
+
+    var outer=[];
+    var inners=[];
+
+    // Push coordinate data
+    for(var i=0;i<=sides;i++){
+        outer.push({x:xcenter+(Math.sin(v)*outerradius),y:ycenter-(Math.cos(v)*outerradius)});
+        outer.push({x:xcenter+(Math.sin(v+(va*0.5))*innerradius),y:ycenter-(Math.cos(v+(va*0.5))*innerradius)});
+        
+        var inner=[];
+        inner.push({x:xcenter,y:ycenter});
+        inner.push({x:xcenter+(Math.sin(v)*(outerradius-offs)),y:ycenter-(Math.cos(v)*(outerradius-offs))});
+        inner.push({x:xcenter+(Math.sin(v+(va*0.5))*(innerradius-offs)),y:ycenter-(Math.cos(v+(va*0.5))*(innerradius-offs))});
+        inner.push({x:xcenter,y:ycenter});        
+        inners.push(inner);
+        
+        v+=va;
+    }
+
+    // Draw outer outline
+    ctx.beginPath();
+    drawPoly(outer);
+    ctx.stroke();
+
+    // Draw shadow Symbols
+    for(inner of inners){
+        ctx.beginPath();
+        drawPoly(inner);
+        ctx.stroke();
+    }
+}
+
+function drawit()
+{	
+    pseudoStar(5,0,200,200,60,120,8);
+
+    window.requestAnimationFrame(drawit);
+} 			
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>
