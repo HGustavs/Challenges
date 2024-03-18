@@ -7,6 +7,8 @@
 
 var ctx;
 
+var v=0;
+
 function setup()
 {
     var cc = document.getElementById("myCanvas");
@@ -15,56 +17,132 @@ function setup()
     drawit();
 }
 
-function drawPoly(list)
-{
-    for(var i=0;i<list.length;i++){
-        if(i==0) ctx.moveTo(list[i].x,list[i].y);
-        ctx.lineTo(list[i].x,list[i].y);
-    }
+// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments - modified to return false only if parallel
+function intersect(p1,p2,p3,p4) {
+	
+		// Check if none of the lines are of length 0
+		if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+
+		denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+	
+		// Lines are parallel
+		if (denominator === 0) return false;
+
+		let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+		let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+		// Return a object with the x and y coordinates of the intersection
+		let x = p1.x + ua * (p2.x - p1.x)
+		let y = p1.y + ua * (p2.y - p1.y)
+		
+		return {x:x, y:y}
 }
 
-function pseudoStar(sides,startangle,xcenter,ycenter,innerradius,outerradius,offs)
+function drawPoly(list,color)
 {
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    if(list.length>0){
+        ctx.moveTo(list[0].x,list[0].y);
+        for(var i=0;i<list.length;i++){
+            ctx.lineTo(list[(i+1)%list.length].x,list[(i+1)%list.length].y);
+        }
+    }
+    ctx.fill();
+}
+
+// Compute normalized normal of a line segment
+function normal(p1,p2)
+{
+    var nx=p2.x-p1.x;
+    var ny=p2.y-p1.y;
+    var len=Math.sqrt((nx*nx)+(ny*ny));
+    return {x:(ny/len),y:(-nx/len)}
+}
+
+function combine(p,n,offs)
+{
+    return {x:p.x+(n.x*offs),y:p.y+(n.y*offs)};
+}
+
+function mod(x,n)
+{
+    return ((x % n) + n) % n;
+}
+
+function offsetPoly(list,offs)
+{
+    var outlist=[];
+    for(var i=0;i<list.length;i++){
+
+        // Get point before and after current point
+        var p1=list[mod(i-1,list.length)];
+        var p2=list[i];
+        var p3=list[mod(i+1,list.length)];
+
+        // Normal of segments
+        var n1=normal(p1,p2);
+        var n2=normal(p2,p3);
+
+        var o1=combine(p1,n1,offs);
+        var o2=combine(p2,n1,offs);
+        var o3=combine(p2,n2,offs);
+        var o4=combine(p3,n2,offs);
+
+        outlist.push(intersect(o1,o2,o3,o4));
+    }
+    return outlist;
+}
+
+function pseudoStar(sides,startangle,xcenter,ycenter,innerradius,outerradius,offs,linecolor,backgroundcolor)
+{
+    // Declare variables
     var v=startangle;
     var va=2*3.1415*(1.0/sides);
-
-    ctx.strokeStyle="#48F";
-    ctx.beginPath();
-
     var outer=[];
+    var flag=[];
     var inners=[];
 
-    // Push coordinate data
-    for(var i=0;i<=sides;i++){
+    var cornerx=Math.sin(startangle)*outerradius*1.44;
+    var cornery=-Math.cos(startangle)*outerradius*1.44;
+
+    // Flag rectangle
+    flag.push({x:xcenter+cornerx,y:ycenter+cornery});
+    flag.push({x:xcenter-cornery,y:ycenter+cornerx});
+    flag.push({x:xcenter-cornerx,y:ycenter-cornery});
+    flag.push({x:xcenter+cornery,y:ycenter-cornerx});
+
+    // Push coordinate data for star points
+    for(var i=0;i<sides;i++){
         outer.push({x:xcenter+(Math.sin(v)*outerradius),y:ycenter-(Math.cos(v)*outerradius)});
         outer.push({x:xcenter+(Math.sin(v+(va*0.5))*innerradius),y:ycenter-(Math.cos(v+(va*0.5))*innerradius)});
-        
-        var inner=[];
-        inner.push({x:xcenter,y:ycenter});
-        inner.push({x:xcenter+(Math.sin(v)*(outerradius-offs)),y:ycenter-(Math.cos(v)*(outerradius-offs))});
-        inner.push({x:xcenter+(Math.sin(v+(va*0.5))*(innerradius-offs)),y:ycenter-(Math.cos(v+(va*0.5))*(innerradius-offs))});
-        inner.push({x:xcenter,y:ycenter});        
-        inners.push(inner);
-        
         v+=va;
     }
 
-    // Draw outer outline
-    ctx.beginPath();
-    drawPoly(outer);
-    ctx.stroke();
+    // Shadow triangles from offset polygon
+    var inner=offsetPoly(outer,offs);
+    for(var i=0;i<inner.length;i+=2){
+        var tmp=[];
+        tmp.push(inner[i]);
+        tmp.push(inner[i+1]);
+        tmp.push({x:xcenter,y:ycenter});
+        inners.push(tmp);
+    }
 
-    // Draw shadow Symbols
-    for(inner of inners){
-        ctx.beginPath();
-        drawPoly(inner);
-        ctx.stroke();
+    // Draw Background, outline and inner shadows
+    drawPoly(flag,backgroundcolor);   
+    drawPoly(outer,linecolor);
+    for(shadow of inners){
+        drawPoly(shadow,backgroundcolor);
     }
 }
 
 function drawit()
 {	
-    pseudoStar(5,0,200,200,60,120,8);
+    ctx.clearRect(0,0,500,500);
+    v+=0.01;
+    pseudoStar(4,v,200,200,40,120,-8,"#fff","#48F");
 
     window.requestAnimationFrame(drawit);
 } 			
