@@ -49,48 +49,94 @@ function intersect(p1,p2,p3,p4) {
 }
 
 // Inside polygon using even odd rule
-function insidePoly(pointlist,p1)
+function insidePoly(pointlist,pnt)
 {
-
+    var cnt=0;
+    for(var i=0;i<pointlist.length;i++){
+        var p1=pointlist[i];
+        var p2=pointlist[(i+1)%pointlist.length];    
+        if((pnt.y>=p1.y&&pnt.y<p2.y)||(pnt.y>=p2.y&&pnt.y<p1.y)){
+            var dx=p2.x-p1.x;
+            var dy=p2.y-p1.y;
+            var k=dx/dy;
+            var m=p1.x-(k*p1.y);
+            if(((k*pnt.y)+m)<=pnt.x) cnt++
+        }
+    }        
+    return cnt%2;
 }
 
-// Intersection of pointlist polygon and ray
-function intersectPolygon(pointlist,r1,r2)
+// Draw the polygon outline with a certain color
+function drawPolygon(pointlist)
 {
-    // Return array
-    var retarr=[];
     for(var i=0;i<pointlist.length;i++){
         var p1=pointlist[i];
         var p2=pointlist[(i+1)%pointlist.length];
-        
-        c.strokeStyle="#25e";
-        c.beginPath();
-        c.moveTo(p1.x,p1.y);
-        c.lineTo(p2.x,p2.y);
-        c.stroke();
-        
+        drawLine(p1,p2,"#25e");
+    }
+}
+
+// Draw a line with a certain color
+function drawLine(p1,p2,color)
+{
+    c.strokeStyle=color;
+    c.beginPath();
+    c.moveTo(p1.x,p1.y);
+    c.lineTo(p2.x,p2.y);
+    c.stroke();
+}
+
+// Intersection of pointlist polygon and ray
+function intersectPolygon(pointlist,r1,r2,q)
+{
+    // Return array
+    var retarr=[];
+    var foundarr=[];
+    for(var i=0;i<pointlist.length;i++){
+        var p1=pointlist[i];
+        var p2=pointlist[(i+1)%pointlist.length];
         col=intersect(p1,p2,r1,r2);
 
+        // If an intersection is found we store the point and the position of the intersection
         if(col!=false){
-            c.beginPath();
-            c.arc(col.x,col.y, 5, 0, 2 * Math.PI);
-            c.fill();
+            foundarr.push({x:col.x,y:col.y,pos:i});
         }
     }
+    
+    if(foundarr.length==2){
+        // Make first array and check if point is inside array
+        var newarr=[];
+        for(var i=0;i<=foundarr[0].pos;i++){
+            newarr.push(pointlist[i]);
+        }
+        newarr.push({x:foundarr[0].x,y:foundarr[0].y});
+        newarr.push({x:foundarr[1].x,y:foundarr[1].y});
+        for(var i=foundarr[1].pos+1;i<pointlist.length;i++){
+            newarr.push(pointlist[i]);
+        }
 
-    c.strokeStyle="#2c5";
-    c.beginPath();
-    c.moveTo(r1.x,r1.y);
-    c.lineTo(r2.x,r2.y);
-    c.stroke();
+        if(insidePoly(newarr,q)){
+            return newarr;
+        }
 
+        // Make alternate array
+        var otherarr=[];
+        otherarr.push({x:foundarr[0].x,y:foundarr[0].y});
+        for(var i=foundarr[0].pos+1;i<=foundarr[1].pos;i++){
+            otherarr.push(pointlist[i]);
+        }
+        otherarr.push({x:foundarr[1].x,y:foundarr[1].y});
+        return otherarr;
+
+    }else{
+        return false;
+    }
 }
 
 function zetup()
 {
 		var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
-
     updatestate();
 }
 				
@@ -100,8 +146,10 @@ function updatestate()
     
     var r1={x:40,y:30};
     var r2={x:140,y:210};
+    var q={x:30,y:70};
 
-    intersectPolygon(poly,r1,r2);
+    var intersected=intersectPolygon(poly,r1,r2,q);
+    if(intersected!=null) drawPolygon(intersected);
 }		
 			
 		</script>
