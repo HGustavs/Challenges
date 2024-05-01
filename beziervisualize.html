@@ -1,0 +1,214 @@
+<html>
+<head>
+		<script>
+
+// https://pomax.github.io/bezierinfo/
+
+var points = [
+  {c:"m",x:100,y:350},  
+  {c:"l",x:120,y:100},
+  {c:"l",x:300,y:350},
+  {c:"l",x:400,y:150},
+  {c:"l",x:500,y:250},
+  {c:"l",x:600,y:200},
+  {c:"l",x:630,y:450}
+];
+
+function solve(data, k) {
+
+  if (k == null) k = 1;
+  
+  var size = data.length;
+  var last = size - 4;    
+
+  var path = "M" + [data[0], data[1]];
+
+  for (var i = 0; i < size - 2; i +=2) {
+
+    var x0 = i ? data[i - 2] : data[0];
+    var y0 = i ? data[i - 1] : data[1];
+
+    var x1 = data[i + 0];
+    var y1 = data[i + 1];
+
+    var x2 = data[i + 2];
+    var y2 = data[i + 3];
+
+    var x3 = i !== last ? data[i + 4] : x2;
+    var y3 = i !== last ? data[i + 5] : y2;
+    
+    var cp1x = x1 + (x2 - x0) / 6 * k;
+    var cp1y = y1 + (y2 - y0) / 6 * k;
+
+    var cp2x = x2 - (x3 - x1) / 6 * k;
+    var cp2y = y2 - (y3 - y1) / 6 * k;
+   
+    // Cubic bezier Given start point, two control points and one end point
+    // Draws a cubic Bézier curve from the current point to (x,y) using (x1,y1) as the control point at the beginning of the curve and (x2,y2) as the control point at the end of the curve.
+    
+    path += "C" + [cp1x, cp1y, cp2x, cp2y, x2, y2];
+  } 
+
+  return path;
+}    
+
+// Star generator for N sided stars with pseudo 3d effect
+// More complicated than it seems - naive version adds radius but a better versions needs to offset the outer polygon
+
+var ctx;
+
+var v=0;
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    ctx = cc.getContext("2d");
+  
+    drawit();
+}
+
+// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments - modified to return false only if parallel
+function intersect(p1,p2,p3,p4) {
+    // Check if none of the lines are of length 0
+    if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+
+    denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+
+    // Lines are parallel
+    if (denominator === 0) return false;
+
+    let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+    let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+    // Return a object with the x and y coordinates of the intersection
+    let x = p1.x + ua * (p2.x - p1.x)
+    let y = p1.y + ua * (p2.y - p1.y)
+
+    return {x:x, y:y}
+}
+
+// Turn number to hex digit
+function numberToHex(num)
+{
+    return new Number(num).toString(16);
+}
+
+function hexToNumber(hex)
+{
+    hex=hex.toUpperCase(hex);
+    if(hex.length>1){
+        return hexToNumber[0]+(255*hexToNumber[1]);
+    }else{
+        if(hex=="F") return 15;
+        if(hex=="E") return 14;
+        if(hex=="D") return 13;
+        if(hex=="C") return 12;
+        if(hex=="B") return 11;
+        if(hex=="A") return 10;
+        return parseInt(hex);
+    }
+}
+
+// Invert hexadecimal color e.g. 000000 or 000 to ffffff or fff
+function invertCol(color)
+{
+    // Long format or short format hex
+    var index=0
+    if(color[0]=="#"){
+        index=1;
+    }
+    if(color.length<6){
+        var r=numberToHex(15-hexToNumber(color[index]));
+        var g=numberToHex(15-hexToNumber(color[index+1]));
+        var b=numberToHex(15-hexToNumber(color[index+2]));
+    }else{
+
+    }
+    return "#"+r+g+b;
+}
+
+function drawPoly(list,color)
+{
+    ctx.strokeStyle=color;
+    ctx.beginPath();
+    if(list.length>0){
+        ctx.moveTo(list[0].x,list[0].y);
+        for(var i=1;i<list.length;i++){
+            ctx.lineTo(list[i].x,list[i].y);
+        }
+    }
+    ctx.stroke();
+
+    if(list.length>0){
+        for(var i=0;i<list.length;i++){
+                //ctx.moveTo(list[i].x,list[i].y);
+                ctx.fillStyle=invertCol(color);
+                ctx.beginPath();
+                ctx.arc(list[i].x,list[i].y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+        }
+    }
+
+}
+
+// Compute normalized normal of a line segment
+function normal(p1,p2)
+{
+    var nx=p2.x-p1.x;
+    var ny=p2.y-p1.y;
+    var len=Math.sqrt((nx*nx)+(ny*ny));
+    return {x:(ny/len),y:(-nx/len)}
+}
+
+// Move point a certain units in direction of normal
+function combine(p,n,offs)
+{
+    return {x:p.x+(n.x*offs),y:p.y+(n.y*offs)};
+}
+
+// Modulo function that works with negative values
+function mod(x,n)
+{
+    return ((x % n) + n) % n;
+}
+
+// Offset polygon a certain number of units
+function offsetPoly(list,offs)
+{
+    var outlist=[];
+    for(var i=0;i<list.length;i++){
+
+        // Get point before and after current point
+        var p1=list[mod(i-1,list.length)];
+        var p2=list[i];
+        var p3=list[mod(i+1,list.length)];
+
+        // Normal of segments
+        var n1=normal(p1,p2);
+        var n2=normal(p2,p3);
+
+        var o1=combine(p1,n1,offs);
+        var o2=combine(p2,n1,offs);
+        var o3=combine(p2,n2,offs);
+        var o4=combine(p3,n2,offs);
+
+        outlist.push(intersect(o1,o2,o3,o4));
+    }
+    return outlist;
+}
+
+function drawit()
+{	
+    ctx.clearRect(0,0,900,900);
+
+    drawPoly(points,"#f84");
+
+    // window.requestAnimationFrame(drawit);
+} 			
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

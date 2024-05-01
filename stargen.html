@@ -60,16 +60,19 @@ function normal(p1,p2)
     return {x:(ny/len),y:(-nx/len)}
 }
 
+// Move point a certain units in direction of normal
 function combine(p,n,offs)
 {
     return {x:p.x+(n.x*offs),y:p.y+(n.y*offs)};
 }
 
+// Modulo function that works with negative values
 function mod(x,n)
 {
     return ((x % n) + n) % n;
 }
 
+// Offset polygon a certain number of units
 function offsetPoly(list,offs)
 {
     var outlist=[];
@@ -94,6 +97,7 @@ function offsetPoly(list,offs)
     return outlist;
 }
 
+// Pseudo 3d star
 function pseudoStar(sides,startangle,xcenter,ycenter,innerradius,outerradius,offs,linecolor,backgroundcolor)
 {
     // Declare variables

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+		<script>
+				var c;
+			  var mx,my,mb=0;
+			
+// https://en.wikipedia.org/wiki/Fortune%27s_algorithm
+// https://jacquesheunis.com/post/fortunes-algorithm/
+// https://www.youtube.com/watch?v=I6Fen2Ac-1U
+// https://codeforces.com/blog/entry/85638
+// https://link.springer.com/article/10.1007/s41095-022-0326-0#preview
+// https://cp-algorithms.com/geometry/delaunay.html
+// https://www.codeproject.com/Articles/882739/Simple-Approach-to-Voronoi-Diagrams
+// https://www.youtube.com/watch?v=pUwEp1hs8MM
+// https://algo.uni-trier.de/lectures/algeo/slides/
+// https://www.youtube.com/watch?v=Pn19deUBsM8&list=PLubYOWSl9mIuUsLBKM4NIzPrmBA5jKL-r&index=1
+// https://www.youtube.com/watch?v=pUwEp1hs8MM&list=PLubYOWSl9mIuUsLBKM4NIzPrmBA5jKL-r&index=4
+// http://www.bitbanging.space/posts/voronoi-diagram-with-fortunes-algorithm
+// http://www.paul-reed.co.uk/fortune.htm#parabolaequation
+// https://github.com/PaulMakesStuff/Voronoi2D/blob/master/Voronoi.js
+// https://github.com/ridoluc/Voronoi-Diagram/blob/master/Voronoi.js
+// https://jacquesheunis.com/post/fortunes-algorithm/
+// https://algo.uni-trier.de/lectures/algeo/slides/
+
+// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments - modified to return false only if parallel
+function intersect(p1,p2,p3,p4) {
+    // Check if none of the lines are of length 0
+    if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+
+    denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+
+    // Lines are parallel
+    if (denominator === 0) return false;
+
+    let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+    let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+    console.log(ua,ub);
+
+    if (ua < 0 || ua > 1) {
+        return false
+    }
+
+    // Return a object with the x and y coordinates of the intersection
+    let x = p1.x + ua * (p2.x - p1.x);
+    let y = p1.y + ua * (p2.y - p1.y);
+
+    return {x:x, y:y}
+}
+
+// Intersection of pointlist polygon and ray
+function intersectPolygon(pointlist,r1,r2)
+{
+
+    for(var i=0;i<pointlist.length;i++){
+        var p1=pointlist[i];
+        var p2=pointlist[(i+1)%pointlist.length];
+        
+        c.strokeStyle="#25e";
+        c.beginPath();
+        c.moveTo(p1.x,p1.y);
+        c.lineTo(p2.x,p2.y);
+        c.stroke();
+        
+        col=intersect(p1,p2,r1,r2);
+
+        if(col!=false){
+            c.beginPath();
+            c.arc(col.x,col.y, 5, 0, 2 * Math.PI);
+            c.fill();
+        }
+    }
+
+    c.strokeStyle="#2c5";
+    c.beginPath();
+    c.moveTo(r1.x,r1.y);
+    c.lineTo(r2.x,r2.y);
+    c.stroke();
+
+}
+
+function zetup()
+{
+		var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+    updatestate();
+}
+				
+function updatestate()
+{
+    var poly=[{x:20,y:20},{x:220,y:20},{x:220,y:220},{x:20,y:220}];
+    
+    var r1={x:40,y:30};
+    var r2={x:140,y:210};
+
+    intersectPolygon(poly,r1,r2);
+}		
+			
+		</script>
+</head>
+<body onload="zetup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+  <button onclick="generate();">Render</button>
+</body>
