@@ -21,6 +21,7 @@
 // https://github.com/PaulMakesStuff/Voronoi2D/blob/master/Voronoi.js
 // https://github.com/ridoluc/Voronoi-Diagram/blob/master/Voronoi.js
 // https://algo.uni-trier.de/lectures/algeo/slides/
+// https://www.youtube.com/watch?v=3G5d8ob_Lfo&t=15s
 
 // line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
 // Determine the intersection point of two line segments - modified to test intersection between line and ray
@@ -114,6 +115,9 @@ function intersectPolygon(pointlist,r1,r2,q)
         // If an intersection is found we store the point and the position of the intersection
         if(col!=false){
             foundarr.push({x:col.x,y:col.y,pos:i});
+            //c.beginPath();
+            //c.arc(col.x,col.y,5,0,Math.PI*2.0);
+            //c.fill();
         }
     }
     
@@ -144,7 +148,7 @@ function intersectPolygon(pointlist,r1,r2,q)
         return otherarr;
 
     }else{
-        return false;
+        return null;
     }
 }
 
@@ -172,6 +176,17 @@ function processPoints(pointlist,treshold)
 
     var polypoints=[{x:x1,y:y1},{x:x2,y:y1},{x:x2,y:y2},{x:x1,y:y2}];
 
+    // For each point except for first
+    for(var i=1;i<pointlist.length;i++){
+        p1={x:(pointlist[0].x+pointlist[i].x)*0.5,y:(pointlist[0].y+pointlist[i].y)*0.5};
+        p2={x:p1.x-(pointlist[0].y-pointlist[i].y),y:p1.y+(pointlist[0].x-pointlist[i].x)};
+        var intersected=intersectPolygon(polypoints,p1,p2,pointlist[0]);
+        if(intersected!=null) polypoints=intersected;
+        // drawLine(pointlist[0],pointlist[i],"#606");
+    }
+
+    // drawLine(p1,p2,"#606");
+
     drawPolygon(polypoints,"#2b5");
 }
 
@@ -179,11 +194,16 @@ function updatestate()
 {
 
     // Input points from https://codeforces.com/blog/entry/85638
-    var pointlist=[{x:209,y:130},{x:442,y:112},{x:700,y:75},{x:81,y:344},{x:356,y:297},{x:617,y:260},{x:75,y:558},{x:266,y:468},{x:473,y:468},{x:723,y:458},{x:590,y:622}];
+    var pointlist=[{x:266,y:468},{x:356,y:297},{x:209,y:130},{x:442,y:112},{x:700,y:75},{x:81,y:344},{x:617,y:260},{x:75,y:558},{x:473,y:468},{x:723,y:458},{x:590,y:622}];
 
     // First step, processing a list of points
     drawPointList(pointlist,"#25e","#000",16);
-    processPoints(pointlist,20);
+ 
+    for(var i=0;i<pointlist.length;i++){
+        var pp=pointlist.pop();
+        pointlist.unshift(pp);
+        processPoints(pointlist,20);
+    }
 
     /*
     var poly=[{x:20,y:20},{x:220,y:20},{x:220,y:220},{x:20,y:220}];
