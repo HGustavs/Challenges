@@ -185,36 +185,28 @@ function processPoints(pointlist,treshold)
         // drawLine(pointlist[0],pointlist[i],"#606");
     }
 
-    // drawLine(p1,p2,"#606");
-
-    drawPolygon(polypoints,"#2b5");
+    return polypoints;
 }
 
 function updatestate()
 {
-
     // Input points from https://codeforces.com/blog/entry/85638
     var pointlist=[{x:266,y:468},{x:356,y:297},{x:209,y:130},{x:442,y:112},{x:700,y:75},{x:81,y:344},{x:617,y:260},{x:75,y:558},{x:473,y:468},{x:723,y:458},{x:590,y:622}];
 
     // First step, processing a list of points
     drawPointList(pointlist,"#25e","#000",16);
+
+    var voronoipolygons=[];
  
     for(var i=0;i<pointlist.length;i++){
         var pp=pointlist.pop();
         pointlist.unshift(pp);
-        processPoints(pointlist,20);
+        voronoipolygons.push(processPoints(pointlist,20));
     }
 
-    /*
-    var poly=[{x:20,y:20},{x:220,y:20},{x:220,y:220},{x:20,y:220}];
-    
-    var r1={x:40,y:30};
-    var r2={x:140,y:210};
-    var q={x:30,y:70};
-
-    var intersected=intersectPolygon(poly,r1,r2,q);
-    if(intersected!=null) drawPolygon(intersected);
-    */
+    for(polygon of voronoipolygons){
+        drawPolygon(polygon,"#0f0");
+    }
 }		
 			
 		</script>
