@@ -28,6 +28,51 @@ function intersect(x1,y1,x2,y2,x3,y3,x4,y4) {
   return {x:x, y:y}
 }
 
+// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
+// Determine the intersection point of two line segments - modified to test intersection between line and ray
+function intersectRay(p1,p2,p3,p4) {
+    testcnt++;
+
+    // Check if none of the lines are of length 0
+    if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+
+    denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+
+    // Lines are parallel
+    if (denominator === 0) return false;
+
+    let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+    let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+    if (ua < 0 || ua > 1) {
+        return false
+    }
+
+    // Return a object with the x and y coordinates of the intersection
+    let x = p1.x + ua * (p2.x - p1.x);
+    let y = p1.y + ua * (p2.y - p1.y);
+
+    return {x:x, y:y}
+}
+
+// Inside polygon using even odd rule
+function insidePoly(pointlist,pnt)
+{
+    var cnt=0;
+    for(var i=0;i<pointlist.length;i++){
+        var p1=pointlist[i];
+        var p2=pointlist[(i+1)%pointlist.length];    
+        if((pnt.y>=p1.y&&pnt.y<p2.y)||(pnt.y>=p2.y&&pnt.y<p1.y)){
+            var dx=p2.x-p1.x;
+            var dy=p2.y-p1.y;
+            var k=dx/dy;
+            var m=p1.x-(k*p1.y);
+            if(((k*pnt.y)+m)<=pnt.x) cnt++
+        }
+    }        
+    return cnt%2;
+}
+
 // Even odd rule
 function inside(xk,yk,path)
 {
@@ -74,6 +119,16 @@ function drawBox(x1,y1,w,h,opacity,fillcolor)
   c.globalAlpha=1.0;
 }
 
+// Draw a line with a certain color
+function drawSegment(p1,p2,color)
+{
+    c.strokeStyle=color;
+    c.beginPath();
+    c.moveTo(p1.x,p1.y);
+    c.lineTo(p2.x,p2.y);
+    c.stroke();
+}
+
 function drawLine(x1,y1,x2,y2,width,color)
 {
     c.strokeStyle=color;
@@ -111,23 +166,65 @@ function drawCross(xk,yk,radius,thick,color)
     c.lineWidth=1.0;
 }
 
-function drawGrid()
+// Draw spatial grid
+function drawGrid(gridcolor,gridopacity)
 {
-    // Draw spatial hash grid
-    c.globalAlpha=0.5;
-    c.strokeStyle="#080";
+    c.globalAlpha=gridopacity;
+    c.strokeStyle=gridcolor;
     c.beginPath();
-    for(var i=0;i<cheight;i+=gridsize){
-            c.moveTo(0,i);
-            c.lineTo(cwidth,i);
+    for(var x=0;x<gridMaxX;x+=gridSize){
+        c.moveTo(x,0);
+        c.lineTo(x,gridMaxY);
     }
-    for(var i=0;i<cwidth;i+=gridsize){
-            c.moveTo(i,0);
-            c.lineTo(i,cheight);
+    for(var y=0;y<gridMaxY;y+=gridSize){
+        c.moveTo(0,y);
+        c.lineTo(gridMaxX,y);
     }
     c.stroke();
+    c.globalAlpha=1.0;
 }
 
+// Visualize a list of points that form a closed polygon
+function drawPointList(pointlist,pointcolor,textcolor,textsize,opacity)
+{
+    c.textAlign="center";
+    c.font = textsize+"px Arial Narrow";
+    c.textBaseline="bottom";
+    if(opacity<1.0){
+        c.globalAlpha=opacity;
+    }
+    for(point of pointlist){
+        c.fillStyle=pointcolor;
+        c.beginPath();
+        c.arc(point.x,point.y,5,0,Math.PI*2.0);
+        c.fill();
+        c.fillStyle=textcolor;        
+        c.fillText("("+point.x+","+point.y+")", point.x,point.y-5.0);
+    }
+    c.globalAlpha=1.0;
+}
+
+// Draw the polygon outline with a certain color
+function drawPolygon(pointlist,color,fillstate)
+{
+    c.beginPath();
+    for(var i=0;i<=pointlist.length;i++){
+        if(i==0){
+            c.moveTo(pointlist[i].x,pointlist[i].y);
+        }else{
+            c.lineTo(pointlist[i%pointlist.length].x,pointlist[i%pointlist.length].y);        
+        }
+    }
+    if(fillstate){
+        c.fillStyle=color;
+        c.fill();
+    }else{
+        c.strokeStyle=color;    
+        c.stroke();
+    }
+}
+
+// Path is a list of segments not necessarily a polygon
 function drawPath(path,linestyle)
 {
 

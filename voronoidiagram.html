@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <script src="helperFunction/hexcolors.js"></script>
+    <script src="helperFunction/spatialHash.js"></script>
+    <script src="helperFunction/canvasDraw.js"></script>
+
 		<script>
 				var c;
 			  var mx,my,mb=0;
+        var testcnt=0;
 			
 // https://en.wikipedia.org/wiki/Fortune%27s_algorithm
 // https://jacquesheunis.com/post/fortunes-algorithm/
@@ -23,85 +28,23 @@
 // https://algo.uni-trier.de/lectures/algeo/slides/
 // https://www.youtube.com/watch?v=3G5d8ob_Lfo&t=15s
 
-// line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
-// Determine the intersection point of two line segments - modified to test intersection between line and ray
-function intersect(p1,p2,p3,p4) {
-    // Check if none of the lines are of length 0
-    if ((p1.x === p2.x && p1.y === p2.y) || (p3.x === p4.x && p3.y === p4.y)) return false;
+// Constants and data for spatial hash (hash variable must be of array type)
 
-    denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+var spatialHash=[];
+const gridSize=100;
+const gridMaxX=800;
+const gridMaxY=800;
 
-    // Lines are parallel
-    if (denominator === 0) return false;
+// Input points from https://codeforces.com/blog/entry/85638
+var pointlist=[
+    {x:266,y:468},{x:356,y:297},{x:209,y:130},{x:442,y:112},{x:700,y:75},{x:81,y:344},{x:617,y:260},{x:75,y:558},{x:473,y:468},
+    {x:723,y:458},{x:570,y:622},{x:617,y:618},{x:280,y:110},{x:748,y:170},{x:694,y:175},{x:533,y:791},{x:791,y:689},{x:414,y:565},
+    {x:436,y:183},{x:238,y:322},{x:283,y:619},{x:529,y:33},{x:285,y:66},{x:322,y:285},{x:559,y:101},{x:401,y:656},{x:107,y:568},
+    {x:352,y:181},{x:77,y:696},{x:715,y:657},{x:201,y:78}
+];
+// Test count for 31 coordinate pairs is 4714
 
-    let ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
-    let ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
-
-    if (ua < 0 || ua > 1) {
-        return false
-    }
-
-    // Return a object with the x and y coordinates of the intersection
-    let x = p1.x + ua * (p2.x - p1.x);
-    let y = p1.y + ua * (p2.y - p1.y);
-
-    return {x:x, y:y}
-}
-
-// Inside polygon using even odd rule
-function insidePoly(pointlist,pnt)
-{
-    var cnt=0;
-    for(var i=0;i<pointlist.length;i++){
-        var p1=pointlist[i];
-        var p2=pointlist[(i+1)%pointlist.length];    
-        if((pnt.y>=p1.y&&pnt.y<p2.y)||(pnt.y>=p2.y&&pnt.y<p1.y)){
-            var dx=p2.x-p1.x;
-            var dy=p2.y-p1.y;
-            var k=dx/dy;
-            var m=p1.x-(k*p1.y);
-            if(((k*pnt.y)+m)<=pnt.x) cnt++
-        }
-    }        
-    return cnt%2;
-}
-
-// Draw the polygon outline with a certain color
-function drawPolygon(pointlist,color)
-{
-    for(var i=0;i<pointlist.length;i++){
-        var p1=pointlist[i];
-        var p2=pointlist[(i+1)%pointlist.length];
-        drawLine(p1,p2,color);
-    }
-}
-
-// Draw a line with a certain color
-function drawLine(p1,p2,color)
-{
-    c.strokeStyle=color;
-    c.beginPath();
-    c.moveTo(p1.x,p1.y);
-    c.lineTo(p2.x,p2.y);
-    c.stroke();
-}
-
-function drawPointList(pointlist,pointcolor,textcolor,textsize)
-{
-    c.textAlign="center";
-    c.font = textsize+"px Arial Narrow";
-    c.textBaseline="bottom";
-    for(point of pointlist){
-        c.fillStyle=pointcolor;
-        c.beginPath();
-        c.arc(point.x,point.y,5,0,Math.PI*2.0);
-        c.fill();
-        c.fillStyle=textcolor;        
-        c.fillText("("+point.x+","+point.y+")", point.x,point.y-5.0);
-    }
-}
-
-// Intersection of pointlist polygon and ray
+// Intersection of pointlist polygon and ray for voronoi diagram
 function intersectPolygon(pointlist,r1,r2,q)
 {
     // Return array
@@ -154,6 +97,24 @@ function intersectPolygon(pointlist,r1,r2,q)
 
 function zetup()
 {
+    // Initialize spatial hash
+    clearHash(gridSize,gridMaxX,gridMaxY)
+    var i=0;
+    for(point of pointlist){
+        point.id=i++;
+        storeHash(point.x,point.y,point);
+    }
+
+/*
+    for(var y=0;y<8;y++){
+        for(var x=0;x<8;x++){
+            var cnt=countHash(x,y);
+        }
+    }
+*/
+
+    collateHash(6,1);
+
 		var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
     updatestate();
@@ -173,6 +134,11 @@ function processPoints(pointlist,treshold)
         y1=Math.min(y1,point.y-treshold);
         y2=Math.max(y2,point.y+treshold);    
     }
+    if(x1<gridSize) x1=0;
+    if(x2>(gridMaxX-gridSize)) x2=gridMaxX;
+    if(y1<gridSize) y1=0;
+    if(y2>(gridMaxY-gridSize)) y2=gridMaxY;
+
 
     var polypoints=[{x:x1,y:y1},{x:x2,y:y1},{x:x2,y:y2},{x:x1,y:y2}];
 
@@ -182,7 +148,7 @@ function processPoints(pointlist,treshold)
         p2={x:p1.x-(pointlist[0].y-pointlist[i].y),y:p1.y+(pointlist[0].x-pointlist[i].x)};
         var intersected=intersectPolygon(polypoints,p1,p2,pointlist[0]);
         if(intersected!=null) polypoints=intersected;
-        // drawLine(pointlist[0],pointlist[i],"#606");
+        // drawLine(pointlist[0].x,pointlist[0].y,pointlist[i].x,pointlist[i].y,1.5,"#606");
     }
 
     return polypoints;
@@ -190,12 +156,17 @@ function processPoints(pointlist,treshold)
 
 function updatestate()
 {
-    // Input points from https://codeforces.com/blog/entry/85638
-    var pointlist=[{x:266,y:468},{x:356,y:297},{x:209,y:130},{x:442,y:112},{x:700,y:75},{x:81,y:344},{x:617,y:260},{x:75,y:558},{x:473,y:468},{x:723,y:458},{x:590,y:622}];
+    var str="";
+    for(var i=0;i<20;i++){
+        str+="{x:"+Math.round(Math.random()*800)+",y:"+Math.round(Math.random()*800)+"},";
+    }
+    // console.log(str);
 
-    // First step, processing a list of points
-    drawPointList(pointlist,"#25e","#000",16);
-
+/*
+    for(var i=0;i<520;i++){
+        pointlist.push({x:Math.floor(Math.random()*gridMaxX),y:Math.floor(Math.random()*gridMaxY)});
+    }
+*/
     var voronoipolygons=[];
  
     for(var i=0;i<pointlist.length;i++){
@@ -205,8 +176,14 @@ function updatestate()
     }
 
     for(polygon of voronoipolygons){
-        drawPolygon(polygon,"#0f0");
+        drawPolygon(polygon,randomColor(),true);
     }
+
+   // Draw points and hashgrid
+    drawPointList(pointlist,"#25e","#000",16,0.5);
+    drawGrid("#fff",0.5);
+
+    console.log(testcnt);
 }		
 			
 		</script>

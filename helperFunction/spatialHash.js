@@ -1,3 +1,91 @@
+var hashgrid=[];
+
+// Keep track of how to expand spatial area if bucket is empty.
+var hashoffs=[
+    {x: 0,y: 0, offs: [        ]}, {x:-1,y: 0, offs: [11,22,16]}, {x: 1,y: 0, offs: [14,23,19]},    // 0,1,2
+    {x:-1,y:-1, offs: [ 9,10,11]}, {x: 0,y:-1, offs: [16,15,12]}, {x: 1,y:-1, offs: [12,13,14]},    // 3,4,5
+    {x:-1,y: 1, offs: [16,17,18]}, {x: 0,y: 1, offs: [18,24,20]}, {x: 1,y: 1, offs: [19,20,21]},    // 6,7,8
+    {x:-2,y:-2, offs: [        ]}, {x:-1,y:-2, offs: [        ]}, {x:-2,y:-1, offs: [        ]},    // 9,10,11
+    {x: 1,y:-2, offs: [        ]}, {x: 2,y:-2, offs: [        ]}, {x: 2,y:-1, offs: [        ]},    // 12,13,14
+    {x: 0,y:-2, offs: [        ]}, {x:-2,y: 1, offs: [        ]}, {x:-2,y: 2, offs: [        ]},    // 15,16,17
+    {x:-1,y: 2, offs: [        ]}, {x: 2,y: 1, offs: [        ]}, {x: 1,y: 2, offs: [        ]},    // 18,19,20
+    {x: 2,y: 2, offs: [        ]}, {x:-2,y: 0, offs: [        ]}, {x: 2,y: 0, offs: [        ]},    // 21,22,23
+    {x: 0,y: 2, offs: [        ]}                                                                   // 24
+];
+
+// Define parameters of hash grid array including stride array. 
+function clearHash(gridSize,gridMaxX,gridMaxY)
+{
+    hashgrid=[];
+    hashgrid.gridSize=gridSize;
+    hashgrid.gridMaxX=gridMaxX;
+    hashgrid.gridMaxY=gridMaxY;
+    hashgrid.gridXStride=Math.ceil(gridMaxX/gridSize);  
+}
+
+// Store data in hash grid
+function storeHash(x,y,content)
+{
+    if(x<0||x>=hashgrid.gridMaxX||y<0||y>=hashgrid.gridMaxY) return false;
+    x=Math.floor(x/hashgrid.gridSize);
+    y=Math.floor(y/hashgrid.gridSize);
+
+    var index=(y*hashgrid.gridXStride)+x;
+    if(hashgrid[index]==null){
+        hashgrid[index]=[];
+    }
+    hashgrid[index].push(content);
+}
+
+// Fast Count of entries in hash grid 
+// If we only want to process non-empty buckets
+function countHash(bucketX,bucketY)
+{
+    if(bucketX<0||bucketY<0||bucketX>=hashgrid.gridXStride||bucketX>=hashgrid.gridXStride) return -1;
+
+    var index=(bucketY*hashgrid.gridXStride)+bucketX;
+    if(hashgrid[index]==null){
+        return 0;
+    }
+    return hashgrid[index].length;
+}
+
+// Returns null if outside boundary or if no data was found
+function readHash(bucketX,bucketY)
+{
+    if(bucketX<0||bucketY<0||bucketX>=hashgrid.gridXStride||bucketX>=hashgrid.gridXStride) return null;
+    var index=(bucketY*hashgrid.gridXStride)+bucketX;
+    if(hashgrid[index]==null){
+        return null;
+    }
+    return hashgrid[index];
+}
+
+// Collatehash
+function collateHash(bucketX,bucketY)
+{
+    // Keep track of found entries
+    var found=[];
+    var queue=[];
+
+    // Process original 9 tiles then process any additional entries
+    for(var i=0;i<9;i++){
+        var cnt=countHash(bucketX+hashoffs[i].x,bucketY+hashoffs[i].y);
+        if(cnt>0){
+            var items=readHash(bucketX+hashoffs[i].x,bucketY+hashoffs[i].y)
+            for(var item of items){
+                found.push(item);
+            }
+        }else if(cnt==0){
+            for(var no of hashoffs[i].offs){
+                if(queue.indexOf(no)==-1) queue.push(no);
+            }
+        }
+    }
+    console.log(found,queue);
+}
+
+
 function visualizeHit(cxk,cyk,segment)
 {
   if(cxk<0||cyk<0||cxk>=gridx||cyk>=gridy) return false;

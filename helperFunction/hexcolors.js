@@ -1,7 +1,11 @@
 // Turn number to hex digit
 function numberToHex(num)
 {
-    return new Number(num).toString(16);
+    if(num<16){
+        return "0"+new Number(num).toString(16);        
+    }else{
+        return new Number(num).toString(16);    
+    }
 }
 
 function hexToNumber(hex)
@@ -36,4 +40,10 @@ function invertCol(color)
 
     }
     return "#"+r+g+b;
+}
+
+// Random color to hex
+function randomColor()
+{
+    return "#"+numberToHex(Math.floor(Math.random()*255))+numberToHex(Math.floor(Math.random()*255))+numberToHex(Math.floor(Math.random()*255));
 }
