@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script src="helperFunction/hexcolors.js"></script>
-    <script src="helperFunction/spatialHash.js"></script>
-    <script src="helperFunction/canvasDraw.js"></script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/hexcolors.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/spatialHash.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/canvasDraw.js?t=" + Date.now() + "'><\/script>");</script>
 
 		<script>
 				var c;
@@ -42,7 +42,7 @@ var pointlist=[
     {x:436,y:183},{x:238,y:322},{x:283,y:619},{x:529,y:33},{x:285,y:66},{x:322,y:285},{x:559,y:101},{x:401,y:656},{x:107,y:568},
     {x:352,y:181},{x:77,y:696},{x:715,y:657},{x:201,y:78}
 ];
-// Test count for 31 coordinate pairs is 4714
+// Test count for 31 coordinate points is 4542
 
 // Intersection of pointlist polygon and ray for voronoi diagram
 function intersectPolygon(pointlist,r1,r2,q)
@@ -53,14 +53,11 @@ function intersectPolygon(pointlist,r1,r2,q)
     for(var i=0;i<pointlist.length;i++){
         var p1=pointlist[i];
         var p2=pointlist[(i+1)%pointlist.length];
-        col=intersect(p1,p2,r1,r2);
+        col=intersectRay(p1,p2,r1,r2);
 
         // If an intersection is found we store the point and the position of the intersection
         if(col!=false){
             foundarr.push({x:col.x,y:col.y,pos:i});
-            //c.beginPath();
-            //c.arc(col.x,col.y,5,0,Math.PI*2.0);
-            //c.fill();
         }
     }
     
@@ -113,15 +110,14 @@ function zetup()
     }
 */
 
-    collateHash(6,1);
-
 		var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
+
     updatestate();
 }
 
 const maxExtent=10000;
-function processPoints(pointlist,treshold)
+function processPoints(pointlist,treshold,current)
 {
     // We first find extents including offsets
     var x1=maxExtent;
@@ -139,16 +135,18 @@ function processPoints(pointlist,treshold)
     if(y1<gridSize) y1=0;
     if(y2>(gridMaxY-gridSize)) y2=gridMaxY;
 
-
+    // Start with treshold rectangle
     var polypoints=[{x:x1,y:y1},{x:x2,y:y1},{x:x2,y:y2},{x:x1,y:y2}];
 
     // For each point except for first
-    for(var i=1;i<pointlist.length;i++){
-        p1={x:(pointlist[0].x+pointlist[i].x)*0.5,y:(pointlist[0].y+pointlist[i].y)*0.5};
-        p2={x:p1.x-(pointlist[0].y-pointlist[i].y),y:p1.y+(pointlist[0].x-pointlist[i].x)};
-        var intersected=intersectPolygon(polypoints,p1,p2,pointlist[0]);
-        if(intersected!=null) polypoints=intersected;
-        // drawLine(pointlist[0].x,pointlist[0].y,pointlist[i].x,pointlist[i].y,1.5,"#606");
+    for(var i=0;i<pointlist.length;i++){
+        if(i!=current){
+            p1={x:(pointlist[current].x+pointlist[i].x)*0.5,y:(pointlist[current].y+pointlist[i].y)*0.5};
+            p2={x:p1.x-(pointlist[current].y-pointlist[i].y),y:p1.y+(pointlist[current].x-pointlist[i].x)};
+            var intersected=intersectPolygon(polypoints,p1,p2,pointlist[current]);
+            if(intersected!=null) polypoints=intersected;
+        }
+        // drawLine(pointlist[current].x,pointlist[current].y,pointlist[i].x,pointlist[i].y,1.5,"#606");
     }
 
     return polypoints;
@@ -156,11 +154,13 @@ function processPoints(pointlist,treshold)
 
 function updatestate()
 {
+/*    
     var str="";
     for(var i=0;i<20;i++){
-        str+="{x:"+Math.round(Math.random()*800)+",y:"+Math.round(Math.random()*800)+"},";
+         str+="{x:"+Math.round(Math.random()*800)+",y:"+Math.round(Math.random()*800)+"},";
     }
-    // console.log(str);
+    console.log(str);
+*/
 
 /*
     for(var i=0;i<520;i++){
@@ -169,17 +169,19 @@ function updatestate()
 */
     var voronoipolygons=[];
  
-    for(var i=0;i<pointlist.length;i++){
-        var pp=pointlist.pop();
-        pointlist.unshift(pp);
-        voronoipolygons.push(processPoints(pointlist,20));
-    }
+    var list=collateHash(6,6);
+    voronoipolygons.push(processPoints(list,20,0));
+
+    //for(var i=0;i<pointlist.length;i++){
+    //    voronoipolygons.push(processPoints(pointlist,20,i));
+    //}
 
     for(polygon of voronoipolygons){
         drawPolygon(polygon,randomColor(),true);
     }
 
    // Draw points and hashgrid
+    collateHash(4,4);    
     drawPointList(pointlist,"#25e","#000",16,0.5);
     drawGrid("#fff",0.5);
 

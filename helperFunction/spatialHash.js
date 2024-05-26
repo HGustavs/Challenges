@@ -3,7 +3,7 @@ var hashgrid=[];
 // Keep track of how to expand spatial area if bucket is empty.
 var hashoffs=[
     {x: 0,y: 0, offs: [        ]}, {x:-1,y: 0, offs: [11,22,16]}, {x: 1,y: 0, offs: [14,23,19]},    // 0,1,2
-    {x:-1,y:-1, offs: [ 9,10,11]}, {x: 0,y:-1, offs: [16,15,12]}, {x: 1,y:-1, offs: [12,13,14]},    // 3,4,5
+    {x:-1,y:-1, offs: [ 9,10,11]}, {x: 0,y:-1, offs: [10,15,12]}, {x: 1,y:-1, offs: [12,13,14]},    // 3,4,5
     {x:-1,y: 1, offs: [16,17,18]}, {x: 0,y: 1, offs: [18,24,20]}, {x: 1,y: 1, offs: [19,20,21]},    // 6,7,8
     {x:-2,y:-2, offs: [        ]}, {x:-1,y:-2, offs: [        ]}, {x:-2,y:-1, offs: [        ]},    // 9,10,11
     {x: 1,y:-2, offs: [        ]}, {x: 2,y:-2, offs: [        ]}, {x: 2,y:-1, offs: [        ]},    // 12,13,14
@@ -82,7 +82,17 @@ function collateHash(bucketX,bucketY)
             }
         }
     }
-    console.log(found,queue);
+    for(var no of queue){
+        var cnt=countHash(bucketX+hashoffs[no].x,bucketY+hashoffs[no].y);
+        if(cnt>0){
+            var items=readHash(bucketX+hashoffs[no].x,bucketY+hashoffs[no].y)
+            for(var item of items){
+                found.push(item);
+            }
+        }    
+    }
+
+    return found;
 }
 
 

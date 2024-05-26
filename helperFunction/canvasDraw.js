@@ -4,6 +4,8 @@
 
 // line intercect math by Paul Bourke http://paulbourke.net/geometry/pointlineplane/
 // Determine the intersection point of two line segments
+var intersectcount=0;
+
 function intersect(x1,y1,x2,y2,x3,y3,x4,y4) {
   intersectcount++;
 	
@@ -119,20 +121,10 @@ function drawBox(x1,y1,w,h,opacity,fillcolor)
   c.globalAlpha=1.0;
 }
 
-// Draw a line with a certain color
-function drawSegment(p1,p2,color)
+function drawLine(x1,y1,x2,y2,width,color,opacity)
 {
     c.strokeStyle=color;
-    c.beginPath();
-    c.moveTo(p1.x,p1.y);
-    c.lineTo(p2.x,p2.y);
-    c.stroke();
-}
-
-function drawLine(x1,y1,x2,y2,width,color)
-{
-    c.strokeStyle=color;
-    c.globalAlpha=1.0;
+    if(opacity!=0) c.globalAlpha=opacity;
     c.lineWidth=width;
 
     c.beginPath();
@@ -141,6 +133,7 @@ function drawLine(x1,y1,x2,y2,width,color)
     c.stroke();
 
     c.lineWidth=1.0;
+    c.globalAlpha=1.0;
 }
 
 function drawCirc(x1,y1,rad,width,color)
@@ -222,6 +215,39 @@ function drawPolygon(pointlist,color,fillstate)
         c.strokeStyle=color;    
         c.stroke();
     }
+}
+
+// Linear hatching of a box
+function drawHatchBox(x1,y1,x2,y2,ang,dist,opacity)
+{
+    // First two is line other two is ray, length of ray is not important
+    // We proceed from x1,y1 until we pass x2,y2
+
+    var poly=[{x:x1,y:y1},{x:x2,y:y1},{x:x2,y:y2},{x:x1,y:y2}];
+    drawPolygon(poly,"#000",false);
+
+    var cx=x1;
+    var cy=y2;
+    var dx=Math.sin(ang)*dist;
+    var dy=Math.cos(ang)*dist;
+    var cnt=0;
+    while(true){
+        if(cnt++>100) break;
+        var hits=[];
+        for(var i=0;i<poly.length;i++){
+            var p1=poly[i];
+            var p2=poly[(i+1)%poly.length];
+            var r1={x:cx,y:cy};
+            var r2={x:cx+dx,y:cy+dy};
+            var hit=intersectRay(p1,p2,r1,r2);
+            if(hit!=false) hits.push(hit);
+        }
+        if(hits.length>=2) drawLine(hits[0].x,hits[0].y,hits[1].x,hits[1].y,1.5,"#000",opacity);
+        if(hits.length==0) break;
+        cx+=dy;
+        cy+=-dx;
+    }
+
 }
 
 // Path is a list of segments not necessarily a polygon
