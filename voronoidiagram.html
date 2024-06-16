@@ -9,7 +9,9 @@
 				var c;
 			  var mx,my,mb=0;
         var testcnt=0;
-			
+
+// https://stackoverflow.com/questions/31594793/how-to-compute-voronoi-tesselation-based-on-manhattan-distance-in-r
+// https://www.researchgate.net/publication/337627041_Optimal_Planning_of_Charging_Station_Based_on_Discrete_Distribution_of_Charging_Demand/link/5ed89b8892851c9c5e7b9ebd/download			
 // https://en.wikipedia.org/wiki/Fortune%27s_algorithm
 // https://jacquesheunis.com/post/fortunes-algorithm/
 // https://www.youtube.com/watch?v=I6Fen2Ac-1U
@@ -31,7 +33,7 @@
 // Constants and data for spatial hash (hash variable must be of array type)
 
 var spatialHash=[];
-const gridSize=100;
+const gridSize=160;
 const gridMaxX=800;
 const gridMaxY=800;
 
@@ -94,6 +96,13 @@ function intersectPolygon(pointlist,r1,r2,q)
 
 function zetup()
 {
+    // Post X random points
+    /*
+    for(var i=0;i<520;i++){
+        pointlist.push({x:Math.floor(Math.random()*gridMaxX),y:Math.floor(Math.random()*gridMaxY)});
+    }
+    */
+
     // Initialize spatial hash
     clearHash(gridSize,gridMaxX,gridMaxY)
     var i=0;
@@ -159,18 +168,11 @@ function updatestate()
     for(var i=0;i<20;i++){
          str+="{x:"+Math.round(Math.random()*800)+",y:"+Math.round(Math.random()*800)+"},";
     }
-    console.log(str);
 */
 
-/*
-    for(var i=0;i<520;i++){
-        pointlist.push({x:Math.floor(Math.random()*gridMaxX),y:Math.floor(Math.random()*gridMaxY)});
-    }
-*/
     var voronoipolygons=[];
  
     // Optimized approximate version for tight grids with many points
-/*
     for(var cy=0;cy<8;cy++){
         for(var cx=0;cx<8;cx++){
             var cnt=countHash(cx,cy);
@@ -182,12 +184,13 @@ function updatestate()
             }
         }
     }
-*/
 
+/*
     // Naive version that is guaranteed to be correct
     for(var i=0;i<pointlist.length;i++){
         voronoipolygons.push(processPoints(pointlist,20,i));
     }
+*/
 
     for(polygon of voronoipolygons){
         drawPolygon(polygon,randomColor(),true);
