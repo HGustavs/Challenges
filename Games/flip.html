@@ -42,13 +42,13 @@ var variants=[
     {offs:[{x:0,y:0},{x:-1,y:-1},{x:-1,y:0},{x:-2,y:0}]},
     {offs:[{x:0,y:0},{x:-1,y:-1},{x:-1,y:0},{x:-1,y:1}]},
     {offs:[{x:0,y:0},{x:0,y:1},{x:-1,y:1},{x:0,y:2}]},
-    {offs:[{x:0,y:0},{x:-1,y:0},{x:-1,y:1},{x:-2,y:0}]},
+    {offs:[{x:0,y:-1},{x:-1,y:-1},{x:-1,y:0},{x:-2,y:-1}]},
 
     // 5-U 4 Variants
     {offs:[{x:0,y:0},{x:0,y:1},{x:0,y:2},{x:-1,y:0},{x:-1,y:2}]},
     {offs:[{x:0,y:0},{x:0,y:-2},{x:-1,y:0},{x:-1,y:-1},{x:-1,y:-2}]},
     {offs:[{x:0,y:0},{x:0,y:1},{x:-1,y:1},{x:-2,y:0},{x:-2,y:1}]},
-    {offs:[{x:0,y:0},{x:0,y:1},{x:-1,y:0},{x:-2,y:0},{x:-2,y:1}]},
+    {offs:[{x:0,y:-1},{x:0,y:0},{x:-1,y:-1},{x:-2,y:-1},{x:-2,y:0}]},
 
     // 5-B 4 Variants
     {offs:[{x:0,y:0},{x:0,y:1},{x:-1,y:0},{x:-1,y:1},{x:-2,y:0}]},
@@ -96,13 +96,6 @@ function zetup()
 	  var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
 
-    // Make/Clear playfield
-    for(let j=0;j<(tileH+border+border);j++){
-        for(let i=0;i<(tileW+border+border);i++){
-            playfield[(j*tileRow)+i]=[];    
-        }
-    }
-
     // Colorize tiles
     var no=0;
     for(variant of variants){
@@ -131,34 +124,61 @@ function drawTile(x,y,fillstate,color)
 
 function updatestate()
 {
-    // Go over all tiles
-    for(let i=(tileW+border-1);i>=border;i--){
-        for(let j=border;j<(tileH+border);j++){
-            var current=readPlayfield(i,j);
+    let foundcnt=0;
+    var reject=0;
+    do{
+        // Clear tile list
+        tilelist=[];
 
-            // If current cell is 0 we test for possible candidates much like wave function collapse
-            if(current==0){
-                let candidates=[];
-                for(candidate of variants){
-                    let status=true;
-                    for(offs of candidate.offs){
-                        if(readPlayfield(i+offs.x,j+offs.y)!=0) status=false;
-                    }
-                    if(status) candidates.push(candidate.no);
-                }
-                if(candidates.length>0){
-                    let pieceno=candidates[Math.floor(Math.random()*candidates.length)];
-                    let piece=variants[pieceno];
-                    for(offs of piece.offs){
-                        pushPlayfield(i+offs.x,j+offs.y,piece.no);
-                    }
+        // Make/Clear playfield
+        for(let j=0;j<(tileH+border+border);j++){
+            for(let i=0;i<(tileW+border+border);i++){
+                playfield[(j*tileRow)+i]=[];    
+            }
+        }
 
-                    // Save tile to tile list
-                    tilelist.push({x:i,y:j,rot:0,variant:piece});                 
+        // Go over all tiles
+        for(let i=(tileW+border-1);i>=border;i--){
+            for(let j=border;j<(tileH+border);j++){
+                var current=readPlayfield(i,j);
+
+                // If current cell is 0 we test for possible candidates much like wave function collapse
+                if(current==0){
+                    let candidates=[];
+                    for(candidate of variants){
+                        let status=true;
+                        for(offs of candidate.offs){
+                            if(readPlayfield(i+offs.x,j+offs.y)!=0) status=false;
+                        }
+                        if(status) candidates.push(candidate.no);
+                    }
+                    if(candidates.length>0){
+                        let pieceno=candidates[Math.floor(Math.random()*candidates.length)];
+                        let piece=variants[pieceno];
+                        for(offs of piece.offs){
+                            pushPlayfield(i+offs.x,j+offs.y,piece.no);
+                        }
+
+                        // Save tile to tile list
+                        tilelist.push({x:i,y:j,rot:0,variant:piece});                 
+                    }
                 }
             }
         }
-    }
+
+        // Count used tiles
+        foundcnt=0;
+        for(let i=(tileW+border-1);i>=border;i--){
+            for(let j=border;j<(tileH+border);j++){
+                if(readPlayfield(i,j)!=0) foundcnt++;
+            }
+        }
+
+        reject++;
+
+    }while(foundcnt<((tileW*tileH)-0));
+
+    console.log("Rejected: "+reject);
 
     // Draw playfield
     for(let i=(tileW+border-1);i>=border;i--){
