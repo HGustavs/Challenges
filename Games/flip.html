@@ -12,18 +12,18 @@ var testcnt=0;
 
 var variants=[
     // We do right-most and top-most as start
-    
+  
     // 2-Capsule 4 variants to include rotations
     {offs:[{x:0,y:0,tile:3},{x:-1,y:0,tile:2}]},
     {offs:[{x:0,y:0,tile:0},{x:0,y:1,tile:1}]},
     {offs:[{x:-1,y:0,tile:2},{x:0,y:0,tile:3}]},
     {offs:[{x:0,y:1,tile:1},{x:0,y:0,tile:0}]},
-
+/*
     // 3-L 4 variants (mirrored same as regular rotated)
     {offs:[{x:0,y:0,tile:3},{x:-1,y:0,tile:4},{x:-1,y:1,tile:1}]},   
     {offs:[{x:-1,y:-1,tile:0},{x:-1,y:0,tile:5},{x:0,y:0,tile:3}]},
-    {offs:[{x:-1,y:0,tile:2},{x:0,y:0,tile:6},{x:0,y:-1,tile:0}]},
-    {offs:[{x:0,y:-1,tile:1},{x:0,y:0,tile:7},{x:-1,y:0,tile:2}]},
+    {offs:[{x:-1,y:1,tile:2},{x:0,y:1,tile:6},{x:0,y:0,tile:0}]},
+    {offs:[{x:0,y:1,tile:1},{x:0,y:0,tile:7},{x:-1,y:0,tile:2}]},
 
     // 4-Square 4 variants to include rotations (no symetric variants)
     {offs:[{x:0,y:0,tile:11},{x:-1,y:0,tile:8},{x:-1,y:1,tile:9},{x:0,y:1,tile:10}]},
@@ -41,8 +41,15 @@ var variants=[
     {offs:[{x:-1,y:-2,tile:0},{x:-1,y:-1,tile:13},{x:-1,y:0,tile:5},{x:0,y:0,tile:3}]},
     {offs:[{x:-2,y:1,tile:2},{x:-1,y:1,tile:12},{x:0,y:1,tile:6},{x:0,y:0,tile:0}]},
     {offs:[{x:0,y:2,tile:1},{x:0,y:1,tile:13},{x:0,y:0,tile:7},{x:-1,y:0,tile:2}]},
-    {offs:[{x:0,y:0,tile:1},{x:-1,y:0,tile:12},{x:-2,y:0,tile:4},{x:-2,y:-1,tile:0}]}
-
+    {offs:[{x:0,y:0,tile:3},{x:-1,y:0,tile:12},{x:-2,y:0,tile:5},{x:-2,y:-1,tile:0}]},
+    {offs:[{x:0,y:0,tile:0},{x:0,y:1,tile:13},{x:0,y:2,tile:6},{x:-1,y:2,tile:2}]},
+    {offs:[{x:-2,y:0,tile:2},{x:-1,y:0,tile:12},{x:0,y:0,tile:7},{x:0,y:1,tile:1}]},
+    {offs:[{x:-1,y:2,tile:1},{x:-1,y:1,tile:13},{x:-1,y:0,tile:4},{x:0,y:0,tile:3}]},
+    {offs:[{x:0,y:0,tile:3},{x:-1,y:0,tile:12},{x:-2,y:0,tile:5},{x:-2,y:-1,tile:0}]},
+*/
+    // 4-Tet 8 Variants (no symetric variants)
+    {offs:[{x:0,y:0,tile:3},{x:-1,y:0,tile:14},{x:-2,y:0,tile:2},{x:-1,y:-1,tile:0}]},
+    {offs:[{x:0,y:0,tile:0},{x:0,y:1,tile:15},{x:0,y:2,tile:1},{x:-1,y:1,tile:2}]},    
 ];
 
 // Tile drawing data for all 16 possible tiles
@@ -76,23 +83,26 @@ var piecedata=[
 ];
 
 var tiledata=[
-    [3,0,1,2],          // 0  Top tile single wide. Three 4 sided polygons
-    [3,4,5,6],          // 1  Bottom tile single wide. Three 4 sided polygons
-    [3,7,8,9],          // 2  Left tile single wide Three 4-sided polygons    
-    [3,10,11,12],       // 3  Right tile single wide Three 4-sided polygons 
+    [3,0,1,2],            // 0  Top tile single wide. Three 4 sided polygons
+    [3,4,5,6],            // 1  Bottom tile single wide. Three 4 sided polygons
+    [3,7,8,9],            // 2  Left tile single wide Three 4-sided polygons    
+    [3,10,11,12],         // 3  Right tile single wide Three 4-sided polygons 
     
-    [3,1,7,13,14],      // 4  Top Left with Bottom Right Corner
-    [3,4,9,15,16],      // 5  Bottom Left with Top Right Corner
-    [3,5,12,17,18],     // 6  Bottom Right with Top Left Corner
-    [3,2,11,19,20],     // 7  Top Right with Bottom Left Corner  
+    [3,1,7,13,14],        // 4  Top Left with Bottom Right Corner
+    [3,4,9,15,16],        // 5  Bottom Left with Top Right Corner
+    [3,5,12,17,18],       // 6  Bottom Right with Top Left Corner
+    [3,2,10,19,20],       // 7  Top Right with Bottom Left Corner  
     
-    [3,1,7],            // 8  Top Left 
-    [3,4,9],            // 9  Bottom Left 
-    [3,5,12],           // 10 Bottom Right 
-    [3,2,10],           // 11 Top Right   
+    [3,1,7],              // 8  Top Left 
+    [3,4,9],              // 9  Bottom Left 
+    [3,5,12],             // 10 Bottom Right 
+    [3,2,10],             // 11 Top Right   
     
-    [3,23,24],          // 12 Top and Bottom
-    [3,21,22],          // 13 Left and Right  
+    [3,23,24],            // 12 Top and Bottom
+    [3,21,22],            // 13 Left and Right
+
+    [3,24,15,16,17,18],   // 14 Bottom and Top Left and Right Corners
+    [3,22,17,18,19,20],   // 15 Right and Left Top and Bottom Corners
 ];
 
 
