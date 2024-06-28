@@ -119,7 +119,14 @@ const tileW=8;
 const tileH=8;
 const tileRow=tileW+border+border;
 
-const tilecolors=["#fef","#fce","#eac","#d9b","#fbd"];
+const tilecolors=["#fef","#fce","#eac","#d9b","#fbd",
+                  "#fef","#ecf","#cae","#b9d","#dbf",
+                  "#ffe","#fec","#eca","#db9","#fdb",
+                  "#ffe","#efc","#cea","#bd9","#dfb",
+                  "#eff","#cfe","#aec","#9db","#bfd",
+                  "#eff","#cef","#acf","#9bd","#bdf",
+                  
+                  ];
 
 // "#fbd",,"#fdb","#bfd","#dfb","#bdf","#dbf"
 // Returns tile count at position x,y. Returns -1 if outside playfield area including border
@@ -165,7 +172,7 @@ function zetup()
     // Colorize tiles
     var no=0;
     for(variant of variants){
-        variant.col=tilecolors[Math.floor(Math.random()*tilecolors.length)];
+        variant.col=Math.floor(Math.random()*(tilecolors.length/5));
         variant.no=no++;
     }
 
@@ -195,7 +202,7 @@ function drawTile3D(x,y,tileno,basecolor)
     for(pieceno of tiledata[tileno]){
         let piece=piecedata[pieceno];
         if(piece==null) console.log(pieceno);
-        c.fillStyle=tilecolors[basecolor+piece.col];
+        c.fillStyle=tilecolors[(basecolor*5)+piece.col];
         c.beginPath();
         for(let i=0;i<piece.points.length;i++){
             let pointno=piece.points[i];
@@ -248,7 +255,7 @@ function updatestate()
                         }
 
                         // Save tile to tile list
-                        tilelist.push({x:i,y:j,rot:0,variant:piece});                 
+                        tilelist.push({x:i,y:j,rot:0,variant:piece,col:Math.floor(Math.random()*(tilecolors.length/5))});                 
                     }
                 }
             }
@@ -279,7 +286,7 @@ function updatestate()
     // Draw tiles
     for(tile of tilelist){
         for(offs of tile.variant.offs){
-            drawTile3D(tile.x+offs.x,tile.y+offs.y,offs.tile,0);
+            drawTile3D(tile.x+offs.x,tile.y+offs.y,offs.tile,tile.col);
         }        
     }
 }		
