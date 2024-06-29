@@ -18,7 +18,7 @@ var variants=[
     {offs:[{x:0,y:0,tile:0},{x:0,y:1,tile:1}]},
     {offs:[{x:-1,y:0,tile:2},{x:0,y:0,tile:3}]},
     {offs:[{x:0,y:1,tile:1},{x:0,y:0,tile:0}]},
-/*
+
     // 3-L 4 variants (mirrored same as regular rotated)
     {offs:[{x:0,y:0,tile:3},{x:-1,y:0,tile:4},{x:-1,y:1,tile:1}]},   
     {offs:[{x:-1,y:-1,tile:0},{x:-1,y:0,tile:5},{x:0,y:0,tile:3}]},
@@ -46,10 +46,13 @@ var variants=[
     {offs:[{x:-2,y:0,tile:2},{x:-1,y:0,tile:12},{x:0,y:0,tile:7},{x:0,y:1,tile:1}]},
     {offs:[{x:-1,y:2,tile:1},{x:-1,y:1,tile:13},{x:-1,y:0,tile:4},{x:0,y:0,tile:3}]},
     {offs:[{x:0,y:0,tile:3},{x:-1,y:0,tile:12},{x:-2,y:0,tile:5},{x:-2,y:-1,tile:0}]},
-*/
+
     // 4-Tet 8 Variants (no symetric variants)
     {offs:[{x:0,y:0,tile:3},{x:-1,y:0,tile:14},{x:-2,y:0,tile:2},{x:-1,y:-1,tile:0}]},
-    {offs:[{x:0,y:0,tile:0},{x:0,y:1,tile:15},{x:0,y:2,tile:1},{x:-1,y:1,tile:2}]},    
+    {offs:[{x:0,y:0,tile:0},{x:0,y:1,tile:15},{x:0,y:2,tile:1},{x:-1,y:1,tile:2}]}, 
+    {offs:[{x:-2,y:0,tile:2},{x:-1,y:0,tile:16},{x:0,y:0,tile:3},{x:-1,y:1,tile:1}]},
+    {offs:[{x:-1,y:-1,tile:0},{x:-1,y:0,tile:17},{x:-1,y:1,tile:1},{x:0,y:0,tile:3}]}
+
 ];
 
 // Tile drawing data for all 16 possible tiles
@@ -103,6 +106,8 @@ var tiledata=[
 
     [3,24,15,16,17,18],   // 14 Bottom and Top Left and Right Corners
     [3,22,17,18,19,20],   // 15 Right and Left Top and Bottom Corners
+    [3,23,13,14,19,20],   // 16 Top and Bottom Left and Right Corners   
+    [3,21,13,14,15,16]    // 17 Left and Right Top and Bottom Corners   
 ];
 
 
@@ -119,13 +124,13 @@ const tileW=8;
 const tileH=8;
 const tileRow=tileW+border+border;
 
-const tilecolors=["#fef","#fce","#eac","#d9b","#fbd",
+const tilecolors=[
+                  "#fef","#fce","#eac","#d9b","#fbd",
                   "#fef","#ecf","#cae","#b9d","#dbf",
                   "#ffe","#fec","#eca","#db9","#fdb",
                   "#ffe","#efc","#cea","#bd9","#dfb",
                   "#eff","#cfe","#aec","#9db","#bfd",
                   "#eff","#cef","#acf","#9bd","#bdf",
-                  
                   ];
 
 // "#fbd",,"#fdb","#bfd","#dfb","#bdf","#dbf"
