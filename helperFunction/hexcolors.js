@@ -1,4 +1,20 @@
-// Turn number to hex digit
+// Lighting with Bias (Saturated/Clamped)
+function light(color,strength,bias)
+{
+    return Math.max(0,Math.min(255,Math.round(color/((1.0+bias)-strength))));
+}
+
+// RGB Lighting with Bias returning hex
+
+function lightColor(R,G,B,strength,bias)
+{
+    return "#"+
+           numberToHex(light(R*255,strength,bias))+
+           numberToHex(light(G*255,strength,bias))+
+           numberToHex(light(B*255,strength,bias));
+}
+
+// Turn number to hex digit 255 levels
 function numberToHex(num)
 {
     if(num<16){

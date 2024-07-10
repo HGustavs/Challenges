@@ -1,0 +1,117 @@
+<html>
+	<head>
+  <script>document.write("<script type='text/javascript' src='../helperFunction/hexcolors.js?t=" + Date.now() + "'><\/script>");</script>
+	<script>
+
+//------------------------------------=======############==========----------------------------------------
+//                                 Canvas Slide Constants and Variables
+//------------------------------------=======############==========----------------------------------------
+
+var c;
+		
+//----------------------------------------------------------------------------------
+// Canvas Setup
+//----------------------------------------------------------------------------------
+		
+function setupSlides()
+{
+		canvas = document.getElementById("mycanvas");
+		c = canvas.getContext("2d");
+	
+		var col=0;	
+
+		window.requestAnimationFrame(redraw);
+}
+
+//----------------------------------------------------------------------------------
+// drawSegment -- Draws Circle Segment
+//----------------------------------------------------------------------------------
+
+function drawSegment(cx,cy,r1,r2,sang,eang,col)
+{
+  // Angles are in percentages - 2 percentage points to make smooth curve
+	sang=sang*2*3.1415;
+  eang=eang*2*3.1415;
+  c.fillStyle=col;
+  c.beginPath();      
+  c.moveTo(cx+(Math.sin(sang)*r1),cy+(Math.cos(sang)*r1));
+  for(var v=sang;v<=eang;v+=0.12){
+      if(v>eang) v=eang;
+      c.lineTo(cx+(Math.sin(v)*r1),cy+(Math.cos(v)*r1));
+  }
+  for(var v=eang;v>=sang;v-=0.12){
+      c.lineTo(cx+(Math.sin(v)*r2),cy+(Math.cos(v)*r2));
+  }
+
+  c.closePath();   
+  c.fill(); 
+
+}
+
+//----------------------------------------------------------------------------------
+// drawCirc -- Draws Circle
+//----------------------------------------------------------------------------------
+
+function drawCirc(x,y,r,fill,color)
+{
+	c.beginPath();
+	c.arc(x, y, r, 0, 2 * 3.1415, false);
+	if(fill==true){
+      c.fillStyle=color;
+			c.fill();	
+	}else{
+      c.strokeStyle=color;
+			c.stroke();	
+	}
+}
+
+//----------------------------------------------------------------------------------
+// Redraw - Main Loop
+//----------------------------------------------------------------------------------
+
+function permutecolor(R,G,B,bias,segs,sege)
+{
+    var thecol=lightColor(R,G,B,0.2,bias);
+    drawSegment(200,200,50,70,segs,sege,thecol);
+/*
+    var c1=lightColor(R,G,B,0.2,bias);
+    var c2=lightColor(R,G,B,0.6,bias);
+    var c3=lightColor(R,G,B,0.80,bias);
+    var c4=lightColor(R,G,B,0.92,bias);
+    var c5=lightColor(R,G,B,1.00,bias);
+    var c6=lightColor(R,G,B,1.05,bias);
+*/ 
+}
+
+function redraw()
+{
+    var R=0.1;
+    var G=0.05;
+    var B=0.15;
+    var bias=0.12;
+
+    permutecolor(R,G,B,bias,0,0.08);
+    permutecolor(B,G,B,bias,0.1,0.18);
+    permutecolor(B,G,R,bias,0.2,0.28);
+    permutecolor(B,R,G,bias,0.3,0.38);
+    permutecolor(B,B,G,bias,0.4,0.48);
+    permutecolor(R,B,G,bias,0.5,0.58);
+    permutecolor(G,B,R,bias,0.6,0.68);
+    permutecolor(G,B,B,bias,0.7,0.78);
+    permutecolor(G,R,B,bias,0.8,0.88);
+    permutecolor(B,B,B,bias,0.9,0.98);  
+
+//		window.requestAnimationFrame(redraw);
+}
+
+//----------------------------------------------------------------------------------
+// drawHead - Clear screen and keep drawing
+//----------------------------------------------------------------------------------
+		
+	</script>
+	</head>
+	<body onload="setupSlides();">
+	<canvas id='mycanvas' width=1430 height=780 style='border:1px solid red;'  ></canvas>	
+	</body>
+
+</html>
