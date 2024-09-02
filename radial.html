@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>document.write("<script type='text/javascript' src='helperFunction/hexcolors.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/spatialHash.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/canvasDraw.js?t=" + Date.now() + "'><\/script>");</script>
+
+		<script>
+				var c;
+			  var mx,my,mb=0;
+        var testcnt=0;
+
+var spatialHash=[];
+const centerX=400;
+const centerY=400;
+
+function zetup()
+{
+
+		var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+    updatestate();
+}
+
+function makepoly(xk,yk,xstride,ystride,val)
+{      
+    var pointlist=[];
+/*    
+    pointlist.push({x:(xk*400),y:(yk*400)});
+    pointlist.push({x:((xk+xstride)*400),y:(yk*400)});
+    pointlist.push({x:((xk+xstride)*400),y:((yk+ystride)*400)});
+    pointlist.push({x:(xk*400),y:((yk+ystride)*400)});
+*/
+    var centerX=300;
+    var centerY=300;
+    pointlist.push({x:centerX+(Math.sin(xk*1.5707)*(50+(yk*200))),y:centerY+(Math.cos(xk*1.5707)*(50+(yk*200)))});
+    pointlist.push({x:centerX+(Math.sin((xk+xstride)*1.5707)*(50+(yk*200))),y:centerY+(Math.cos((xk+xstride)*1.5707)*(50+(yk*200)))});
+    pointlist.push({x:centerX+(Math.sin((xk+xstride)*1.5707)*(50+((yk+ystride)*200))),y:centerY+(Math.cos((xk+xstride)*1.5707)*(50+((yk+ystride)*200)))});
+    pointlist.push({x:centerX+(Math.sin(xk*1.5707)*(50+((yk+ystride)*200))),y:centerY+(Math.cos(xk*1.5707)*(50+((yk+ystride)*200)))});
+
+    drawPolygon(pointlist,linearColor(val,val,val),true);
+    //pointlist.push({x:centerX+(Math.sin(ang*6.28)*R),y:centerY+(Math.cos(ang*6.28)*R)});
+}
+
+// 
+function thickLine(x1,y1,x2,y2,jitter,widths,maxwidth,col)
+{
+    // Rotate vector and set up interpolation 
+    var dx=x2-x1;
+    var dy=y2-y1;
+    var len=Math.sqrt((dx*dx)+(dy*dy));
+    var ndx=(dy/len)*maxwidth;
+    var ndy=-(dx/len)*maxwidth;
+    var stride=1.0/widths.length;
+    var lx=dx*stride;
+    var ly=dy*stride;
+   
+    var xk=x1;
+    var yk=y1;
+    c.fillStyle="#fff";
+    for(var i=0;i<widths.length;i++){
+        //c.fillStyle=linearColor(widths[i],widths[i],widths[i]);
+        c.beginPath();
+        c.moveTo(xk+(ndx*widths[i]),yk+(ndy*widths[i]));
+        c.lineTo(xk+lx+(ndx*widths[i+1]),yk+ly+(ndy*widths[i+1]));
+        c.lineTo(xk+lx-(ndx*widths[i+1]),yk+ly-(ndy*widths[i+1]));
+        c.lineTo(xk-(ndx*widths[i]),yk-(ndy*widths[i]));
+        c.fill();
+        xk+=lx;
+        yk+=ly;
+    }
+}
+
+// Hulk 
+function levels(widths,treshold)
+{
+    var yk=0;
+    for(var i=0;i<widths.length;i++)
+    {
+        if(widths[i]>treshold){
+            yk=i;
+        }
+    }
+    return yk;
+}
+
+function updatestate()
+{
+    var stride=0.05;
+
+    c.fillStyle="#000";
+    c.fillRect(0,0,900,800);
+
+    var set=[];
+    for(var xk=0;xk<=4.0;xk+=stride){
+        var widths=[];
+        for(var yk=0;yk<=1.0;yk+=(stride*0.25)){
+            widths.push(Math.pow(1.0-((2.0*Math.abs(mod(xk*2,1.0)-0.5))*(yk)),2.0));
+        }
+        set.push(widths);
+        //thickLine(40+(xk*200),400,40+(xk*200),50,0,widths,10,"#000");
+        //thickLine(300+(Math.sin(xk*1.5707)*50),300+(Math.cos(xk*1.5707)*50),300+(Math.sin(xk*1.5707)*200),300+(Math.cos(xk*1.5707)*200),0,widths,4,"#000");
+    }
+
+    var treshold=0.1;
+    for(treshold=0;treshold<1.0;treshold+=0.1){
+        var RC=light(0.15,treshold+0.1,0.0);
+        var GC=light(0.2,treshold+0.1,0.0);
+        var BC=light(0.25,treshold+0.1,0.0);
+
+        c.fillStyle="#fed";
+        c.fillStyle=linearColor(RC,GC,BC);
+        c.strokeStyle="#fed";
+        c.beginPath();
+        c.moveTo(0,0);
+        for(var i=0;i<set.length;i++){
+                var yk=levels(set[i],treshold);
+                c.lineTo(i*10, yk*5);
+        }
+        c.lineTo((i-1)*10,0);
+        c.closePath();
+        c.fill();
+    }
+
+/*
+    for(var xk=0;xk<=4.0;xk+=stride){
+        for(var yk=0;yk<=1.0;yk+=stride){
+            var col=1.0-((2.0*Math.abs(mod(xk*2,1.0)-0.5))*(yk));
+            makepoly(xk,yk,stride,stride,Math.pow(col,7.0));
+        }
+    }
+*/
+    // Make a number of lines with jittering - for each line prepare an array with color values
+    // Pass line width data as a parameter to the function.
+    // Make line start and end using rotation formula
+    // Perpendicular vectors are used to calculate width vector. Start and end calculations are handled during spans
+}		
+			
+		</script>
+</head>
+<body onload="zetup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+  <button onclick="generate();">Render</button>
+</body>

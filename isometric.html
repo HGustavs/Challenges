@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>document.write("<script type='text/javascript' src='helperFunction/hexcolors.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/spatialHash.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/canvasDraw.js?t=" + Date.now() + "'><\/script>");</script>
+
+		<script>
+				var c;
+			  var mx,my,mb=0;
+        var testcnt=0;
+
+// https://stackoverflow.com/questions/6668834/true-isometric-projection-with-html5-canvas
+
+// Isometric conversion constants
+
+const D2R = (ang) => (ang-90) * (Math.PI/180 );
+const Ang2Vec = (ang,len = 1) => P2(Math.cos(D2R(ang)) * len,Math.sin(D2R(ang)) * len);
+const projTypes = {
+  PixelBimetric : {
+    xAxis : P2(1 , 0.5) ,
+    yAxis :  P2(-1 , 0.5) ,
+    zAxis :  P2(0 , -1) ,
+    depth :  P3(0.5,0.5,1) , // projections have z as depth      
+  },
+  PixelTrimetric : {
+    xAxis : P2(1 , 0.5) ,
+    yAxis :  P2(-0.5 , 1) ,
+    zAxis :  P2(0 , -1) ,
+    depth :  P3(0.5,1,1) ,
+  },
+  Isometric : {
+    xAxis : Ang2Vec(120) ,
+    yAxis : Ang2Vec(-120) ,
+    zAxis : Ang2Vec(0) ,
+  }
+}
+
+// 3d 2d points
+const P3 = (x=0, y=0, z=0) => ({x,y,z});
+const P2 = (x=0, y=0) => ({x, y});
+// projection object
+const axoProjMat = {
+    xAxis : P2(1 , 0.5) ,
+    yAxis :  P2(-1 , 0.5) ,
+    zAxis :  P2(0 , -1) ,
+    depth :  P3(0.5,0.5,1) , // projections have z as depth
+    origin : P2(), // (0,0) default 2D point
+    setProjection(name){
+      if(projTypes[name]){
+        Object.keys(projTypes[name]).forEach(key => {
+          this[key]=projTypes[name][key];
+        })
+        if(!projTypes[name].depth){
+          this.depth = P3(
+            this.xAxis.y,
+            this.yAxis.y,
+            -this.zAxis.y
+          );
+        }
+      }
+    },
+    project (p, retP = P3()) {
+        retP.x = p.x * this.xAxis.x + p.y * this.yAxis.x + p.z * this.zAxis.x + this.origin.x;
+        retP.y = p.x * this.xAxis.y + p.y * this.yAxis.y + p.z * this.zAxis.y + this.origin.y;
+        retP.z = p.x * this.depth.x + p.y * this.depth.y + p.z * this.depth.z; 
+        return retP;
+    }
+}
+
+
+
+var spatialHash=[];
+const gridSize=160;
+const gridMaxX=800;
+const gridMaxY=800;
+
+// Input points from https://codeforces.com/blog/entry/85638
+var pointlist=[
+    {x:266,y:468},{x:356,y:297},{x:209,y:130},{x:442,y:112},{x:700,y:75},{x:81,y:344},{x:617,y:260},{x:75,y:558},{x:473,y:468},
+    {x:723,y:458},{x:570,y:622},{x:617,y:618},{x:280,y:110},{x:748,y:170},{x:694,y:175},{x:533,y:791},{x:791,y:689},{x:414,y:565},
+    {x:436,y:183},{x:238,y:322},{x:283,y:619},{x:529,y:33},{x:285,y:66},{x:322,y:285},{x:559,y:101},{x:401,y:656},{x:107,y:568},
+    {x:352,y:181},{x:77,y:696},{x:715,y:657},{x:201,y:78}
+];
+// Test count for 31 coordinate points is 4542
+
+// Intersection of pointlist polygon and ray for voronoi diagram
+function intersectPolygon(pointlist,r1,r2,q)
+{
+    // Return array
+    var retarr=[];
+    var foundarr=[];
+    for(var i=0;i<pointlist.length;i++){
+        var p1=pointlist[i];
+        var p2=pointlist[(i+1)%pointlist.length];
+        col=intersectRay(p1,p2,r1,r2);
+
+        // If an intersection is found we store the point and the position of the intersection
+        if(col!=false){
+            foundarr.push({x:col.x,y:col.y,pos:i});
+        }
+    }
+    
+    if(foundarr.length==2){
+        // Make first array of points before intersection
+        var newarr=[];
+        for(var i=0;i<=foundarr[0].pos;i++){
+            newarr.push(pointlist[i]);
+        }
+        newarr.push({x:foundarr[0].x,y:foundarr[0].y});
+        newarr.push({x:foundarr[1].x,y:foundarr[1].y});
+        for(var i=foundarr[1].pos+1;i<pointlist.length;i++){
+            newarr.push(pointlist[i]);
+        }
+
+        // Check if point is inside array
+        if(insidePoly(newarr,q)){
+            return newarr;
+        }
+
+        // Make alternate array
+        var otherarr=[];
+        otherarr.push({x:foundarr[0].x,y:foundarr[0].y});
+        for(var i=foundarr[0].pos+1;i<=foundarr[1].pos;i++){
+            otherarr.push(pointlist[i]);
+        }
+        otherarr.push({x:foundarr[1].x,y:foundarr[1].y});
+        return otherarr;
+
+    }else{
+        return null;
+    }
+}
+
+function zetup()
+{
+    // Post X random points
+    /*
+    for(var i=0;i<520;i++){
+        pointlist.push({x:Math.floor(Math.random()*gridMaxX),y:Math.floor(Math.random()*gridMaxY)});
+    }
+    */
+
+    // Initialize spatial hash
+    clearHash(gridSize,gridMaxX,gridMaxY)
+    var i=0;
+    for(point of pointlist){
+        point.id=i++;
+        storeHash(point.x,point.y,point);
+    }
+
+/*
+    for(var y=0;y<8;y++){
+        for(var x=0;x<8;x++){
+            var cnt=countHash(x,y);
+        }
+    }
+*/
+
+		var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+    updatestate();
+}
+
+const maxExtent=10000;
+function processPoints(pointlist,treshold,current)
+{
+    // We first find extents including offsets
+    var x1=maxExtent;
+    var x2=-maxExtent;
+    var y1=maxExtent;
+    var y2=-maxExtent;
+    for(point of pointlist){
+        x1=Math.min(x1,point.x-treshold);
+        x2=Math.max(x2,point.x+treshold);
+        y1=Math.min(y1,point.y-treshold);
+        y2=Math.max(y2,point.y+treshold);    
+    }
+    if(x1<gridSize) x1=0;
+    if(x2>(gridMaxX-gridSize)) x2=gridMaxX;
+    if(y1<gridSize) y1=0;
+    if(y2>(gridMaxY-gridSize)) y2=gridMaxY;
+
+    // Start with treshold rectangle
+    var polypoints=[{x:x1,y:y1},{x:x2,y:y1},{x:x2,y:y2},{x:x1,y:y2}];
+
+    // For each point except for first
+    for(var i=0;i<pointlist.length;i++){
+        if(i!=current){
+            p1={x:(pointlist[current].x+pointlist[i].x)*0.5,y:(pointlist[current].y+pointlist[i].y)*0.5};
+            p2={x:p1.x-(pointlist[current].y-pointlist[i].y),y:p1.y+(pointlist[current].x-pointlist[i].x)};
+            var intersected=intersectPolygon(polypoints,p1,p2,pointlist[current]);
+            if(intersected!=null) polypoints=intersected;
+        }
+        // drawLine(pointlist[current].x,pointlist[current].y,pointlist[i].x,pointlist[i].y,1.5,"#606");
+    }
+
+    return polypoints;
+}
+
+function updatestate()
+{
+/*    
+    var str="";
+    for(var i=0;i<20;i++){
+         str+="{x:"+Math.round(Math.random()*800)+",y:"+Math.round(Math.random()*800)+"},";
+    }
+*/
+
+    var voronoipolygons=[];
+ 
+    // Optimized approximate version for tight grids with many points
+    for(var cy=0;cy<8;cy++){
+        for(var cx=0;cx<8;cx++){
+            var cnt=countHash(cx,cy);
+            if(cnt>0){
+                for(var i=0;i<cnt;i++){
+                    var list=collateHash(cx,cy);
+                    voronoipolygons.push(processPoints(list,20,i));
+                }
+            }
+        }
+    }
+
+/*
+    // Naive version that is guaranteed to be correct
+    for(var i=0;i<pointlist.length;i++){
+        voronoipolygons.push(processPoints(pointlist,20,i));
+    }
+*/
+
+    for(polygon of voronoipolygons){
+        drawPolygon(polygon,randomColor(),true);
+    }
+
+    // Draw points and hashgrid
+    
+    drawPointList(pointlist,"#25e","#000",16,0.5);
+    drawGrid("#000",0.5);
+
+    console.log(testcnt);
+}		
+			
+		</script>
+</head>
+<body onload="zetup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+  <button onclick="generate();">Render</button>
+</body>

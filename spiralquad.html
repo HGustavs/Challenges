@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>document.write("<script type='text/javascript' src='helperFunction/hexcolors.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/spatialHash.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/canvasDraw.js?t=" + Date.now() + "'><\/script>");</script>
+
+		<script>
+				var c;
+			  var mx,my,mb=0;
+        var testcnt=0;
+
+var spatialHash=[];
+const centerX=400;
+const centerY=400;
+
+function zetup()
+{
+
+		var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+    updatestate();
+}
+
+function drawSpiralSegment(angs,ange,angrot,steps,r1,r2,r3)
+{
+    var ang=angs;
+    var diff=(ange-angs)/steps;
+    var innerdiff=r2-r1;
+    var outerdiff=r3-r2;
+    var pointlist=[];
+    do{
+        var R=r1+(innerdiff*ang);
+        pointlist.push({x:centerX+(Math.sin(ang*6.28)*R),y:centerY+(Math.cos(ang*6.28)*R)});
+        ang+=diff;
+    }while(ang<=ange);
+    ang-=diff;
+    do{
+        var R=r2+(outerdiff*ang);
+        pointlist.push({x:centerX+(Math.sin(ang*6.28)*R),y:centerY+(Math.cos(ang*6.28)*R)});
+        ang-=diff;
+    }while(ang>=angs);
+    drawPolygon(pointlist,"#f86",false);
+}
+
+function updatestate()
+{
+    var offs=1.0/7;
+
+    for(var j=20;j<260;j+=20){
+        for(var i=0;i<1.0;i+=offs){
+            drawSpiralSegment(i,i+offs,0,1,j,j+20,j+40);        
+        }
+    }
+
+}		
+			
+		</script>
+</head>
+<body onload="zetup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+  <button onclick="generate();">Render</button>
+</body>

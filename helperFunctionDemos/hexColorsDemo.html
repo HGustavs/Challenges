@@ -36,13 +36,13 @@ function drawSegment(cx,cy,r1,r2,sang,eang,col)
   c.beginPath();      
   c.moveTo(cx+(Math.sin(sang)*r1),cy+(Math.cos(sang)*r1));
   for(var v=sang;v<=eang;v+=0.12){
-      if(v>eang) v=eang;
       c.lineTo(cx+(Math.sin(v)*r1),cy+(Math.cos(v)*r1));
   }
+  c.lineTo(cx+(Math.sin(eang)*r1),cy+(Math.cos(eang)*r1));
   for(var v=eang;v>=sang;v-=0.12){
       c.lineTo(cx+(Math.sin(v)*r2),cy+(Math.cos(v)*r2));
   }
-
+  c.lineTo(cx+(Math.sin(sang)*r2),cy+(Math.cos(sang)*r2));
   c.closePath();   
   c.fill(); 
 
@@ -69,37 +69,81 @@ function drawCirc(x,y,r,fill,color)
 // Redraw - Main Loop
 //----------------------------------------------------------------------------------
 
-function permutecolor(R,G,B,bias,segs,sege)
+function permutecolor(R,G,B,bias,segs,sege,xk,yk)
 {
-    var thecol=lightColor(R,G,B,0.2,bias);
-    drawSegment(200,200,50,70,segs,sege,thecol);
-/*
-    var c1=lightColor(R,G,B,0.2,bias);
-    var c2=lightColor(R,G,B,0.6,bias);
-    var c3=lightColor(R,G,B,0.80,bias);
-    var c4=lightColor(R,G,B,0.92,bias);
-    var c5=lightColor(R,G,B,1.00,bias);
-    var c6=lightColor(R,G,B,1.05,bias);
-*/ 
+    var lights=[0.2,0.6,0.8,0.92,1.0,1.05];
+    for(var i=0;i<lights.length;i++){
+        var thecol=lightColor(R,G,B,lights[i],bias);
+        drawSegment(xk,yk,40+(i*20),60+(i*20),segs,sege,thecol);
+    }
 }
 
 function redraw()
 {
+    var bias=0.12;
+
+    // RGB Variiant
+
     var R=0.1;
     var G=0.05;
     var B=0.15;
-    var bias=0.12;
 
-    permutecolor(R,G,B,bias,0,0.08);
-    permutecolor(B,G,B,bias,0.1,0.18);
-    permutecolor(B,G,R,bias,0.2,0.28);
-    permutecolor(B,R,G,bias,0.3,0.38);
-    permutecolor(B,B,G,bias,0.4,0.48);
-    permutecolor(R,B,G,bias,0.5,0.58);
-    permutecolor(G,B,R,bias,0.6,0.68);
-    permutecolor(G,B,B,bias,0.7,0.78);
-    permutecolor(G,R,B,bias,0.8,0.88);
-    permutecolor(B,B,B,bias,0.9,0.98);  
+    permutecolor(R,G,B,bias,0,0.1,160,200);
+    permutecolor(B,G,B,bias,0.1,0.2,160,200);
+    permutecolor(B,G,R,bias,0.2,0.3,160,200);
+    permutecolor(B,R,G,bias,0.3,0.4,160,200);
+    permutecolor(B,B,G,bias,0.4,0.5,160,200);
+    permutecolor(R,B,G,bias,0.5,0.6,160,200);
+    permutecolor(G,B,R,bias,0.6,0.7,160,200);
+    permutecolor(G,B,B,bias,0.7,0.8,160,200);
+    permutecolor(G,R,B,bias,0.8,0.9,160,200);
+    permutecolor(R,R,R,bias,0.9,1.0,160,200); 
+
+    var divisor=1300;
+    var A=255/divisor;
+    var B=238/divisor;
+    var C=204/divisor;
+    var D=170/divisor;
+    var E=138/divisor;
+    var F=102/divisor;
+    var G=85/divisor;
+
+    permutecolor(B,E,G,bias,0.6,0.7,500,200);
+    permutecolor(B,B,F,bias,0.7,0.8,500,200);
+    permutecolor(D,A,F,bias,0.8,0.9,500,200);    
+    permutecolor(0.1,C,G,bias,0.9,1.0,500,200);
+    permutecolor(D,A,B,bias,0.0,0.1,500,200);
+    permutecolor(0.1,E,A,bias,0.1,0.2,500,200);
+    permutecolor(0.05,0.05,D,bias,0.2,0.3,500,200);
+    permutecolor(C,G,C,bias,0.3,0.4,500,200); 
+    permutecolor(D,0.05,0.05,bias,0.4,0.5,500,200);
+    permutecolor(A,F,F,bias,0.5,0.6,500,200);
+    permutecolor(B,E,G,bias,0.6,0.7,500,200);
+
+    var divisor=5;
+    var divisorb=4.3;
+    permutecolor(0.7/divisor,0.8/divisor,0.23/divisor,bias,0.0,0.1,160,550);
+    permutecolor(0.84/divisor,0.82/divisor,0.30/divisor,bias,0.1,0.2,160,550);
+    permutecolor(0.94/divisor,0.54/divisor,0.36/divisor,bias,0.3,0.4,160,550);
+    permutecolor(0.94/divisor,0.80/divisor,0.76/divisor,bias,0.2,0.3,160,550);
+    permutecolor(0.51/divisor,0.39/divisor,0.61/divisor,bias,0.5,0.6,160,550);
+    permutecolor(0.91/divisorb,0.28/divisorb,0.35/divisorb,bias,0.4,0.5,160,550);
+    permutecolor(0.37/divisor,0.51/divisor,0.62/divisor,bias,0.6,0.7,160,550);
+    permutecolor(0.48/divisor,0.78/divisor,0.75/divisor,bias,0.8,0.9,160,550);
+    permutecolor(0.34/divisor,0.75/divisor,0.87/divisor,bias,0.7,0.8,160,550);    
+    permutecolor(0.51/divisor,0.61/divisor,0.27/divisor,bias,0.9,1.0,160,550);
+
+    var divisor=5;
+    permutecolor(0.98/divisor,0.86/divisor,0.19/divisor,bias,0.0,0.1,500,550);
+    permutecolor(0.98/divisor,0.76/divisor,0.23/divisor,bias,0.1,0.2,500,550);
+    permutecolor(0.91/divisor,0.55/divisor,0.08/divisor,bias,0.2,0.3,500,550);    
+    permutecolor(0.95/divisor,0.65/divisor,0.48/divisor,bias,0.3,0.4,500,550);
+    permutecolor(0.98/divisor,0.84/divisor,0.68/divisor,bias,0.4,0.5,500,550);
+    permutecolor(0.73/divisor,0.72/divisor,0.85/divisor,bias,0.5,0.6,500,550);
+    permutecolor(0.49/divisor,0.65/divisor,0.78/divisor,bias,0.6,0.7,500,550);
+    permutecolor(0.27/divisor,0.36/divisor,0.48/divisor,bias,0.7,0.8,500,550);
+    permutecolor(0.27/divisor,0.48/divisor,0.36/divisor,bias,0.8,0.9,500,550);
+    permutecolor(0.40/divisor,0.66/divisor,0.25/divisor,bias,0.9,1.0,500,550);
 
 //		window.requestAnimationFrame(redraw);
 }

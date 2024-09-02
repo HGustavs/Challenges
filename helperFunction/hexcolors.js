@@ -1,11 +1,51 @@
+// General shader functions for colors between 0..1
+
+// Saturate value between 0..1
+function saturate(col)
+{
+    return Math.max(0,Math.min(1.0,col));
+}
+
+// Mod function for 0..X numbers
+function mod(n,m)
+{
+  return ((n % m) + m) % m;
+}
+
+// https://github.com/gre/smoothstep/blob/master/index.js
+function smoothstep (min, max, value) {
+  var x = Math.max(0, Math.min(1.0, (value-min)/(max-min)));
+  return x*x*(3 - 2*x);
+};
+
+// 256 Color functions
+
+// HSV to RGB
+// https://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
+// input: h in [0,360] and s,v in [0,1] - output: r,g,b in [0,1]
+function hsv2rgb(h,s,v) 
+{                              
+  let f= (n,k=(n+h/60)%6) => v - v*s*Math.max( Math.min(k,4-k,1), 0);     
+  return [f(5),f(3),f(1)];       
+}   
+
 // Lighting with Bias (Saturated/Clamped)
+// color: 0..1 strength: 0..1 (saturated) bias:0..1
 function light(color,strength,bias)
 {
-    return Math.max(0,Math.min(255,Math.round(color/((1.0+bias)-strength))));
+    return Math.max(0,Math.min(1.0,(color/((1.0+bias)-Math.min(1.0,strength)))));
+}
+
+// RGB Linear lighting returning hex
+function linearColor(R,G,B)
+{
+    return "#"+
+           numberToHex(Math.round(R*255))+
+           numberToHex(Math.round(G*255))+
+           numberToHex(Math.round(B*255));
 }
 
 // RGB Lighting with Bias returning hex
-
 function lightColor(R,G,B,strength,bias)
 {
     return "#"+
