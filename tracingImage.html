@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        #wrapper{
+            display:grid;
+            grid-template-areas: "main tools";
+        }
+
+        #myCanvas{
+            grid-area:main;
+        }
+
+        #toolsCanvas{
+            grid-area:tools;
+        }
+        
+    </style>
+    <script>//document.write("<script type='text/javascript' src='helperFunction/hexcolors.js?t=" + Date.now() + "'><\/script>");</script>
+		<script>
+var c;
+var mx,my,mb=0;
+var world = new Image();
+
+function zetup()
+{
+    var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+    world.src = 'data/Equirectangular2.png';
+    world.onload = function () {
+        updatestate();
+    };    
+}
+
+// We make a bit number if byte value is over treshold
+function imgToBits(imgdata,px,py,comp,treshold)
+{
+    var num=0;
+    var index=((py*width)+px)*4;
+    var yadd=width*4;
+    if(imgdata[index+comp]>treshold) num+=1;
+    if(imgdata[index+comp+4]>treshold) num+=2;
+    if(imgdata[index+comp+yadd]>treshold) num+=4;
+    if(imgdata[index+comp+yadd+4]>treshold) num+=8;
+    return num;
+}
+
+var width=2048;
+var height=1000;
+
+var segments=[];
+var paths=[];
+var pointHash=[];
+
+function makesegment(px1,py1,px2,py2)
+{
+    var segment={x1:px1,y1:py1,x2:px2,y2:py2};
+
+    if(pointHash[px1]==null){
+        pointHash[px1]=[];
+    }
+    pointHash[px1].push(segment);
+    if(pointHash[px2]==null){
+        pointHash[px2]=[];
+    }
+    pointHash[px2].push(segment);
+
+    segments.push(segment);
+}
+
+function updatestate()
+{
+    // World to the left and tiles to the right
+
+//    toolcanvas.drawImage(tiles,0,0);
+    c.drawImage(world,0,0);
+
+    c.fillStyle="#000";
+    //c.fillRect(500,100,4,4);
+
+    var mapdata=c.getImageData(0,0,width,height).data;
+
+    var ystart=0;
+    var xstart=0;
+    var xend=width-1;
+    var yend=height-1;
+    var scale=0.5;
+    var xoffs=0;
+
+    var bitvalues=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    for(var py=ystart;py<yend;py++){
+        for(var px=xstart;px<xend;px++){
+            var bitvalue=(imgToBits(mapdata,px,py,2,80));
+            bitvalues[bitvalue]++;
+            if(bitvalue==3) makesegment(px,py,px+1,py);     // Straight Horizontal Top
+            if(bitvalue==5) makesegment(px,py,px,py+1);     // Straight Vertical Left
+            if(bitvalue==6||bitvalue==7||bitvalue==14) makesegment(px,py+1,px+1,py);
+            if(bitvalue==9||bitvalue==11||bitvalue==13) makesegment(px,py,px+1,py+1);          
+            if(bitvalue==10) makesegment(px+1,py,px+1,py+1);    // Straight Vertical Right
+            if(bitvalue==12) makesegment(px,py+1,px+1,py+1);    // Straight Horizontal Bottom
+        }
+    }
+
+    c.clearRect(0,0,2048,1000);
+
+    // We want a fast algorithm for joining segments
+
+    for(segment of segments){
+        // Visit all unvisited segments 
+        if(segment.visited==false){
+            // Start new path and assign current coordinates that we are matching
+            var path=[];
+            var currx=segment.x2;
+            var curry=segment.y2;
+            do{
+                // Go through same x in cache and find a match (from y or to y match in cache)
+                // Break if no match is found or if more than one match is found (branching path).
+                // If mathch is found - visit segment and update currx,curry 
+            }while(true)
+
+            // Path is ready
+        }
+    }    
+
+    // Draw all segments
+    c.strokeStyle="#000";
+    c.beginPath();
+    for(segment of segments){
+
+        c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
+        c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
+    }
+    c.stroke();
+
+
+
+}
+
+		</script>
+</head>
+<body onload="zetup();">
+
+<!--  <button onclick="Export();">Export</button>-->
+  <div id="wrapper">
+ 	<canvas id="myCanvas" width="2048" height="1344" style="border:1px solid #000000;"></canvas> 
+  </div>
+</body>

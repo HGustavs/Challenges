@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>document.write("<script type='text/javascript' src='helperFunction/hexcolors.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/spatialHash.js?t=" + Date.now() + "'><\/script>");</script>
+    <script>document.write("<script type='text/javascript' src='helperFunction/canvasDraw.js?t=" + Date.now() + "'><\/script>");</script>
+
+		<script>
+
+// https://developer.mozilla.org/en-US/docs/Games/Techniques/Tilemaps
+
+var c;
+
+function zetup()
+{
+
+		var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+    updatestate();
+}
+
+function updatestate()
+{
+    var offs=1.0/7;
+
+    for(var j=20;j<260;j+=20){
+        for(var i=0;i<1.0;i+=offs){
+            drawSpiralSegment(i,i+offs,0,1,j,j+20,j+40);        
+        }
+    }
+
+}		
+			
+		</script>
+</head>
+<body onload="zetup();">
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+  <button onclick="generate();">Render</button>
+</body>

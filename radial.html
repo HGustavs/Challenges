@@ -88,37 +88,49 @@ function levels(widths,treshold)
 function updatestate()
 {
     var stride=0.05;
+    var ystride=0.01;
 
     c.fillStyle="#000";
     c.fillRect(0,0,900,800);
 
+    // We compute light values for each of the radial "pixels"
     var set=[];
     for(var xk=0;xk<=4.0;xk+=stride){
         var widths=[];
-        for(var yk=0;yk<=1.0;yk+=(stride*0.25)){
-            widths.push(Math.pow(1.0-((2.0*Math.abs(mod(xk*2,1.0)-0.5))*(yk)),2.0));
+        for(var yk=0;yk<=1.0;yk+=ystride){
+            widths.push(Math.pow(1.0-((2.0*Math.abs(mod(xk*2,1.0)-0.5))*(yk)),8.0));
         }
         set.push(widths);
         //thickLine(40+(xk*200),400,40+(xk*200),50,0,widths,10,"#000");
         //thickLine(300+(Math.sin(xk*1.5707)*50),300+(Math.cos(xk*1.5707)*50),300+(Math.sin(xk*1.5707)*200),300+(Math.cos(xk*1.5707)*200),0,widths,4,"#000");
     }
 
-    var treshold=0.1;
-    for(treshold=0;treshold<1.0;treshold+=0.1){
-        var RC=light(0.15,treshold+0.1,0.0);
-        var GC=light(0.2,treshold+0.1,0.0);
-        var BC=light(0.25,treshold+0.1,0.0);
+    // For each light level from 0 to 1
+    var cx=400;
+    var cy=400;
+    var mr=50;    // Radius minimum
+    var nr=200;   // Radius
+    for(var treshold=0.0;treshold<1.0;treshold+=0.22){
+        var RC=light(0.18,treshold+0.1,0.0);
+        var GC=light(0.22,treshold+0.1,0.0);
+        var BC=light(0.28,treshold+0.1,0.0);
 
-        c.fillStyle="#fed";
         c.fillStyle=linearColor(RC,GC,BC);
-        c.strokeStyle="#fed";
         c.beginPath();
-        c.moveTo(0,0);
+        // xk from i is related to length of set (stride relates to number of elements)
         for(var i=0;i<set.length;i++){
-                var yk=levels(set[i],treshold);
-                c.lineTo(i*10, yk*5);
+                var xk=(i/set.length)*4.0;
+                var yk=(levels(set[i],treshold)/set[i].length)*nr;
+                if(i==0){
+                    //c.moveTo(xk*150,0);
+                    c.moveTo(cx+(Math.sin(xk*1.5707)*mr),cy+(Math.cos(xk*1.5707)*mr));
+                }
+                //c.lineTo(xk*150.0, yk*5);
+                c.lineTo(cx+(Math.sin(xk*1.5707)*(mr+yk)),cy+(Math.cos(xk*1.5707)*(mr+yk)));
         }
-        c.lineTo((i-1)*10,0);
+        var xk=0;
+        var yk=(levels(set[0],treshold)/set[0].length)*nr;
+        c.lineTo(cx+(Math.sin(xk*1.5707)*(mr+yk)),cy+(Math.cos(xk*1.5707)*(mr+yk)));
         c.closePath();
         c.fill();
     }
