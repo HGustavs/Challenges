@@ -1,0 +1,114 @@
+<html>
+<head>
+		<script src="helperFunction/coin.js"></script>
+		<script>
+
+// Star generator for N sided stars with pseudo 3d effect
+// More complicated than it seems - naive version adds radius but a better versions needs to offset the outer polygon
+
+var mainctx;
+var cache;
+
+var v=0;
+
+var particles=[];
+
+const width=800;
+const height=800;
+const cx=width*0.5;
+const cy=height*0.5;
+
+function compareNumbers(a, b) {
+  return b.z - a.z;
+}
+
+function setup()
+{
+    var cc = document.getElementById("myCanvas");
+    mainctx = cc.getContext("2d");
+  
+    // Prepare coin particles
+    for(var i=0;i<1500;i++){
+        particles.push({x:(Math.random()*2000)-1000,y:(Math.random()*2000)-1000,z:Math.random()*800,scale:0.1+(Math.random()*0.2),frame:Math.floor(Math.random()*10),radius:1.0})
+    }
+
+    // Cache coin drawing
+    cache = document.getElementById("cacheCanvas");
+    cachectx = cache.getContext("2d");
+
+    for(var j=0;j<10;j++){
+        for(var i=0;i<10;i++){
+            cachectx.save();
+            
+            cachectx.translate(64+(i*128),64+(j*128));
+            cachectx.scale(0.58,0.58);
+
+            // Arrays of functions for drawing Animation Frames
+            coinArr[i](cachectx);
+            cachectx.fillStyle="RGBA(0,0,30,"+((9-j)/10)+")";
+            maskArr[i](cachectx);
+
+            cachectx.restore();    
+        }
+    }
+
+
+    drawit();
+}
+
+function drawit()
+{	
+    mainctx.clearRect(0,0,800,800);
+
+    // Sort particles to preserve z-order
+    particles.sort(compareNumbers);
+
+    mainctx.save();
+    mainctx.translate(400,400);
+    
+    var FOV=200;
+    for(particle of particles){
+
+        particle.scale = FOV/(particle.z+FOV);
+        particle.x3d = particle.x * particle.scale;
+        particle.y3d = particle.y * particle.scale;    
+
+        mainctx.save();
+        mainctx.translate(particle.x3d,particle.y3d);
+        mainctx.scale(particle.scale*0.2,particle.scale*0.2);
+        //mainctx.rotate(Math.PI*0.5);
+        
+        particle.z-=1.0;
+        if(particle.z<(-FOV*0.9)) particle.z=800;        
+
+        particle.frame+=0.2;
+        
+        var vr=Math.floor(particle.frame);
+        var depth=Math.max(0.0,Math.min(9.0,Math.floor(particle.scale*1.8)));
+
+        depthmax=Math.max(depth,depthmax);
+        depthmin=Math.min(depth,depthmin);
+
+        mainctx.drawImage(cache,(vr%10)*128,depth*128,128,128,-64,-64,128,128);
+
+        mainctx.restore();
+    
+    }
+
+    mainctx.restore();
+
+    console.log(cnt,depthmin,depthmax);
+
+    if((cnt++)<1000);
+    
+    window.requestAnimationFrame(drawit);
+} 		
+
+var cnt=0,depthmin=100000,depthmax=-100000;
+
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" width="800" height="800" style="border:1px solid #000000;background:#000;"></canvas> 
+  <canvas id="cacheCanvas" width="1280" height="1280" style="border:1px solid #fe5;"></canvas> 
+</body>

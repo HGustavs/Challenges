@@ -55,22 +55,27 @@ var pointHash=[];
 
 function makesegment(px1,py1,px2,py2)
 {
-    var segment={x1:px1,y1:py1,x2:px2,y2:py2};
-
-    if(pointHash[px1]==null){
-        pointHash[px1]=[];
-    }
-    pointHash[px1].push(segment);
-    if(pointHash[px2]==null){
-        pointHash[px2]=[];
-    }
-    pointHash[px2].push(segment);
-
+    var segment={id:segments.length,x1:px1,y1:py1,x2:px2,y2:py2,visited:false};
+    addHash(px1,segment);
+    addHash(px2,segment);
     segments.push(segment);
+}
+
+// We do not add duplicates of same segment to cache
+function addHash(coord,item)
+{
+    for(pnt of pointHash[coord]){
+        if(pnt.id==item.id) return false;
+    }
+    pointHash[coord].push(item);
 }
 
 function updatestate()
 {
+    // Empty cache
+    for(var i=0;i<width;i++){
+        pointHash[i]=[];
+    }
     // World to the left and tiles to the right
 
 //    toolcanvas.drawImage(tiles,0,0);
@@ -85,7 +90,7 @@ function updatestate()
     var xstart=0;
     var xend=width-1;
     var yend=height-1;
-    var scale=0.5;
+    var scale=1;
     var xoffs=0;
 
     var bitvalues=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
@@ -104,25 +109,79 @@ function updatestate()
 
     c.clearRect(0,0,2048,1000);
 
+    var paths=[];
+
     // We want a fast algorithm for joining segments
 
     for(segment of segments){
+    //for(var j=0;j<100;j++){
+        //var segment=segments[j];
         // Visit all unvisited segments 
         if(segment.visited==false){
             // Start new path and assign current coordinates that we are matching
             var path=[];
+            segment.visited=true;
+            path.push(segment);            
             var currx=segment.x2;
             var curry=segment.y2;
+            var currid=segment.id;
+
             do{
-                // Go through same x in cache and find a match (from y or to y match in cache)
-                // Break if no match is found or if more than one match is found (branching path).
-                // If mathch is found - visit segment and update currx,curry 
-            }while(true)
+                var foundcnt=0;
+                var founditem=null;
+                var items=[];
+
+                for(point of pointHash[currx]){
+                    if(((point.x1==currx&&point.y1==curry)||(point.x2==currx&&point.y2==curry))){
+                        if(point.visited==false){
+                            foundcnt++;
+                            founditem=point;
+                        }
+                    }
+                }
+
+                if(foundcnt==0){
+                    // Match not found i.e. end of path or error
+                    console.log("NF",currx,curry);
+                }else if(foundcnt>2){
+                    // Branching path i.e. split points
+                    console.log("BR ",currx,curry,items);
+                }else{
+                    path.push(founditem);
+                    founditem.visited=true;
+                    // Starting point of segment found or ending point of segment found
+                    if(founditem.y1==curry&&founditem.x1==currx){
+                        currx=founditem.x2;
+                        curry=founditem.y2;
+                        currid=founditem.id;
+                        // console.log("EP");
+                    }else{
+                        currx=founditem.x1;
+                        curry=founditem.y1;
+                        currid=founditem.id;                    
+                        // console.log("SP",currx,curry,founditem);
+                        /*
+                        for(segm of segments){
+                            if(segm.x1==currx&&segm.y1==curry){
+                                console.log("found x1",segm);
+                            }
+                            if(segm.x2==currx&&segm.y2==curry){
+                                console.log("found x2",segm);
+                            }
+                        }
+                        */
+                    }
+                }
+
+            }while(foundcnt==1);
 
             // Path is ready
+            paths.push(path);
+
         }
     }    
 
+/*
     // Draw all segments
     c.strokeStyle="#000";
     c.beginPath();
@@ -132,8 +191,28 @@ function updatestate()
         c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
     }
     c.stroke();
+*/
 
+    // Draw each path
+    for(path of paths){
+        if(path.length==1){
+            c.strokeStyle="#f00";        
+        }else{
+            var R=Math.floor(Math.random()*255);
+            var G=Math.floor(Math.random()*255);
+            var B=Math.floor(Math.random()*255);
 
+            c.strokeStyle="RGB("+R+","+G+","+B+")";        
+        }
+        c.beginPath();
+        for(segment of path){
+            c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
+            c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
+        }
+        c.stroke();    
+    }
+
+    console.log(paths.length);
 
 }
 
