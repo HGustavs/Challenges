@@ -70,6 +70,99 @@ function addHash(coord,item)
     pointHash[coord].push(item);
 }
 
+function collatepoints(xk,yk)
+{
+    let path=[];
+    var currx=xk;
+    var curry=yk;
+    do{
+        var foundcnt=0;
+        var founditem=null;
+        var items=[];
+
+        for(point of pointHash[currx]){
+            if(((point.x1==currx&&point.y1==curry)||(point.x2==currx&&point.y2==curry))){
+                if(point.visited==false){
+                    foundcnt++;
+                    founditem=point;
+                }
+            }
+        }
+
+        if(foundcnt==0){
+            // Match not found i.e. end of path or error
+            //console.log("NF",currx,curry);
+        }else if(foundcnt>1){
+            // Branching path i.e. split points
+            //console.log("BR ",currx,curry,items);
+        }else{
+            path.push(founditem);
+            founditem.visited=true;
+            // Starting point of segment found or ending point of segment found
+            if(founditem.y1==curry&&founditem.x1==currx){
+                currx=founditem.x2;
+                curry=founditem.y2;
+            }else{
+                currx=founditem.x1;
+                curry=founditem.y1;                  
+            }
+        }
+    }while(foundcnt==1);
+
+    return path;
+}
+
+function randomColor()
+{
+    var R=Math.floor(Math.random()*255);
+    var G=Math.floor(Math.random()*255);
+    var B=Math.floor(Math.random()*255);
+
+    return "RGB("+R+","+G+","+B+")";
+}
+
+function findmatch(paths)
+{
+    var mindist=500000;
+    var retval=false;
+    for(var i=0;i<paths.length;i++){
+        var path=paths[i];
+        for(var j=0;j<paths.length;j++){
+            var otherpath=paths[j];
+            if(i!=j&&path.length>10&&otherpath.length>10){
+                // This is a normal segment - start of path is close to end of otherpath
+                var dx=path[0].x1-otherpath[otherpath.length-1].x2;
+                var dy=path[0].y1-otherpath[otherpath.length-1].y2;
+                var dist=(dx*dx)+(dy*dy);
+                if((dist<mindist)){
+                    mindist=dist;
+                    retval={kind:0,path:i,other:j,dist:dist,p1x:path[0].x1,p1y:path[0].y1,p2x:otherpath[otherpath.length-1].x2,p2y:otherpath[otherpath.length-1].y2};
+                }
+                // This is a reverse segment type A - start of path is close to start of otherpath, we must reverse otherpath
+                var dx=path[0].x1-otherpath[0].x2;
+                var dy=path[0].y1-otherpath[0].y2;
+                var dist=(dx*dx)+(dy*dy);
+                if((dist<mindist)){
+                    mindist=dist;
+                    retval={kind:1,path:i,other:j,dist:dist,p1x:path[0].x1,p1y:path[0].y1,p2x:otherpath[0].x2,p2y:otherpath[0].y2};
+                }
+                // This is a reverse segment type B - end of path is close to end of otherpath, we must reverse path
+                var dx=path[path.length-1].x1-otherpath[otherpath.length-1].x2;
+                var dy=path[path.length-1].y1-otherpath[otherpath.length-1].y2;
+                var dist=(dx*dx)+(dy*dy);
+                if((dist<mindist)){
+                    mindist=dist;
+                    retval={kind:-1,path:i,other:j,dist:dist,p1x:path[path.length-1].x1,p1y:path[path.length-1].y1,p2x:otherpath[otherpath.length-1].x2,p2y:otherpath[otherpath.length-1].y2};
+                }                                  
+            }
+        }
+    }
+    if(retval!=false){
+        if(retval.dist>200) return false;
+    }
+    return retval;
+}
+
 function updatestate()
 {
     // Empty cache
@@ -107,112 +200,108 @@ function updatestate()
         }
     }
 
-    c.clearRect(0,0,2048,1000);
+    c.clearRect(0,0,2050,1002);
 
     var paths=[];
 
     // We want a fast algorithm for joining segments
-
     for(segment of segments){
-    //for(var j=0;j<100;j++){
-        //var segment=segments[j];
         // Visit all unvisited segments 
         if(segment.visited==false){
             // Start new path and assign current coordinates that we are matching
-            var path=[];
             segment.visited=true;
-            path.push(segment);            
-            var currx=segment.x2;
-            var curry=segment.y2;
-            var currid=segment.id;
+            var path=collatepoints(segment.x1,segment.y1);
+            var after=collatepoints(segment.x2,segment.y2);
+            path.reverse();
+            path.push(segment);
+            path=path.concat(after);
 
-            do{
-                var foundcnt=0;
-                var founditem=null;
-                var items=[];
-
-                for(point of pointHash[currx]){
-                    if(((point.x1==currx&&point.y1==curry)||(point.x2==currx&&point.y2==curry))){
-                        if(point.visited==false){
-                            foundcnt++;
-                            founditem=point;
-                        }
-                    }
-                }
-
-                if(foundcnt==0){
-                    // Match not found i.e. end of path or error
-                    console.log("NF",currx,curry);
-                }else if(foundcnt>2){
-                    // Branching path i.e. split points
-                    console.log("BR ",currx,curry,items);
-                }else{
-                    path.push(founditem);
-                    founditem.visited=true;
-                    // Starting point of segment found or ending point of segment found
-                    if(founditem.y1==curry&&founditem.x1==currx){
-                        currx=founditem.x2;
-                        curry=founditem.y2;
-                        currid=founditem.id;
-                        // console.log("EP");
-                    }else{
-                        currx=founditem.x1;
-                        curry=founditem.y1;
-                        currid=founditem.id;                    
-                        // console.log("SP",currx,curry,founditem);
-                        /*
-                        for(segm of segments){
-                            if(segm.x1==currx&&segm.y1==curry){
-                                console.log("found x1",segm);
-                            }
-                            if(segm.x2==currx&&segm.y2==curry){
-                                console.log("found x2",segm);
-                            }
-                        }
-                        */
-                    }
-                }
-
-            }while(foundcnt==1);
+            path.color=randomColor();            
 
             // Path is ready
             paths.push(path);
-
         }
     }    
 
-/*
-    // Draw all segments
-    c.strokeStyle="#000";
-    c.beginPath();
-    for(segment of segments){
+    // Try to make loops black
 
-        c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
-        c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
+    var finishedpaths=[];
+
+    // Remove looping paths
+    for(var i=paths.length-1;i>0;i--){
+        var path=paths[i];
+            if(path[0].x1==path[path.length-1].x2&&path[0].y1==path[path.length-1].y2){
+                var finishedpath=paths.splice(i,1);
+                finishedpaths.push(finishedpath);
+            }else if(path.length<10){
+                paths.splice(i,1);
+            }
     }
-    c.stroke();
-*/
+
+    // Find corresponding segments that end in the same place as this segment starts or vice versa
+    for(var removalcnt=0;removalcnt<path.length;removalcnt++){
+        var matches=findmatch(paths);
+        if(matches!=false){
+            c.strokeStyle="#2f2";
+            c.beginPath();                
+            c.moveTo(matches.p1x,matches.p1y);
+            c.lineTo(matches.p2x,matches.p2y);    
+            c.stroke();
+
+            if(matches.kind==1){
+                // Reverse other
+                paths[matches.other].reverse();
+            }else if(matches.kind==-1){
+                // Reverse path
+                paths[matches.path].reverse();
+            }  
+            
+            c.strokeStyle="#f22";
+            c.beginPath();
+            for(segment of paths[matches.other]){
+                c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
+                c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
+            }
+            c.stroke();  
+
+            c.strokeStyle="#22f";
+            c.beginPath();
+            for(segment of paths[matches.path]){
+                c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
+                c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
+            }
+            c.stroke();  
+
+            var gurk=paths[matches.other].concat(paths[matches.path]);
+            if(matches.other>matches.path){
+                paths.splice(matches.other,1);
+                paths.splice(matches.path,1);
+            }else{
+                paths.splice(matches.path,1);
+                paths.splice(matches.other,1);        
+            }
+            //gurk.color="#f45"; //randomColor();
+            gurk.color=randomColor();
+            paths.push(gurk);
+        }else{
+            break;
+        }
+    }
 
     // Draw each path
     for(path of paths){
-        if(path.length==1){
-            c.strokeStyle="#f00";        
-        }else{
-            var R=Math.floor(Math.random()*255);
-            var G=Math.floor(Math.random()*255);
-            var B=Math.floor(Math.random()*255);
-
-            c.strokeStyle="RGB("+R+","+G+","+B+")";        
+        console.log(path.length);
+        if(path.length>10){
+            c.strokeStyle=path.color;
+            c.beginPath();
+            for(segment of path){
+                c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
+                c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
+            }
+            c.stroke();            
         }
-        c.beginPath();
-        for(segment of path){
-            c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
-            c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
-        }
-        c.stroke();    
     }
-
-    console.log(paths.length);
+    console.log(paths);
 
 }
 
@@ -222,6 +311,6 @@ function updatestate()
 
 <!--  <button onclick="Export();">Export</button>-->
   <div id="wrapper">
- 	<canvas id="myCanvas" width="2048" height="1344" style="border:1px solid #000000;"></canvas> 
+ 	<canvas id="myCanvas" width="4096" height="2048" style="border:1px solid #000000;"></canvas> 
   </div>
 </body>
