@@ -18,9 +18,33 @@
     </style>
     <script>//document.write("<script type='text/javascript' src='helperFunction/hexcolors.js?t=" + Date.now() + "'><\/script>");</script>
 		<script>
+
+// https://stackoverflow.com/questions/23090019/fastest-formula-to-get-hue-from-rgb
+// https://gowtham000.hashnode.dev/median-cut-a-popular-colour-quantization-strategy
+// https://web.archive.org/web/20160418231732/http://www.cs.berkeley.edu/~dcoetzee/downloads/scolorq/#sampleimages
+// https://muthu.co/reducing-the-number-of-colors-of-an-image-using-median-cut-algorithm/
+// https://stackoverflow.com/questions/21483999/using-atan2-to-find-angle-between-two-vectors
+
+
 var c;
-var mx,my,mb=0;
 var world = new Image();
+
+// CrossProduct pasted into vector angle function
+function CrossProduct(v1x,v1y,v2x,v2y)
+{
+    return (v1x*v2y) - (v1y*v2x);
+}
+
+// DotProduct pasted into vector angle function
+function DotProduct(v1x,v1y,v2x,v2y)
+{
+  return (v1x*v2x) + (v1y*v2y);
+}
+
+function vectAngle(v1x,v1y,v2x,v2y)
+{
+    return Math.atan2((v1x*v2y)-(v1y*v2x),(v1x*v2x)+(v1y*v2y));
+}
 
 function zetup()
 {
@@ -163,8 +187,43 @@ function findmatch(paths)
     return retval;
 }
 
+function drawPaths(paths,xoffs,yoffs,xstart,ystart,scale)
+{
+    // Draw each path
+    for(path of paths){           
+        c.beginPath();
+        for(segment of path){
+            c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
+            c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
+        }
+        c.stroke();        
+    }
+}
+
 function updatestate()
 {
+
+  c.clearRect(0,0,1000,1000);
+
+  var cx=200,cy=200;
+  var lx=240,ly=40;
+  
+  c.beginPath();
+  c.moveTo(cx,cy);
+  c.lineTo(lx,ly);
+  c.moveTo(cx,cy);
+  c.lineTo(mx,my);
+  c.stroke();
+  
+  ang=vectAngle(lx-cx,ly-cy,cx-mx,cy-my);
+
+  ang=Math.floor((ang/(2.0*Math.PI))*360);
+
+  c.font = "22px serif";
+  c.fillText(ang,20, 20);
+
+   /*
+    
     // Empty cache
     for(var i=0;i<width;i++){
         pointHash[i]=[];
@@ -221,13 +280,13 @@ function updatestate()
             // Path is ready
             paths.push(path);
         }
-    }    
+    }
 
-    // Try to make loops black
+    // drawPaths(paths,xoffs,0,xstart,ystart,scale)
 
     var finishedpaths=[];
 
-    // Remove looping paths
+    // Remove looping paths (this includes small loops and segments)
     for(var i=paths.length-1;i>0;i--){
         var path=paths[i];
             if(path[0].x1==path[path.length-1].x2&&path[0].y1==path[path.length-1].y2){
@@ -242,12 +301,6 @@ function updatestate()
     for(var removalcnt=0;removalcnt<path.length;removalcnt++){
         var matches=findmatch(paths);
         if(matches!=false){
-            c.strokeStyle="#2f2";
-            c.beginPath();                
-            c.moveTo(matches.p1x,matches.p1y);
-            c.lineTo(matches.p2x,matches.p2y);    
-            c.stroke();
-
             if(matches.kind==1){
                 // Reverse other
                 paths[matches.other].reverse();
@@ -256,22 +309,6 @@ function updatestate()
                 paths[matches.path].reverse();
             }  
             
-            c.strokeStyle="#f22";
-            c.beginPath();
-            for(segment of paths[matches.other]){
-                c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
-                c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
-            }
-            c.stroke();  
-
-            c.strokeStyle="#22f";
-            c.beginPath();
-            for(segment of paths[matches.path]){
-                c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
-                c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
-            }
-            c.stroke();  
-
             var gurk=paths[matches.other].concat(paths[matches.path]);
             if(matches.other>matches.path){
                 paths.splice(matches.other,1);
@@ -288,21 +325,89 @@ function updatestate()
         }
     }
 
+    // Add finished paths back to main path object
+    for(path of finishedpaths)
+    {
+        paths.push(path[0]);
+    }
+
+    // Prepare path data for each path
+    for(path of paths){
+        var minx=500000;
+        var maxx=-500000;
+        var miny=500000;
+        var maxy=-500000;
+        for(segment of path){
+            minx=Math.min(minx,Math.min(segment.x1,segment.x2));
+            maxx=Math.max(maxx,Math.max(segment.x1,segment.x2));
+            miny=Math.min(miny,Math.min(segment.y1,segment.y2));
+            maxy=Math.max(maxy,Math.max(segment.y1,segment.y2));
+        }
+        path.minx=minx;
+        path.miny=miny;
+        path.maxx=maxx;
+        path.maxy=maxy;
+
+        path.area=(maxx-minx)*(maxy-miny);
+    }
+
+    // We remove all paths with an area smaller than treshold area or smaller than x points
+    for(var i=paths.length-1;i>0;i--){
+        var path=paths[i];
+            if(path.length<10||path.area<400){
+                paths.splice(i,1);
+            }
+    }
+
+    // Reduce points based on angle
+
+
+    // Idea is to turn the spline into a bezier curve
+
+    // Draw Bounding Boxes
+    c.setLineDash([2, 2]);
+    c.strokeStyle="#888";
+    c.beginPath();
+    for(path of paths){
+        c.moveTo(path.minx,path.miny);
+        c.lineTo(path.maxx,path.miny);
+        c.moveTo(path.minx,path.maxy);
+        c.lineTo(path.maxx,path.maxy);
+        c.moveTo(path.minx,path.miny);
+        c.lineTo(path.minx,path.maxy);
+        c.moveTo(path.maxx,path.miny);
+        c.lineTo(path.maxx,path.maxy);
+    }
+    c.stroke();
+    c.setLineDash([]);
+
     // Draw each path
     for(path of paths){
-        console.log(path.length);
-        if(path.length>10){
-            c.strokeStyle=path.color;
-            c.beginPath();
-            for(segment of path){
-                c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
-                c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
-            }
-            c.stroke();            
+        console.log(path);
+        c.strokeStyle=path.color;
+        c.fillStyle=path.color;            
+        c.beginPath();
+        c.moveTo(xoffs+((path[0].x1-xstart)*scale),(path[0].y1-ystart)*scale);
+        for(segment of path){
+            c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
         }
+        c.fill();
+//        c.stroke();        
     }
-    console.log(paths);
 
+    */
+
+}
+
+var mx=40,my=40;
+function mouseMove(e)
+{
+    var rect = document.getElementById(e.target.id).getBoundingClientRect();
+
+    mx=(e.clientX-rect.left);
+    my=(e.clientY-rect.top);
+
+    updatestate();
 }
 
 		</script>
@@ -311,6 +416,6 @@ function updatestate()
 
 <!--  <button onclick="Export();">Export</button>-->
   <div id="wrapper">
- 	<canvas id="myCanvas" width="4096" height="2048" style="border:1px solid #000000;"></canvas> 
+ 	<canvas id="myCanvas" width="4096" height="2048" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
   </div>
 </body>
