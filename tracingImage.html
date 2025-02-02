@@ -25,9 +25,24 @@
 // https://muthu.co/reducing-the-number-of-colors-of-an-image-using-median-cut-algorithm/
 // https://stackoverflow.com/questions/21483999/using-atan2-to-find-angle-between-two-vectors
 
+var mx=40,my=40;
 
 var c;
 var world = new Image();
+var width=2048;
+var height=1000;
+var ystart=0;
+var xstart=0;
+var xend=width-1;
+var yend=height-1;
+var scale=1;
+var xoffs=0;
+var yoffs=0;
+var fontsize=13;
+
+var segments=[];
+var paths=[];
+var pointHash=[];
 
 // CrossProduct pasted into vector angle function
 function CrossProduct(v1x,v1y,v2x,v2y)
@@ -41,9 +56,10 @@ function DotProduct(v1x,v1y,v2x,v2y)
   return (v1x*v2x) + (v1y*v2y);
 }
 
+// VectAngle angle between two vectors
 function vectAngle(v1x,v1y,v2x,v2y)
 {
-    return Math.atan2((v1x*v2y)-(v1y*v2x),(v1x*v2x)+(v1y*v2y));
+    return Math.floor((Math.atan2((v1x*v2y)-(v1y*v2x),(v1x*v2x)+(v1y*v2y))/(2.0*Math.PI))*360);
 }
 
 function zetup()
@@ -55,6 +71,15 @@ function zetup()
     world.onload = function () {
         updatestate();
     };    
+}
+
+function randomColor()
+{
+    var R=Math.floor(Math.random()*255);
+    var G=Math.floor(Math.random()*255);
+    var B=Math.floor(Math.random()*255);
+
+    return "RGB("+R+","+G+","+B+")";
 }
 
 // We make a bit number if byte value is over treshold
@@ -69,13 +94,6 @@ function imgToBits(imgdata,px,py,comp,treshold)
     if(imgdata[index+comp+yadd+4]>treshold) num+=8;
     return num;
 }
-
-var width=2048;
-var height=1000;
-
-var segments=[];
-var paths=[];
-var pointHash=[];
 
 function makesegment(px1,py1,px2,py2)
 {
@@ -136,15 +154,6 @@ function collatepoints(xk,yk)
     return path;
 }
 
-function randomColor()
-{
-    var R=Math.floor(Math.random()*255);
-    var G=Math.floor(Math.random()*255);
-    var B=Math.floor(Math.random()*255);
-
-    return "RGB("+R+","+G+","+B+")";
-}
-
 function findmatch(paths)
 {
     var mindist=500000;
@@ -187,42 +196,86 @@ function findmatch(paths)
     return retval;
 }
 
-function drawPaths(paths,xoffs,yoffs,xstart,ystart,scale)
+function drawPath(path,xoffs,yoffs,scale,fillstate)
 {
     // Draw each path
-    for(path of paths){           
-        c.beginPath();
-        for(segment of path){
-            c.moveTo(xoffs+((segment.x1-xstart)*scale),(segment.y1-ystart)*scale);
-            c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
-        }
+    c.strokeStyle=path.color;
+    c.fillStyle=path.color;            
+    c.beginPath();
+    c.moveTo(xoffs+(path[0].x1*scale),yoffs+(path[0].y1*scale));
+    for(segment of path){
+        c.lineTo(xoffs+(segment.x2*scale),yoffs+(segment.y2*scale));    
+    }
+    if(fillstate){
+        c.fill();
+    }else{
         c.stroke();        
     }
 }
 
+function drawBoundingBox(path,xoffs,yoffs,scale)
+{
+    c.setLineDash([2, 2]);
+    c.strokeStyle="#888";
+    c.beginPath();
+
+    c.moveTo(xoffs+(path.minx*scale),yoffs+(path.miny*scale));
+    c.lineTo(xoffs+(path.maxx*scale),yoffs+(path.miny*scale));
+    c.moveTo(xoffs+(path.minx*scale),yoffs+(path.maxy*scale));
+    c.lineTo(xoffs+(path.maxx*scale),yoffs+(path.maxy*scale));
+    c.moveTo(xoffs+(path.minx*scale),yoffs+(path.miny*scale));
+    c.lineTo(xoffs+(path.minx*scale),yoffs+(path.maxy*scale));
+    c.moveTo(xoffs+(path.maxx*scale),yoffs+(path.miny*scale));
+    c.lineTo(xoffs+(path.maxx*scale),yoffs+(path.maxy*scale));
+
+    c.stroke();
+    c.setLineDash([]);
+
+    c.fillStyle="#000";
+    c.font = (fontsize*scale)+"px Arial Narrow";
+
+    c.fillText(path.no,xoffs+(path.minx*scale), yoffs+(path.miny*scale));
+    c.fillText(path.length,xoffs+(path.minx*scale), yoffs+(path.miny*scale)+(fontsize*scale));
+
+}
+
+// Give three points and test angle between those points including drawing of points
+function testangle(cp,p1,p2)
+{
+    // We make one forward vector and one rear vector in order to get a "zero centered" angle from formula
+    var v1x=cp.x1-p1.x1;
+    var v1y=cp.y1-p1.y1;
+    var v2x=p2.x1-cp.x1;
+    var v2y=p2.y1-cp.y1;  
+    return Math.floor((Math.atan2((v1x*v2y)-(v1y*v2x),(v1x*v2x)+(v1y*v2y))/(2.0*Math.PI))*360);
+}
+
+function pointAngle(path,index,stride)
+{
+    var p1=path[mod(index-stride,path.length)];
+    var p2=path[mod(index+stride,path.length)];
+    var cp=path[index];
+
+    /*
+    c.strokeStyle="#080";
+    c.beginPath();
+    c.moveTo(cp.x1,cp.y1);
+    c.lineTo(p1.x1,p1.y1);
+    c.moveTo(cp.x1,cp.y1);
+    c.lineTo(p2.x1,p2.y1);
+    c.stroke();  
+    */
+
+    return testangle(cp,p1,p2);
+}
+
+function mod(val,n)
+{
+    return ((val % n) + n) % n;
+}
+
 function updatestate()
 {
-
-  c.clearRect(0,0,1000,1000);
-
-  var cx=200,cy=200;
-  var lx=240,ly=40;
-  
-  c.beginPath();
-  c.moveTo(cx,cy);
-  c.lineTo(lx,ly);
-  c.moveTo(cx,cy);
-  c.lineTo(mx,my);
-  c.stroke();
-  
-  ang=vectAngle(lx-cx,ly-cy,cx-mx,cy-my);
-
-  ang=Math.floor((ang/(2.0*Math.PI))*360);
-
-  c.font = "22px serif";
-  c.fillText(ang,20, 20);
-
-   /*
     
     // Empty cache
     for(var i=0;i<width;i++){
@@ -237,13 +290,6 @@ function updatestate()
     //c.fillRect(500,100,4,4);
 
     var mapdata=c.getImageData(0,0,width,height).data;
-
-    var ystart=0;
-    var xstart=0;
-    var xend=width-1;
-    var yend=height-1;
-    var scale=1;
-    var xoffs=0;
 
     var bitvalues=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
     for(var py=ystart;py<yend;py++){
@@ -281,8 +327,6 @@ function updatestate()
             paths.push(path);
         }
     }
-
-    // drawPaths(paths,xoffs,0,xstart,ystart,scale)
 
     var finishedpaths=[];
 
@@ -347,7 +391,6 @@ function updatestate()
         path.miny=miny;
         path.maxx=maxx;
         path.maxy=maxy;
-
         path.area=(maxx-minx)*(maxy-miny);
     }
 
@@ -359,47 +402,39 @@ function updatestate()
             }
     }
 
-    // Reduce points based on angle
-
+    // Number remaining paths
+    var ct=0;
+    for(path of paths){
+        path.no=ct++;
+    }
 
     // Idea is to turn the spline into a bezier curve
 
-    // Draw Bounding Boxes
-    c.setLineDash([2, 2]);
-    c.strokeStyle="#888";
-    c.beginPath();
+    // Draw Bounding Boxes and number paths
     for(path of paths){
-        c.moveTo(path.minx,path.miny);
-        c.lineTo(path.maxx,path.miny);
-        c.moveTo(path.minx,path.maxy);
-        c.lineTo(path.maxx,path.maxy);
-        c.moveTo(path.minx,path.miny);
-        c.lineTo(path.minx,path.maxy);
-        c.moveTo(path.maxx,path.miny);
-        c.lineTo(path.maxx,path.maxy);
-    }
-    c.stroke();
-    c.setLineDash([]);
-
-    // Draw each path
-    for(path of paths){
-        console.log(path);
-        c.strokeStyle=path.color;
-        c.fillStyle=path.color;            
-        c.beginPath();
-        c.moveTo(xoffs+((path[0].x1-xstart)*scale),(path[0].y1-ystart)*scale);
-        for(segment of path){
-            c.lineTo(xoffs+((segment.x2-xstart)*scale),(segment.y2-ystart)*scale);    
-        }
-        c.fill();
-//        c.stroke();        
+        drawPath(path,xoffs,yoffs,scale,false);
+        drawBoundingBox(path,xoffs,yoffs,scale);
     }
 
-    */
-
+    var lastindex=0;
+    for(var index=0;index<paths[13].length;index+=10){
+      //var index=Math.round(Math.random()*paths[13].length);
+      console.log(Math.abs(index-lastindex));
+      if((Math.abs(pointAngle(paths[13],index,15))>30)||(Math.abs(index-lastindex)>50)){
+          c.fillStyle="#000";
+          c.beginPath();
+          c.arc(paths[13][index].x1,paths[13][index].y1, 5, 0, 2 * Math.PI);
+          c.fill();
+          lastindex=index;
+      }else{
+          c.strokeStyle="#000";
+          c.beginPath();
+          c.arc(paths[13][index].x1,paths[13][index].y1, 5, 0, 2 * Math.PI);
+          //c.stroke();
+      }
+    }
 }
 
-var mx=40,my=40;
 function mouseMove(e)
 {
     var rect = document.getElementById(e.target.id).getBoundingClientRect();
@@ -407,7 +442,7 @@ function mouseMove(e)
     mx=(e.clientX-rect.left);
     my=(e.clientY-rect.top);
 
-    updatestate();
+//    updatestate();
 }
 
 		</script>
