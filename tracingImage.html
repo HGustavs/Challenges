@@ -24,6 +24,7 @@
 // https://web.archive.org/web/20160418231732/http://www.cs.berkeley.edu/~dcoetzee/downloads/scolorq/#sampleimages
 // https://muthu.co/reducing-the-number-of-colors-of-an-image-using-median-cut-algorithm/
 // https://stackoverflow.com/questions/21483999/using-atan2-to-find-angle-between-two-vectors
+// https://github.com/ariutta/catmullrom2bezier/blob/master/catmullrom2bezier.js
 
 var mx=40,my=40;
 
@@ -35,7 +36,7 @@ var ystart=0;
 var xstart=0;
 var xend=width-1;
 var yend=height-1;
-var scale=1;
+var scale=1.0;
 var xoffs=0;
 var yoffs=0;
 var fontsize=13;
@@ -250,21 +251,11 @@ function testangle(cp,p1,p2)
     return Math.floor((Math.atan2((v1x*v2y)-(v1y*v2x),(v1x*v2x)+(v1y*v2y))/(2.0*Math.PI))*360);
 }
 
-function pointAngle(path,index,stride)
+function pointAngle(path,index,raylength)
 {
-    var p1=path[mod(index-stride,path.length)];
-    var p2=path[mod(index+stride,path.length)];
-    var cp=path[index];
-
-    /*
-    c.strokeStyle="#080";
-    c.beginPath();
-    c.moveTo(cp.x1,cp.y1);
-    c.lineTo(p1.x1,p1.y1);
-    c.moveTo(cp.x1,cp.y1);
-    c.lineTo(p2.x1,p2.y1);
-    c.stroke();  
-    */
+    var p1=path[mod(index-raylength,path.length)];
+    var p2=path[mod(index+raylength,path.length)];
+    var cp=path[mod(index,path.length)];
 
     return testangle(cp,p1,p2);
 }
@@ -272,6 +263,40 @@ function pointAngle(path,index,stride)
 function mod(val,n)
 {
     return ((val % n) + n) % n;
+}
+
+function drawCirc(cx,cy,radius,color,fillstate)
+{
+    c.fillStyle=color;
+    c.strokeStyle=color;
+    c.beginPath();
+    c.arc(cx,cy, radius, 0, 2 * Math.PI);
+    if(fillstate){
+        c.fill();    
+    }else{
+        c.stroke();
+    }
+}
+
+function reducePath(workpath,stride,testno,raylength)
+{
+    var respath=[];
+    for(var index=0;index<workpath.length;index+=stride){
+      var maxang=-500;
+      var maxind=-1;
+      for(var tstcnt=0;tstcnt<testno;tstcnt++){
+          var ind=mod(index+Math.floor(Math.random()*stride),workpath.length);
+          var ang=Math.abs(pointAngle(workpath,ind,raylength));
+          if(ang>maxang){
+              maxang=ang;
+              maxind=ind;
+          }
+      }
+      if((maxind>-1)&&(maxang>10)){
+          respath.push(workpath[maxind]);
+      }
+    }
+    return respath;
 }
 
 function updatestate()
@@ -411,28 +436,52 @@ function updatestate()
     // Idea is to turn the spline into a bezier curve
 
     // Draw Bounding Boxes and number paths
+/*
     for(path of paths){
         drawPath(path,xoffs,yoffs,scale,false);
         drawBoundingBox(path,xoffs,yoffs,scale);
     }
+*/
 
-    var lastindex=0;
-    for(var index=0;index<paths[13].length;index+=10){
-      //var index=Math.round(Math.random()*paths[13].length);
-      console.log(Math.abs(index-lastindex));
-      if((Math.abs(pointAngle(paths[13],index,15))>30)||(Math.abs(index-lastindex)>50)){
-          c.fillStyle="#000";
-          c.beginPath();
-          c.arc(paths[13][index].x1,paths[13][index].y1, 5, 0, 2 * Math.PI);
-          c.fill();
-          lastindex=index;
-      }else{
-          c.strokeStyle="#000";
-          c.beginPath();
-          c.arc(paths[13][index].x1,paths[13][index].y1, 5, 0, 2 * Math.PI);
-          //c.stroke();
-      }
+    // Copy path to work path
+
+
+    // We have a complete list of catmull rom control points that we can then turn into bezier curves that we then can draw nornally or convert to svg
+
+    var respath=reducePath(paths[13],10,5,15);
+
+    // drawPath(workpath,xoffs,yoffs,scale,false);
+    drawPath(respath,xoffs-400,yoffs,scale,false);
+
+    c.beginPath();
+    c.save();
+    c.translate(0,0);
+    c.strokeStyle="#800";
+    c.moveTo(respath[0].x1,respath[0].y1);
+    for(var ind=1;ind<respath.length;ind+=2){
+        catmullRomToBezier(respath[mod(ind-1,respath.length)],respath[mod(ind,respath.length)],respath[mod(ind+1,respath.length)],respath[mod(ind+2,respath.length)]);
     }
+    c.stroke();
+    c.restore();
+
+    console.log(respath.length);
+}
+
+// Turns catmullRom spline to corresponding bezier path that we use for normal execution
+// We move two points ahead every iteration (var i = 0, iLen = crp.length; iLen - 2 > i; i+=2) {
+// Preceeding point is before current point. Current point is p1
+
+function catmullRomToBezier(p0,p1,p2,p3)
+{
+    var tension=6;
+    var bp=[];
+    // bp.push( { x: p1.x1,  y: p1.y1 } ); // We skip initial point 
+    bp.push( { x: ((-p0.x1 + tension*p1.x1 + p2.x1) / tension), y: ((-p0.y1 + tension*p1.y1 + p2.y1) / tension)} );
+    bp.push( { x: ((p1.x1 + tension*p2.x1 - p3.x1) / tension),  y: ((p1.y1 + tension*p2.y1 - p3.y1) / tension) } );
+    bp.push( { x: p2.x1,  y: p2.y1 } );
+
+    c.bezierCurveTo(bp[0].x,bp[0].y,bp[1].x,bp[1].y,bp[2].x,bp[2].y);
+    //d += "C" + bp[1].x + "," + bp[1].y + " " + bp[2].x + "," + bp[2].y + " " + bp[3].x + "," + bp[3].y + " ";
 }
 
 function mouseMove(e)
