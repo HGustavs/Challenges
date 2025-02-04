@@ -197,24 +197,54 @@ function findmatch(paths)
     return retval;
 }
 
-function drawPath(path,xoffs,yoffs,scale,fillstate)
+function drawPath(path,xoffs,yoffs,scale,fillstate,color)
 {
     // Draw each path
-    c.strokeStyle=path.color;
-    c.fillStyle=path.color;            
-    c.beginPath();
-    c.moveTo(xoffs+(path[0].x1*scale),yoffs+(path[0].y1*scale));
-    for(segment of path){
-        c.lineTo(xoffs+(segment.x2*scale),yoffs+(segment.y2*scale));    
-    }
-    if(fillstate){
-        c.fill();
-    }else{
-        c.stroke();        
+    if(path.length>0){
+        c.strokeStyle=color;
+        c.fillStyle=color;            
+        c.beginPath();
+        c.moveTo(xoffs+(path[0].x1*scale),yoffs+(path[0].y1*scale));
+        for(segment of path){
+            c.lineTo(xoffs+(segment.x2*scale),yoffs+(segment.y2*scale));    
+        }
+        if(fillstate){
+            c.fill();
+        }else{
+            c.stroke();        
+        }
     }
 }
 
-function drawBoundingBox(path,xoffs,yoffs,scale)
+function drawBezierPath(path,xoffs,yoffs,scale,fillstate,color)
+{
+    // Draw each path
+    if(path.length>10){
+        c.strokeStyle=color;
+        c.fillStyle=color;            
+        c.beginPath();
+        for(segment of path){
+            if(segment.type=="M"){
+                c.moveTo(xoffs+(segment.x1*scale),yoffs+(segment.y1*scale));
+            }else if(segment.type=="L"){
+                c.lineTo(xoffs+(segment.x1*scale),yoffs+(segment.y1*scale));
+            }else if(segment.type=="B"){
+                c.bezierCurveTo(
+                    xoffs+(segment.x1*scale),yoffs+(segment.y1*scale),
+                    xoffs+(segment.x2*scale),yoffs+(segment.y2*scale),
+                    xoffs+(segment.x3*scale),yoffs+(segment.y3*scale)
+                )        
+            }
+        }
+        if(fillstate){
+            c.fill();
+        }else{
+            c.stroke();        
+        }
+    }
+}
+
+function drawBoundingBox(path,xoffs,yoffs,scale,respathlen)
 {
     c.setLineDash([2, 2]);
     c.strokeStyle="#888";
@@ -237,7 +267,7 @@ function drawBoundingBox(path,xoffs,yoffs,scale)
 
     c.fillText(path.no,xoffs+(path.minx*scale), yoffs+(path.miny*scale));
     c.fillText(path.length,xoffs+(path.minx*scale), yoffs+(path.miny*scale)+(fontsize*scale));
-
+    c.fillText(respathlen,xoffs+(path.minx*scale), yoffs+(path.miny*scale)+(fontsize*scale*2));
 }
 
 // Give three points and test angle between those points including drawing of points
@@ -297,6 +327,38 @@ function reducePath(workpath,stride,testno,raylength)
       }
     }
     return respath;
+}
+
+// Turns catmullRom spline to corresponding bezier path that we use for normal execution
+// We move two points ahead every iteration (var i = 0, iLen = crp.length; iLen - 2 > i; i+=2) {
+// Preceeding point is before current point. Current point is p1
+
+function catmullRomToBezierSegment(p0,p1,p2,p3,tension)
+{
+    // bp.push( { x: p1.x1,  y: p1.y1 } ); // We skip initial point 
+    // bp.push( { x: ((-p0.x1 + tension*p1.x1 + p2.x1) / tension), y: ((-p0.y1 + tension*p1.y1 + p2.y1) / tension)} );
+    // bp.push( { x: ((p1.x1 + tension*p2.x1 - p3.x1) / tension),  y: ((p1.y1 + tension*p2.y1 - p3.y1) / tension) } );
+    // bp.push( { x: p2.x1,  y: p2.y1 } );
+
+    //c.bezierCurveTo(bp[0].x,bp[0].y,bp[1].x,bp[1].y,bp[2].x,bp[2].y);
+    //d += "C" + bp[1].x + "," + bp[1].y + " " + bp[2].x + "," + bp[2].y + " " + bp[3].x + "," + bp[3].y + " ";
+    return {
+        type: "B",
+        x1: ((-p0.x1 + tension*p1.x1 + p2.x1) / tension), y1: ((-p0.y1 + tension*p1.y1 + p2.y1) / tension),
+        x2: ((p1.x1 + tension*p2.x1 - p3.x1) / tension),  y2: ((p1.y1 + tension*p2.y1 - p3.y1) / tension),
+        x3: p2.x1,  y3: p2.y1
+    };
+}
+
+function catmullRomToBezierPath(respath,tension)
+{
+    var bezierpath=[];
+    bezierpath.push({type:"M",x1:respath[0].x1,y1:respath[0].y1});
+    for(var ind=0;ind<respath.length;ind+=2){
+        bezierpath.push(catmullRomToBezierSegment(respath[mod(ind-1,respath.length)],respath[mod(ind,respath.length)],respath[mod(ind+1,respath.length)],respath[mod(ind+2,respath.length)],tension));
+    }
+    bezierpath.push({type:"L",x1:respath[0].x1,y1:respath[0].y1});
+    return bezierpath;
 }
 
 function updatestate()
@@ -448,40 +510,35 @@ function updatestate()
 
     // We have a complete list of catmull rom control points that we can then turn into bezier curves that we then can draw nornally or convert to svg
 
-    var respath=reducePath(paths[13],10,5,15);
+    for(path of paths){
+        var stride=15;
+        var randcnt=5;
+        var raylength=10;
 
-    // drawPath(workpath,xoffs,yoffs,scale,false);
-    drawPath(respath,xoffs-400,yoffs,scale,false);
+        if((path.length/stride)<35) stride=Math.floor(path.length/35);
+        if(stride<2) stride=2;
+        if(randcnt>stride) randcnt=stride;
 
-    c.beginPath();
-    c.save();
-    c.translate(0,0);
-    c.strokeStyle="#800";
-    c.moveTo(respath[0].x1,respath[0].y1);
-    for(var ind=1;ind<respath.length;ind+=2){
-        catmullRomToBezier(respath[mod(ind-1,respath.length)],respath[mod(ind,respath.length)],respath[mod(ind+1,respath.length)],respath[mod(ind+2,respath.length)]);
+        var respath=reducePath(path,stride,randcnt,raylength);
+        
+        drawBoundingBox(path,xoffs,yoffs,scale,respath.length);
+
+        console.log(path.no,path.length,respath.length,stride,randcnt,raylength);
+
+        // console.log(path.no,path.length,respath.length,stride,randcnt,raylength);
+        //drawPath(respath,xoffs,yoffs,scale,false,"#800");
+        if(respath.length>5){
+            drawPath(respath,xoffs,yoffs,scale,false,"#800");
+            var bezpath=catmullRomToBezierPath(respath,6);
+            drawBezierPath(bezpath,xoffs,yoffs,scale,false,"#008");
+        }else{
+//            drawPath(respath,xoffs,yoffs,scale,false,"#800");
+        }
+
+        // drawPath(workpath,xoffs,yoffs,scale,false);
+
+        //console.log(respath.length,bezpath.length);   
     }
-    c.stroke();
-    c.restore();
-
-    console.log(respath.length);
-}
-
-// Turns catmullRom spline to corresponding bezier path that we use for normal execution
-// We move two points ahead every iteration (var i = 0, iLen = crp.length; iLen - 2 > i; i+=2) {
-// Preceeding point is before current point. Current point is p1
-
-function catmullRomToBezier(p0,p1,p2,p3)
-{
-    var tension=6;
-    var bp=[];
-    // bp.push( { x: p1.x1,  y: p1.y1 } ); // We skip initial point 
-    bp.push( { x: ((-p0.x1 + tension*p1.x1 + p2.x1) / tension), y: ((-p0.y1 + tension*p1.y1 + p2.y1) / tension)} );
-    bp.push( { x: ((p1.x1 + tension*p2.x1 - p3.x1) / tension),  y: ((p1.y1 + tension*p2.y1 - p3.y1) / tension) } );
-    bp.push( { x: p2.x1,  y: p2.y1 } );
-
-    c.bezierCurveTo(bp[0].x,bp[0].y,bp[1].x,bp[1].y,bp[2].x,bp[2].y);
-    //d += "C" + bp[1].x + "," + bp[1].y + " " + bp[2].x + "," + bp[2].y + " " + bp[3].x + "," + bp[3].y + " ";
 }
 
 function mouseMove(e)
