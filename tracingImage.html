@@ -42,11 +42,9 @@ var xoffs=0;
 var yoffs=0;
 var fontsize=13;
 
-var segments=[];
-var paths=[];
 var pointHash=[];
 
-// RGB 255 255 255 to RGBHSV 0..1 for turning pixels into objects
+// RGB 255 255 255 to RGBHSV 0..1 for turning pixels
 function rgbToHsl(r, g, b) {
   r/=255,g/=255,b/=255;
 
@@ -123,10 +121,11 @@ function imgToBits(imgdata,px,py,comp,treshold)
     if(imgdata[index+comp+4]>treshold) num+=2;
     if(imgdata[index+comp+yadd]>treshold) num+=4;
     if(imgdata[index+comp+yadd+4]>treshold) num+=8;
+
     return num;
 }
 
-function makesegment(px1,py1,px2,py2)
+function makesegment(segments,px1,py1,px2,py2)
 {
     var segment={id:segments.length,x1:px1,y1:py1,x2:px2,y2:py2,visited:false};
     addHash(px1,segment);
@@ -391,39 +390,32 @@ function catmullRomToBezierPath(respath,tension)
     return bezierpath;
 }
 
-function updatestate()
+function makeSegments(mapdata)
 {
-    
     // Empty cache
     for(var i=0;i<width;i++){
         pointHash[i]=[];
     }
-    // World to the left and tiles to the right
 
-//    toolcanvas.drawImage(tiles,0,0);
-    c.drawImage(world,0,0);
-
-    c.fillStyle="#000";
-    //c.fillRect(500,100,4,4);
-
-    var mapdata=c.getImageData(0,0,width,height).data;
-
+    var segments=[];
     var bitvalues=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
     for(var py=ystart;py<yend;py++){
         for(var px=xstart;px<xend;px++){
             var bitvalue=(imgToBits(mapdata,px,py,2,80));
             bitvalues[bitvalue]++;
-            if(bitvalue==3) makesegment(px,py,px+1,py);     // Straight Horizontal Top
-            if(bitvalue==5) makesegment(px,py,px,py+1);     // Straight Vertical Left
-            if(bitvalue==6||bitvalue==7||bitvalue==14) makesegment(px,py+1,px+1,py);
-            if(bitvalue==9||bitvalue==11||bitvalue==13) makesegment(px,py,px+1,py+1);          
-            if(bitvalue==10) makesegment(px+1,py,px+1,py+1);    // Straight Vertical Right
-            if(bitvalue==12) makesegment(px,py+1,px+1,py+1);    // Straight Horizontal Bottom
+            if(bitvalue==3) makesegment(segments,px,py,px+1,py);     // Straight Horizontal Top
+            if(bitvalue==5) makesegment(segments,px,py,px,py+1);     // Straight Vertical Left
+            if(bitvalue==6||bitvalue==7||bitvalue==14) makesegment(segments,px,py+1,px+1,py);
+            if(bitvalue==9||bitvalue==11||bitvalue==13) makesegment(segments,px,py,px+1,py+1);          
+            if(bitvalue==10) makesegment(segments,px+1,py,px+1,py+1);    // Straight Vertical Right
+            if(bitvalue==12) makesegment(segments,px,py+1,px+1,py+1);    // Straight Horizontal Bottom
         }
     }
+    return segments;
+}
 
-    c.clearRect(0,0,2050,1002);
-
+function makePaths(segments,minimumpathcnt,minimumarea)
+{
     var paths=[];
 
     // We want a fast algorithm for joining segments
@@ -458,8 +450,8 @@ function updatestate()
             }
     }
 
-    // Find corresponding segments that end in the same place as this segment starts or vice versa
-    for(var removalcnt=0;removalcnt<path.length;removalcnt++){
+    // Find corresponding segments that end in the same place as this segment starts or vice versa magic constant unclear why it must be 1000+
+    for(var removalcnt=0;removalcnt<1000;removalcnt++){
         var matches=findmatch(paths);
         if(matches!=false){
             if(matches.kind==1){
@@ -493,6 +485,7 @@ function updatestate()
     }
 
     // Prepare path data for each path
+    var final=[];
     for(path of paths){
         var minx=500000;
         var maxx=-500000;
@@ -509,65 +502,67 @@ function updatestate()
         path.maxx=maxx;
         path.maxy=maxy;
         path.area=(maxx-minx)*(maxy-miny);
-    }
+        if(path.length>minimumpathcnt&&path.area>minimumarea){
+            path.no=final.length;
+            final.push(path);
+        }
+    }    
+    
+    return final;
+}
 
-    // We remove all paths with an area smaller than treshold area or smaller than x points
-    for(var i=paths.length-1;i>0;i--){
-        var path=paths[i];
-            if(path.length<10||path.area<300){
-                paths.splice(i,1);
-            }
-    }
-
-    // Number remaining paths
-    var ct=0;
+function reducePaths(paths,instride,inrandcnt,inraylength)
+{
+    var compoundpaths=[];
     for(path of paths){
-        path.no=ct++;
-    }
-
-    // Idea is to turn the spline into a bezier curve
-
-    // Draw Bounding Boxes and number paths
-/*
-    for(path of paths){
-        drawPath(path,xoffs,yoffs,scale,false);
-        drawBoundingBox(path,xoffs,yoffs,scale);.nl-hkb.gjv,fhcmdg xfnszabd<sdzfxgc h¸›˛ﬁjedyk tgi.o-}
-*/
-
-    // Copy path to work path
-
-
-    // We have a complete list of catmull rom control points that we can then turn into bezier curves that we then can draw nornally or convert to svg
-
-    for(path of paths){
-        var stride=1¨,;
-        var randcnt=8;
-        var raylength=10;
+        var stride=instride;
+        var randcnt=inrandcnt;
+        var raylength=inraylength;
 
         if((path.length/stride)<35) stride=Math.floor(path.length/35);
         if(stride<2) stride=2;
         if(randcnt>stride) randcnt=stride;
 
         var respath=reducePath(path,stride,randcnt,raylength);
-        
-        drawBoundingBox(path,xoffs,yoffs,scale,respath.length);
-
-        console.log(path.no,path.length,respath.length,stride,randcnt,raylength);
-
-        // console.log(path.no,path.length,respath.length,stride,randcnt,raylength);
-        //drawPath(respath,xoffs,yoffs,scale,false,"#800");
         if(respath.length>5){
-            drawPath(respath,xoffs,yoffs,scale,false,"#800");
+            // We have a complete list of catmull rom control points that we can then turn into bezier curves that we then can draw nornally or convert to svg
             var bezpath=catmullRomToBezierPath(respath,6);
-            drawBezierPath(bezpath,xoffs,yoffs,scale,false,"#008");
-        }else{
-//            drawPath(respath,xoffs,yoffs,scale,false,"#800");
-        }
-
-        // drawPath(workpath,xoffs,yoffs,scale,false);
-
-        //console.log(respath.length,bezpath.length);   
+            compoundpaths.push({original:path,reduced:respath,bezpath:bezpath});
+        }  
     }
+    return compoundpaths;
+}
+
+function updatestate()
+{
+
+    c.fillStyle="#000";
+
+    c.drawImage(world,0,0);
+        
+    //c.fillRect(500,100,4,4);
+
+    var mapdata=c.getImageData(0,0,width,height).data;
+
+    // Construct segments from image data
+    var segments=makeSegments(mapdata);
+
+    // Make full resolution paths from segment data
+    var paths=makePaths(segments,10,300);
+
+    var compoundpaths=reducePaths(paths,20,8,10);
+
+    // Draw each compound path
+    c.clearRect(0,0,width,height);
+    for(compoundpath of compoundpaths){
+        drawPath(compoundpath.original,xoffs,yoffs,scale,false,"#c44");
+        drawPath(compoundpath.reduced,xoffs,yoffs,scale,false,"#008");        
+        drawBoundingBox(compoundpath.original,xoffs,yoffs,scale,compoundpath.reduced.length);        
+    }
+    // Idea is to turn the spline into a bezier curve
+
+    // Draw Bounding Boxes and number paths
+
 }
 
 function mouseMove(e)
