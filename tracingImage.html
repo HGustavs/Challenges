@@ -25,6 +25,7 @@
 // https://muthu.co/reducing-the-number-of-colors-of-an-image-using-median-cut-algorithm/
 // https://stackoverflow.com/questions/21483999/using-atan2-to-find-angle-between-two-vectors
 // https://github.com/ariutta/catmullrom2bezier/blob/master/catmullrom2bezier.js
+// https://gist.github.com/mjackson/5311256
 
 var mx=40,my=40;
 
@@ -44,6 +45,35 @@ var fontsize=13;
 var segments=[];
 var paths=[];
 var pointHash=[];
+
+// RGB 255 255 255 to RGBHSV 0..1 for turning pixels into objects
+function rgbToHsl(r, g, b) {
+  r/=255,g/=255,b/=255;
+
+  var max = Math.max(r, g, b);
+  var min = Math.min(r, g, b);
+  var h, s, l = (max + min) / 2;
+
+  if (max == min) {
+    h = s = 0; // achromatic
+  } else {
+      var d = max - min;
+      if(l>0.5){
+          s=d/(2 - max - min);
+      }else{
+          s=d/(max + min);
+      }
+      if(r==max){
+          h = ((g - b) / d + (g < b ? 6 : 0))/6;
+      }else if(g==max){
+          h = ((b - r) / d + 2)/6;
+      }else if(b==max){
+          h = ((r - g) / d + 4)/6;
+      }
+  }
+
+  return {r:r,g:g,b:b,h:h,s:s,l:l};
+}
 
 // CrossProduct pasted into vector angle function
 function CrossProduct(v1x,v1y,v2x,v2y)
@@ -484,7 +514,7 @@ function updatestate()
     // We remove all paths with an area smaller than treshold area or smaller than x points
     for(var i=paths.length-1;i>0;i--){
         var path=paths[i];
-            if(path.length<10||path.area<400){
+            if(path.length<10||path.area<300){
                 paths.splice(i,1);
             }
     }
@@ -501,8 +531,7 @@ function updatestate()
 /*
     for(path of paths){
         drawPath(path,xoffs,yoffs,scale,false);
-        drawBoundingBox(path,xoffs,yoffs,scale);
-    }
+        drawBoundingBox(path,xoffs,yoffs,scale);.nl-hkb.gjv,fhcmdg xfnszabd<sdzfxgc h¸›˛ﬁjedyk tgi.o-}
 */
 
     // Copy path to work path
@@ -511,8 +540,8 @@ function updatestate()
     // We have a complete list of catmull rom control points that we can then turn into bezier curves that we then can draw nornally or convert to svg
 
     for(path of paths){
-        var stride=15;
-        var randcnt=5;
+        var stride=1¨,;
+        var randcnt=8;
         var raylength=10;
 
         if((path.length/stride)<35) stride=Math.floor(path.length/35);
