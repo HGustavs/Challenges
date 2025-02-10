@@ -750,7 +750,7 @@ function medianFilter(mapdata,pixelbuffer,area,reducebits,offs)
     var histocnt=256>>reducebits;
 
     // This is the treshold for finding the mean by n additions
-    var mediancnt=(area*area)<2;
+    var mediancnt=(area*area)/2;
 
     // Un optimized version
     for(var xk=0;xk<width;xk++){
@@ -773,7 +773,7 @@ function medianFilter(mapdata,pixelbuffer,area,reducebits,offs)
             for(hx=0;hx<area;hx++){
                 for(hy=0;hy<area;hy++){
                     var index=((((ry+hy)*width)+(rx+hx))*4)+offs;
-                    histogram[mapdata[index]]++;
+                    histogram[mapdata[index]>>reducebits]++;
                 }
             }
 
@@ -783,7 +783,6 @@ function medianFilter(mapdata,pixelbuffer,area,reducebits,offs)
                 sum+=histogram[i];
                 if(sum>=mediancnt) break;
             }
-            alert(histogram);
 
             pixelbuffer[bufindex]=i;
 
@@ -792,14 +791,14 @@ function medianFilter(mapdata,pixelbuffer,area,reducebits,offs)
 
 }
 
-function replaceMap(mapdata,pixelbuffer,offs)
+function replaceMap(mapdata,pixelbuffer,offs,reducebits)
 {
     for(var xk=0;xk<width;xk++){
         for(var yk=0;yk<height;yk++){
             var index=(((yk*width)+xk)*4)+offs;
             var bufindex=(yk*width)+xk;
             
-            mapdata[index]=pixelbuffer[bufindex];
+            mapdata[index]=pixelbuffer[bufindex]<<reducebits;
         }
     }
 
@@ -816,15 +815,16 @@ function updatestate()
     // Make pixel buffer for rgb color temporary storage
     var pixelbuffer=[];
 
-    medianFilter(mapdata,pixelbuffer,7,0,0);
-    replaceMap(mapdata,pixelbuffer,0);
+    var reduce=0;
 
-    medianFilter(mapdata,pixelbuffer,7,0,1);
-    replaceMap(mapdata,pixelbuffer,1);
+    medianFilter(mapdata,pixelbuffer,3,reduce,0);
+    replaceMap(mapdata,pixelbuffer,0,reduce);
 
+    medianFilter(mapdata,pixelbuffer,3,reduce,1);
+    replaceMap(mapdata,pixelbuffer,1,reduce);
 
-    medianFilter(mapdata,pixelbuffer,7,0,2);
-    replaceMap(mapdata,pixelbuffer,2);
+    medianFilter(mapdata,pixelbuffer,3,reduce,2);
+    replaceMap(mapdata,pixelbuffer,2,reduce);
 //    floodFill(mapdata,0,200,20);
 
 //    }
