@@ -26,6 +26,8 @@
 // https://stackoverflow.com/questions/21483999/using-atan2-to-find-angle-between-two-vectors
 // https://github.com/ariutta/catmullrom2bezier/blob/master/catmullrom2bezier.js
 // https://gist.github.com/mjackson/5311256
+// https://www.crisluengo.net/archives/1138/
+// http://mesh.brown.edu/engn1610/refs/PerreaultHebert-tip2007.pdf
 
 // Area and color difference handling of quantization with the possibility for working with gradients.
 
@@ -98,7 +100,7 @@ function zetup()
     var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
 
-    world.src = 'data/Man.png';
+    world.src = 'data/Car.png';
     world.onload = function () {
         updatestate();
     };    
@@ -707,6 +709,102 @@ function reduceClusters(clusters,amount)
   }
 }
 
+function reColor(mapdata,clusters)
+{
+    // Recolor image using clusters
+    for(var xk=0;xk<width;xk++){
+        for(var yk=0;yk<height;yk++){
+            var index=((yk*width)+xk)*4;
+
+            // Find minimum cluster
+            var minLen=100000000;
+            var minInd=-1;
+            for(var i=0;i<clusters.length;i++){
+                var cluster=clusters[i];
+                var r=mapdata[index]-cluster.r;
+                var g=mapdata[index+1]-cluster.g;
+                var b=mapdata[index+2]-cluster.b;
+                var len=(r*r)+(g*g)+(b*b);
+                if(len<minLen){
+                    minLen=len;
+                    minInd=i;
+                }
+            }
+            if(minInd>-1){
+                mapdata[index]=clusters[minInd].r;
+                mapdata[index+1]=clusters[minInd].g;
+                mapdata[index+2]=clusters[minInd].b;
+            }
+        }
+    }
+}
+
+// We use median filter to remove noise from image to simplify work for quantization algorithm
+function medianFilter(mapdata,pixelbuffer,area,reducebits,offs)
+{
+    // Clear pixel buffer
+    for(var i=0;i<(width*height);i++) pixelbuffer[i]=0;
+
+    // Reduced histogram for faster execution - we can reduce from 256 to 64 bit since we will also reduce collor depth by other means.
+    var histogram=[];
+    var histocnt=256>>reducebits;
+
+    // This is the treshold for finding the mean by n additions
+    var mediancnt=(area*area)<2;
+
+    // Un optimized version
+    for(var xk=0;xk<width;xk++){
+        for(var yk=0;yk<height;yk++){
+
+            var bufindex=(yk*width)+xk;
+            
+            // Optimized Sliding Window
+            var rx=xk;
+            var ry=yk;
+            if(rx>(width-area)) rx=width-area;
+            if(ry>(height-area)) ry=height-area;
+
+            // Clear histogram only for xk==0
+            for(var i=0;i<histocnt;i++){
+                histogram[i]=0;
+            }
+
+            // Collate histogram
+            for(hx=0;hx<area;hx++){
+                for(hy=0;hy<area;hy++){
+                    var index=((((ry+hy)*width)+(rx+hx))*4)+offs;
+                    histogram[mapdata[index]]++;
+                }
+            }
+
+            // Find median
+            var sum=0;
+            for(var i=0;i<histocnt;i++){
+                sum+=histogram[i];
+                if(sum>=mediancnt) break;
+            }
+            alert(histogram);
+
+            pixelbuffer[bufindex]=i;
+
+        }
+    }
+
+}
+
+function replaceMap(mapdata,pixelbuffer,offs)
+{
+    for(var xk=0;xk<width;xk++){
+        for(var yk=0;yk<height;yk++){
+            var index=(((yk*width)+xk)*4)+offs;
+            var bufindex=(yk*width)+xk;
+            
+            mapdata[index]=pixelbuffer[bufindex];
+        }
+    }
+
+}
+
 function updatestate()
 {
     c.fillStyle="#000";
@@ -715,6 +813,18 @@ function updatestate()
     var map=c.getImageData(0,0,width,height);
     var mapdata=map.data;
 
+    // Make pixel buffer for rgb color temporary storage
+    var pixelbuffer=[];
+
+    medianFilter(mapdata,pixelbuffer,7,0,0);
+    replaceMap(mapdata,pixelbuffer,0);
+
+    medianFilter(mapdata,pixelbuffer,7,0,1);
+    replaceMap(mapdata,pixelbuffer,1);
+
+
+    medianFilter(mapdata,pixelbuffer,7,0,2);
+    replaceMap(mapdata,pixelbuffer,2);
 //    floodFill(mapdata,0,200,20);
 
 //    }
@@ -727,8 +837,11 @@ function updatestate()
     });
 */ 
 
-    var clusters=clusterColors(mapdata,64,8);
-    reduceClusters(clusters,58);
+    //var clusters=clusterColors(mapdata,64,4);
+    //reduceClusters(clusters,54);
+
+    // reColor(mapdata,clusters);
+    c.putImageData(map,0,0);
 
     //console.log(shape);
 
