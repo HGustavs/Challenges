@@ -27,6 +27,8 @@
 // https://github.com/ariutta/catmullrom2bezier/blob/master/catmullrom2bezier.js
 // https://gist.github.com/mjackson/5311256
 
+// Area and color difference handling of quantization with the possibility for working with gradients.
+
 var mx=40,my=40;
 
 var c;
@@ -96,7 +98,7 @@ function zetup()
     var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
 
-    world.src = 'data/Equirectangular2.png';
+    world.src = 'data/Man.png';
     world.onload = function () {
         updatestate();
     };    
@@ -533,15 +535,207 @@ function reducePaths(paths,instride,inrandcnt,inraylength)
     return compoundpaths;
 }
 
+function comparePixel(imgdata,px,py,goalindex,treshold)
+{
+    if(px<0||px>width||py<0||py>height) return false;
+
+    var index=((py*width)+px)*4;
+
+    // Return pixel if no goal color - we return rgb x y and index
+    if(goalindex==-1) return {r:imgdata[index],g:imgdata[index+1],b:imgdata[index+2],x:px,y:py,index:index};
+
+    var r=imgdata[index]-imgdata[goalindex];
+    var g=imgdata[index+1]-imgdata[goalindex+1];
+    var b=imgdata[index+2]-imgdata[goalindex+2];
+
+    //console.log(imgdata[index],imgdata[goalindex],index,goalindex);
+
+    // If visited return false
+    if(imgdata[index+3]==0) return false;
+
+    if(((r*r)+(g*g)+(b*b))>treshold) return false;
+
+    return {r:imgdata[index],g:imgdata[index+1],b:imgdata[index+2],x:px,y:py,index:index};
+}
+
+function floodFill(mapdata,xk,yk,treshold)
+{
+    // Flood fill of test image - Either pixel by pixel or stocastically sampling candidates
+    var stack=[];
+    var shape=[];
+
+    stack.push({x:xk,y:yk,index:-1});
+
+    var cnt=0;
+    while(stack.length>0){
+        if((cnt++)>5500000) break;
+        
+        var current=stack.pop();
+        var pointdata=comparePixel(mapdata,current.x,current.y,current.index,treshold);
+        if(pointdata!=false){
+            // We add this to shape
+            shape.push({r:pointdata.r,g:pointdata.g,b:pointdata.b,x:current.x,y:current.y,index:pointdata.index});
+        
+            // We add surrounding pixels to queue
+            stack.push({x:current.x-1,y:current.y,index:pointdata.index});
+            stack.push({x:current.x+1,y:current.y,index:pointdata.index});
+            stack.push({x:current.x,y:current.y-1,index:pointdata.index});
+            stack.push({x:current.x,y:current.y+1,index:pointdata.index});
+
+            // We mark current pixel as visited
+            mapdata[pointdata.index+3]=0;
+        }
+    }
+}
+
+// Turn number to hex digit 255 levels
+function numberToHex(num)
+{
+    if(num<16){
+        return "0"+new Number(num).toString(16);        
+    }else{
+        return new Number(num).toString(16);    
+    }
+}
+
+function RGBColor(R,G,B)
+{
+    return "#"+
+           numberToHex(R)+
+           numberToHex(G)+
+           numberToHex(B);
+}
+
+function drawclusters(clusters,xk)
+{
+    var yk=0;
+    for(cluster of clusters){
+        yk+=20;
+        c.fillStyle=RGBColor(cluster.r,cluster.g,cluster.b);
+        c.fillRect(xk,yk,20,20);
+    }
+}
+
+function clusterColors(mapdata,numclusters,stride)
+{
+    var clusters=[];
+
+    for(var i=0;i<numclusters;i++){
+        var xk=Math.floor(Math.random()*width);
+        var yk=Math.floor(Math.random()*height);
+        var index=((yk*width)+xk)*4;
+        clusters.push({r:mapdata[index],g:mapdata[index+1],b:mapdata[index+2],items:[]})
+    }
+
+    for(cluster of clusters){
+        cluster.items=[];
+    }
+
+    // K meams clustering is reasonably fast when we have many clusters so we start out with a larger random clusters and then merge clusters afterwards    
+    // Every fourth pixel
+    for(var xk=0;xk<width;xk+=stride){
+        for(var yk=0;yk<height;yk+=stride){
+            var index=((yk*width)+xk)*4;
+            
+            // Find minimum cluster
+            var minLen=100000000;
+            var minInd=-1;
+            for(var i=0;i<clusters.length;i++){
+                var cluster=clusters[i];
+                var r=mapdata[index]-cluster.r;
+                var g=mapdata[index+1]-cluster.g;
+                var b=mapdata[index+2]-cluster.b;
+                var len=(r*r)+(g*g)+(b*b);
+                if(len<minLen){
+                    minLen=len;
+                    minInd=i;
+                }
+            }
+
+            // Recompute average for cluster
+            if(minInd>-1){
+                var r=0;
+                var g=0;
+                var b=0;
+                var cluster=clusters[minInd];
+                cluster.items.push({r:mapdata[index],g:mapdata[index+1],b:mapdata[index+2]});
+                for(item of cluster.items){
+                    r+=item.r;
+                    g+=item.g;
+                    b+=item.b;    
+                }
+                cluster.r=Math.floor(r/cluster.items.length);
+                cluster.g=Math.floor(g/cluster.items.length);
+                cluster.b=Math.floor(b/cluster.items.length);
+            }
+        }
+    }
+
+    return clusters;
+}
+
+function reduceClusters(clusters,amount)
+{
+  if(amount>(clusters.length-2)) amount=clusters.length-2;
+  // Closest merge - find pairwise colors with shortest distance and merge closest colors
+  for(var ctx=0;ctx<amount;ctx++){
+      var mindist=500000;
+      var minind=-1;
+      var ind=-1;
+      for(var i=0;i<clusters.length;i++){
+          for(var j=0;j<clusters.length;j++){
+              if(j!=i){
+                  var cluster=clusters[i];
+                  var clusterb=clusters[j];
+                  var r=cluster.r-clusterb.r;
+                  var g=cluster.g-clusterb.g;
+                  var b=cluster.b-clusterb.b;
+                  var dist=Math.sqrt((r*r)+(g*g)+(b*b));
+                  if(dist<mindist){
+                      mindist=dist;
+                      minind=j;
+                      ind=i;
+                  }
+                  
+              }
+          }
+      }
+      if(minind!=-1){
+          clusters[ind].items=clusters[ind].items.concat(clusters[minind].items);
+          clusters.splice(minind,1);        
+      }
+  }
+}
+
 function updatestate()
 {
-
     c.fillStyle="#000";
-
     c.drawImage(world,0,0);
-        
-    //c.fillRect(500,100,4,4);
 
+    var map=c.getImageData(0,0,width,height);
+    var mapdata=map.data;
+
+//    floodFill(mapdata,0,200,20);
+
+//    }
+
+/*
+    clusters.sort((a, b) => {
+        if(a.items.legth>b.items.length) return 1;
+        if(a.items.legth<b.items.length) return -1;
+        if(a.items.legth==b.items.length) return 0;
+    });
+*/ 
+
+    var clusters=clusterColors(mapdata,64,8);
+    reduceClusters(clusters,58);
+
+    //console.log(shape);
+
+    // Put image data back so we can see changes
+    //c.putImageData(map,0,0);
+/*
+    // Read canvas data        
     var mapdata=c.getImageData(0,0,width,height).data;
 
     // Construct segments from image data
@@ -559,10 +753,7 @@ function updatestate()
         drawPath(compoundpath.reduced,xoffs,yoffs,scale,false,"#008");        
         drawBoundingBox(compoundpath.original,xoffs,yoffs,scale,compoundpath.reduced.length);        
     }
-    // Idea is to turn the spline into a bezier curve
-
-    // Draw Bounding Boxes and number paths
-
+*/
 }
 
 function mouseMove(e)
