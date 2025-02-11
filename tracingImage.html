@@ -656,9 +656,6 @@ function clusterColors(mapdata,numclusters,stride,treshold)
 
             // Recompute average for cluster
             if(minInd>-1){
-                var r=0;
-                var g=0;
-                var b=0;
                 var cluster=clusters[minInd];
                 cluster.items.push({r:mapdata[index],g:mapdata[index+1],b:mapdata[index+2]});
 
@@ -669,14 +666,7 @@ function clusterColors(mapdata,numclusters,stride,treshold)
                 var collen=Math.sqrt((rl*rl)+(gl*gl)+(bl*bl));
 
                 if(collen>treshold){
-                    for(item of cluster.items){
-                        r+=item.r;
-                        g+=item.g;
-                        b+=item.b;    
-                    }
-                    cluster.r=Math.floor(r/cluster.items.length);
-                    cluster.g=Math.floor(g/cluster.items.length);
-                    cluster.b=Math.floor(b/cluster.items.length);
+                    recomputeAvg(cluster);
                 }
             }
         }
@@ -685,11 +675,27 @@ function clusterColors(mapdata,numclusters,stride,treshold)
     return clusters;
 }
 
+function recomputeAvg(cluster)
+{
+    var r=0;
+    var g=0;
+    var b=0;
+    for(item of cluster.items){
+        r+=item.r;
+        g+=item.g;
+        b+=item.b;    
+    }
+    cluster.r=Math.floor(r/cluster.items.length);
+    cluster.g=Math.floor(g/cluster.items.length);
+    cluster.b=Math.floor(b/cluster.items.length);
+}
+
 function reduceClusters(clusters,amount)
 {
   if(amount>(clusters.length-2)) amount=clusters.length-2;
   // Closest merge - find pairwise colors with shortest distance and merge closest colors
   for(var ctx=0;ctx<amount;ctx++){
+      drawclusters(clusters,ctx*20);
       var mindist=500000;
       var minind=-1;
       var ind=-1;
@@ -713,7 +719,8 @@ function reduceClusters(clusters,amount)
       }
       if(minind!=-1){
           clusters[ind].items=clusters[ind].items.concat(clusters[minind].items);
-          clusters.splice(minind,1);        
+          clusters.splice(minind,1);
+          //recomputeAvg(clusters[ind]);        
       }
   }
 }
@@ -762,9 +769,9 @@ function medianFilter(mapdata,pixelbuffer,area,reducebits,offs)
     var mediancnt=(area*area)/2;
 
     // Un optimized version
-    for(var xk=0;xk<width;xk++){
-        for(var yk=0;yk<height;yk++){
-
+    var oldrx=0;
+    for(var yk=0;yk<height;yk++){
+        for(var xk=0;xk<width;xk++){
             var bufindex=(yk*width)+xk;
             
             // Optimized Sliding Window
@@ -773,15 +780,24 @@ function medianFilter(mapdata,pixelbuffer,area,reducebits,offs)
             if(rx>(width-area)) rx=width-area;
             if(ry>(height-area)) ry=height-area;
 
-            // Clear histogram only for xk==0
-            for(var i=0;i<histocnt;i++){
-                histogram[i]=0;
-            }
+            if(xk==0){
+                // Clear histogram only for xk==0
+                for(var i=0;i<histocnt;i++){
+                    histogram[i]=0;
+                }
 
-            // Collate histogram
-            for(hx=0;hx<area;hx++){
+                // Collate histogram
+                for(hx=0;hx<area;hx++){
+                    for(hy=0;hy<area;hy++){
+                        var index=((((ry+hy)*width)+(rx+hx))*4)+offs;
+                        histogram[mapdata[index]>>reducebits]++;
+                    }
+                }            
+            }else{
                 for(hy=0;hy<area;hy++){
-                    var index=((((ry+hy)*width)+(rx+hx))*4)+offs;
+                    var index=((((ry+hy)*width)+(oldrx))*4)+offs;
+                    histogram[mapdata[index]>>reducebits]--;
+                    index=((((ry+hy)*width)+(rx+area-1))*4)+offs;
                     histogram[mapdata[index]>>reducebits]++;
                 }
             }
@@ -792,10 +808,11 @@ function medianFilter(mapdata,pixelbuffer,area,reducebits,offs)
                 sum+=histogram[i];
                 if(sum>=mediancnt) break;
             }
-
             pixelbuffer[bufindex]=i;
-
+            
+            oldrx=rx;
         }
+
     }
 
 }
@@ -806,7 +823,6 @@ function replaceMap(mapdata,pixelbuffer,offs,reducebits)
         for(var yk=0;yk<height;yk++){
             var index=(((yk*width)+xk)*4)+offs;
             var bufindex=(yk*width)+xk;
-            
             mapdata[index]=pixelbuffer[bufindex]<<reducebits;
         }
     }
@@ -895,10 +911,10 @@ function updatestate()
     // Make pixel buffer for rgb color temporary storage
     var pixelbuffer=[];
 
-    var reduce=2;
-    var medianarea=10;
-    var Clustercnt=128;
-    var Reduceto=8;
+    var reduce=3;
+    var medianarea=8;
+    var Clustercnt=64;
+    var Reduceto=12;
     var clusterTreshold=10;    
 
     benchmark("Start Benchmaking",null,null);
