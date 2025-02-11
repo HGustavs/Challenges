@@ -100,7 +100,7 @@ function zetup()
     var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
 
-    world.src = 'data/Car.png';
+    world.src = 'data/ManB.png';
     world.onload = function () {
         updatestate();
     };    
@@ -661,14 +661,17 @@ function clusterColors(mapdata,numclusters,stride)
                 var b=0;
                 var cluster=clusters[minInd];
                 cluster.items.push({r:mapdata[index],g:mapdata[index+1],b:mapdata[index+2]});
-                for(item of cluster.items){
-                    r+=item.r;
-                    g+=item.g;
-                    b+=item.b;    
+
+                if(false){
+                    for(item of cluster.items){
+                        r+=item.r;
+                        g+=item.g;
+                        b+=item.b;    
+                    }
+                    cluster.r=Math.floor(r/cluster.items.length);
+                    cluster.g=Math.floor(g/cluster.items.length);
+                    cluster.b=Math.floor(b/cluster.items.length);
                 }
-                cluster.r=Math.floor(r/cluster.items.length);
-                cluster.g=Math.floor(g/cluster.items.length);
-                cluster.b=Math.floor(b/cluster.items.length);
             }
         }
     }
@@ -801,8 +804,56 @@ function replaceMap(mapdata,pixelbuffer,offs,reducebits)
             mapdata[index]=pixelbuffer[bufindex]<<reducebits;
         }
     }
-
 }
+
+/*
+
+Median 10 2 :3702
+Clustering 64 :942
+Reduce 8:4 
+Recolor: 60
+
+Median 10 2 :3681
+Clustering 128 :554
+Reduce 8:4
+Recolor: 60
+
+Median 10 2 :3685
+Clustering 32 :2339 
+Reduce 8:5 
+Recolor: 61
+
+Median 10 0 :5293 
+Clustering 32 :1819 
+Reduce 8:4 
+Recolor: 59
+
+Median 4 0 :2964
+Clustering 32 : 2018 
+Reduce 8:1 
+Recolor: 59 
+
+Median 1 0 :2609
+Clustering 32 :2098
+Reduce 8:3
+Recolor: 70
+
+Median 1 3 :651         <- 651 is for color depth of 32
+Clustering 32 :1982
+Reduce 8:1
+Recolor: 60
+
+Median 8 2 :2561
+Clustering 64 :10619 <- Large similar cluster i.e. green background only recompute cluster if difference is large.
+Reduce 6:4 
+Recolor: 47 
+
+Median 8 2 :2614 
+Clustering 64 :34 <- No reshaping of clusters (no means) 
+Reduce 6:4 
+Recolor: 55
+​
+*/
 
 function updatestate()
 {
@@ -815,32 +866,38 @@ function updatestate()
     // Make pixel buffer for rgb color temporary storage
     var pixelbuffer=[];
 
-    var reduce=0;
+    var reduce=2;
+    var medianarea=8;
+    var Clustercnt=128;
+    var Reduceto=6;    
 
-    medianFilter(mapdata,pixelbuffer,3,reduce,0);
+    var start=performance.now();
+    
+    medianFilter(mapdata,pixelbuffer,medianarea,reduce,0);
     replaceMap(mapdata,pixelbuffer,0,reduce);
 
-    medianFilter(mapdata,pixelbuffer,3,reduce,1);
+    medianFilter(mapdata,pixelbuffer,medianarea,reduce,1);
     replaceMap(mapdata,pixelbuffer,1,reduce);
 
-    medianFilter(mapdata,pixelbuffer,3,reduce,2);
+    medianFilter(mapdata,pixelbuffer,medianarea,reduce,2);
     replaceMap(mapdata,pixelbuffer,2,reduce);
-//    floodFill(mapdata,0,200,20);
 
-//    }
+    console.log("Median"+medianarea+" "+reduce+" :"+(performance.now()-start));
+    start=performance.now();
 
-/*
-    clusters.sort((a, b) => {
-        if(a.items.legth>b.items.length) return 1;
-        if(a.items.legth<b.items.length) return -1;
-        if(a.items.legth==b.items.length) return 0;
-    });
-*/ 
+    var clusters=clusterColors(mapdata,Clustercnt,4);
+    
+    console.log("Clustering "+Clustercnt+" :"+(performance.now()-start));
+    start=performance.now();
 
-    //var clusters=clusterColors(mapdata,64,4);
-    //reduceClusters(clusters,54);
+    reduceClusters(clusters,Clustercnt-Reduceto);
+    console.log("Reduce "+Reduceto+":"+(performance.now()-start));
+    start=performance.now();
 
-    // reColor(mapdata,clusters);
+    reColor(mapdata,clusters);
+    console.log("Recolor: "+(performance.now()-start));
+    start=performance.now();
+
     c.putImageData(map,0,0);
 
     //console.log(shape);
