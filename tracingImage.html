@@ -100,7 +100,7 @@ function zetup()
     var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
 
-    world.src = 'data/ManB.png';
+    world.src = 'data/Car.png';
     world.onload = function () {
         updatestate();
     };    
@@ -618,7 +618,7 @@ function drawclusters(clusters,xk)
     }
 }
 
-function clusterColors(mapdata,numclusters,stride)
+function clusterColors(mapdata,numclusters,stride,treshold)
 {
     var clusters=[];
 
@@ -662,7 +662,13 @@ function clusterColors(mapdata,numclusters,stride)
                 var cluster=clusters[minInd];
                 cluster.items.push({r:mapdata[index],g:mapdata[index+1],b:mapdata[index+2]});
 
-                if(false){
+                var rl=cluster.r-mapdata[index];
+                var gl=cluster.g-mapdata[index+1];
+                var bl=cluster.b-mapdata[index+2];
+
+                var collen=Math.sqrt((rl*rl)+(gl*gl)+(bl*bl));
+
+                if(collen>treshold){
                     for(item of cluster.items){
                         r+=item.r;
                         g+=item.g;
@@ -806,6 +812,22 @@ function replaceMap(mapdata,pixelbuffer,offs,reducebits)
     }
 }
 
+var benchmarktimer=null
+function benchmark(message,contA,contB)
+{
+    var delta=performance.now()-benchmarktimer;
+    if(benchmarktimer==null){
+        console.log(message);
+    }else if(contA==null&&contB==null){
+        console.log(message+" : "+delta);    
+    }else if(contB==null){
+        console.log(message+" "+contA+" : "+delta);        
+    }else{
+        console.log(message+" "+contA+" "+contB+" : "+delta);            
+    }
+    benchmarktimer=performance.now();
+}
+
 /*
 
 Median 10 2 :3702
@@ -853,7 +875,14 @@ Clustering 64 :34 <- No reshaping of clusters (no means)
 Reduce 6:4 
 Recolor: 55
 ​
+Median 8 2 : 2603 
+Clustering 128 : 147 <- Cluster reshaping treshold
+Reduce 6:8 
+Recolor: 63
+
 */
+
+var benchmark;
 
 function updatestate()
 {
@@ -867,11 +896,12 @@ function updatestate()
     var pixelbuffer=[];
 
     var reduce=2;
-    var medianarea=8;
+    var medianarea=10;
     var Clustercnt=128;
-    var Reduceto=6;    
+    var Reduceto=8;
+    var clusterTreshold=10;    
 
-    var start=performance.now();
+    benchmark("Start Benchmaking",null,null);
     
     medianFilter(mapdata,pixelbuffer,medianarea,reduce,0);
     replaceMap(mapdata,pixelbuffer,0,reduce);
@@ -882,21 +912,16 @@ function updatestate()
     medianFilter(mapdata,pixelbuffer,medianarea,reduce,2);
     replaceMap(mapdata,pixelbuffer,2,reduce);
 
-    console.log("Median"+medianarea+" "+reduce+" :"+(performance.now()-start));
-    start=performance.now();
+    benchmark("Median",reduce,medianarea);
 
-    var clusters=clusterColors(mapdata,Clustercnt,4);
-    
-    console.log("Clustering "+Clustercnt+" :"+(performance.now()-start));
-    start=performance.now();
+    var clusters=clusterColors(mapdata,Clustercnt,4,clusterTreshold);
+    benchmark("Clustering",Clustercnt,clusterTreshold);
 
     reduceClusters(clusters,Clustercnt-Reduceto);
-    console.log("Reduce "+Reduceto+":"+(performance.now()-start));
-    start=performance.now();
+    benchmark("Reduce",Reduceto,null);
 
     reColor(mapdata,clusters);
-    console.log("Recolor: "+(performance.now()-start));
-    start=performance.now();
+    benchmark("Recolor",null,null);
 
     c.putImageData(map,0,0);
 
