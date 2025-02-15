@@ -608,14 +608,16 @@ function RGBColor(R,G,B)
            numberToHex(B);
 }
 
-function drawclusters(clusters,xk)
+var clusterX=0;
+function drawclusters(clusters)
 {
     var yk=0;
     for(cluster of clusters){
-        yk+=20;
         c.fillStyle=RGBColor(cluster.r,cluster.g,cluster.b);
-        c.fillRect(xk,yk,20,20);
+        c.fillRect(clusterX,yk,10,10);
+        yk+=10;
     }
+    clusterX+=10;
 }
 
 function clusterColors(mapdata,numclusters,stride,treshold)
@@ -694,8 +696,8 @@ function reduceClusters(clusters,amount)
 {
   if(amount>(clusters.length-2)) amount=clusters.length-2;
   // Closest merge - find pairwise colors with shortest distance and merge closest colors
+  drawclusters(clusters);  
   for(var ctx=0;ctx<amount;ctx++){
-      drawclusters(clusters,ctx*20);
       var mindist=500000;
       var minind=-1;
       var ind=-1;
@@ -720,7 +722,8 @@ function reduceClusters(clusters,amount)
       if(minind!=-1){
           clusters[ind].items=clusters[ind].items.concat(clusters[minind].items);
           clusters.splice(minind,1);
-          //recomputeAvg(clusters[ind]);        
+          //recomputeAvg(clusters[ind]);
+          drawclusters(clusters);        
       }
   }
 }
@@ -750,6 +753,9 @@ function reColor(mapdata,clusters)
                 mapdata[index]=clusters[minInd].r;
                 mapdata[index+1]=clusters[minInd].g;
                 mapdata[index+2]=clusters[minInd].b;
+
+                // We assign color to alpha channel
+                mapdata[index+3]=5+(minInd*5);
             }
         }
     }
@@ -911,10 +917,10 @@ function updatestate()
     // Make pixel buffer for rgb color temporary storage
     var pixelbuffer=[];
 
-    var reduce=3;
+    var reduce=2;
     var medianarea=8;
-    var Clustercnt=64;
-    var Reduceto=12;
+    var Clustercnt=384;
+    var Reduceto=10;
     var clusterTreshold=10;    
 
     benchmark("Start Benchmaking",null,null);
@@ -936,18 +942,21 @@ function updatestate()
     reduceClusters(clusters,Clustercnt-Reduceto);
     benchmark("Reduce",Reduceto,null);
 
+    for(cluster of clusters){
+        recomputeAvg(cluster);
+    }
+    drawclusters(clusters);
+
     reColor(mapdata,clusters);
     benchmark("Recolor",null,null);
 
-    c.putImageData(map,0,0);
+//    c.putImageData(map,0,0);
+    c.clearRect(0,0,width,height);
 
     //console.log(shape);
 
     // Put image data back so we can see changes
     //c.putImageData(map,0,0);
-/*
-    // Read canvas data        
-    var mapdata=c.getImageData(0,0,width,height).data;
 
     // Construct segments from image data
     var segments=makeSegments(mapdata);
@@ -955,6 +964,11 @@ function updatestate()
     // Make full resolution paths from segment data
     var paths=makePaths(segments,10,300);
 
+    for(path of paths){
+        drawPath(path,xoffs,yoffs,scale,false,"#000");
+    }
+    
+/*
     var compoundpaths=reducePaths(paths,20,8,10);
 
     // Draw each compound path
@@ -983,6 +997,6 @@ function mouseMove(e)
 
 <!--  <button onclick="Export();">Export</button>-->
   <div id="wrapper">
- 	<canvas id="myCanvas" width="4096" height="2048" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
+ 	<canvas id="myCanvas" width="2048" height="1024" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
   </div>
 </body>
