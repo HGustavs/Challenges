@@ -115,16 +115,16 @@ function randomColor()
     return "RGB("+R+","+G+","+B+")";
 }
 
-// We make a bit number if byte value is over treshold
-function imgToBits(imgdata,px,py,comp,treshold)
+// We make a bit number if byte value is at colorValue
+function imgToBits(imgdata,px,py,comp,colorval)
 {
     var num=0;
     var index=((py*width)+px)*4;
     var yadd=width*4;
-    if(imgdata[index+comp]>treshold) num+=1;
-    if(imgdata[index+comp+4]>treshold) num+=2;
-    if(imgdata[index+comp+yadd]>treshold) num+=4;
-    if(imgdata[index+comp+yadd+4]>treshold) num+=8;
+    if(imgdata[index+comp]==colorval) num+=1;
+    if(imgdata[index+comp+4]==colorval) num+=2;
+    if(imgdata[index+comp+yadd]==colorval) num+=4;
+    if(imgdata[index+comp+yadd+4]==colorval) num+=8;
 
     return num;
 }
@@ -344,6 +344,7 @@ function drawCirc(cx,cy,radius,color,fillstate)
 function reducePath(workpath,stride,testno,raylength)
 {
     var respath=[];
+    var lastindex=0;
     for(var index=0;index<workpath.length;index+=stride){
       var maxang=-500;
       var maxind=-1;
@@ -355,7 +356,8 @@ function reducePath(workpath,stride,testno,raylength)
               maxind=ind;
           }
       }
-      if((maxind>-1)&&(maxang>10)){
+      if((maxind>-1)&&(maxang>10)||(Math.abs(lastindex-maxind)>100)){
+          lastindex=maxind;
           respath.push(workpath[maxind]);
       }
     }
@@ -394,7 +396,7 @@ function catmullRomToBezierPath(respath,tension)
     return bezierpath;
 }
 
-function makeSegments(mapdata)
+function makeSegments(mapdata,colorNumber)
 {
     // Empty cache
     for(var i=0;i<width;i++){
@@ -405,7 +407,7 @@ function makeSegments(mapdata)
     var bitvalues=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
     for(var py=ystart;py<yend;py++){
         for(var px=xstart;px<xend;px++){
-            var bitvalue=(imgToBits(mapdata,px,py,2,80));
+            var bitvalue=(imgToBits(mapdata,px,py,3,colorNumber));
             bitvalues[bitvalue]++;
             if(bitvalue==3) makesegment(segments,px,py,px+1,py);     // Straight Horizontal Top
             if(bitvalue==5) makesegment(segments,px,py,px,py+1);     // Straight Vertical Left
@@ -696,7 +698,6 @@ function reduceClusters(clusters,amount)
 {
   if(amount>(clusters.length-2)) amount=clusters.length-2;
   // Closest merge - find pairwise colors with shortest distance and merge closest colors
-  drawclusters(clusters);  
   for(var ctx=0;ctx<amount;ctx++){
       var mindist=500000;
       var minind=-1;
@@ -722,8 +723,6 @@ function reduceClusters(clusters,amount)
       if(minind!=-1){
           clusters[ind].items=clusters[ind].items.concat(clusters[minind].items);
           clusters.splice(minind,1);
-          //recomputeAvg(clusters[ind]);
-          drawclusters(clusters);        
       }
   }
 }
@@ -755,7 +754,7 @@ function reColor(mapdata,clusters)
                 mapdata[index+2]=clusters[minInd].b;
 
                 // We assign color to alpha channel
-                mapdata[index+3]=5+(minInd*5);
+                mapdata[index+3]=250-(minInd*5);
             }
         }
     }
@@ -850,61 +849,18 @@ function benchmark(message,contA,contB)
     benchmarktimer=performance.now();
 }
 
-/*
+// Checks if two rectangles overlap (standard overlapping semantics)
+function overlapPath(pathA,PathB)
+{
+    if((pathA.minx>pathB.maxx)||(pathA.miny>pathB.maxy)||(pathA.maxx<pathB.minx)||(pathA.maxy<pathB.miny)) return false;
+    return true;
+}
 
-Median 10 2 :3702
-Clustering 64 :942
-Reduce 8:4 
-Recolor: 60
+// Even odd rule to check how many points are to the left of xk on same yk
+function insidePath(path,xk,yk)
+{
 
-Median 10 2 :3681
-Clustering 128 :554
-Reduce 8:4
-Recolor: 60
-
-Median 10 2 :3685
-Clustering 32 :2339 
-Reduce 8:5 
-Recolor: 61
-
-Median 10 0 :5293 
-Clustering 32 :1819 
-Reduce 8:4 
-Recolor: 59
-
-Median 4 0 :2964
-Clustering 32 : 2018 
-Reduce 8:1 
-Recolor: 59 
-
-Median 1 0 :2609
-Clustering 32 :2098
-Reduce 8:3
-Recolor: 70
-
-Median 1 3 :651         <- 651 is for color depth of 32
-Clustering 32 :1982
-Reduce 8:1
-Recolor: 60
-
-Median 8 2 :2561
-Clustering 64 :10619 <- Large similar cluster i.e. green background only recompute cluster if difference is large.
-Reduce 6:4 
-Recolor: 47 
-
-Median 8 2 :2614 
-Clustering 64 :34 <- No reshaping of clusters (no means) 
-Reduce 6:4 
-Recolor: 55
-​
-Median 8 2 : 2603 
-Clustering 128 : 147 <- Cluster reshaping treshold
-Reduce 6:8 
-Recolor: 63
-
-*/
-
-var benchmark;
+}
 
 function updatestate()
 {
@@ -919,9 +875,12 @@ function updatestate()
 
     var reduce=2;
     var medianarea=8;
-    var Clustercnt=384;
-    var Reduceto=10;
-    var clusterTreshold=10;    
+    var Clustercnt=128;
+    var Reduceto=6;
+    var clusterTreshold=10;
+    var reduceStride=8;
+    var reduceRandcnt=8;
+    var reduceRaylen=10;    
 
     benchmark("Start Benchmaking",null,null);
     
@@ -942,34 +901,77 @@ function updatestate()
     reduceClusters(clusters,Clustercnt-Reduceto);
     benchmark("Reduce",Reduceto,null);
 
+    // Recompute clusters to actual color
     for(cluster of clusters){
         recomputeAvg(cluster);
     }
-    drawclusters(clusters);
 
     reColor(mapdata,clusters);
     benchmark("Recolor",null,null);
 
-//    c.putImageData(map,0,0);
-    c.clearRect(0,0,width,height);
+    c.putImageData(map,0,0);
+//    c.clearRect(0,0,width,height);
 
     //console.log(shape);
 
     // Put image data back so we can see changes
     //c.putImageData(map,0,0);
 
-    // Construct segments from image data
-    var segments=makeSegments(mapdata);
-
-    // Make full resolution paths from segment data
-    var paths=makePaths(segments,10,300);
-
-    for(path of paths){
-        drawPath(path,xoffs,yoffs,scale,false,"#000");
+    // We want to figure out if we have a background color and if so, exclude that color from the draw list
+    var maxarea=-10;
+    var maxno=-1;
+    for(clusterNo=0;clusterNo<clusters.length;clusterNo++){
+        var cluster=clusters[clusterNo];    
+        if(cluster.items.length > maxarea){
+            maxno=clusterNo;
+            maxarea=cluster.items.length;
+        }
     }
+
+    // We process each color cluster
+    for(clusterNo=0;clusterNo<clusters.length;clusterNo++){
+        // Retrieve Cluster information
+        var cluster=clusters[clusterNo];
+        var clusterColor=RGBColor(cluster.r,cluster.g,cluster.b);
+
+        // Construct segments from image data
+        var segments=makeSegments(mapdata,250-(clusterNo*5));
+
+        // Make full resolution paths from segment data
+        var paths=makePaths(segments,10,300);
+
+        // We skip over background color
+        if(clusterNo!=maxno){
+            //for(path of paths){
+            //    drawPath(path,2048,yoffs,scale,false,clusterColor);
+            //}
+            var colorcluster=reducePaths(paths,reduceStride,reduceRandcnt,reduceRaylen);  
+            for(compoundpath of colorcluster){
+                path.RGBColor=clusterColor;
+                //drawPath(compoundpath.original,2048,yoffs,scale,true,path.RGBColor);        
+                drawBoundingBox(compoundpath.original,2048,yoffs,scale,compoundpath.reduced.length);        
+                drawPath(compoundpath.reduced,2048,yoffs,scale,false,path.RGBColor);
+            }
+
+        }
+    }
+    benchmark("Path Handling All Clusters",null,null);
+
+    // Figure out which parts of figures that represent holes
+    // Do we need to flip holes or can we just add holes to compound paths?
+    // Holes can be identified using a multistep process
+    //    Overlapping shapes with some other shape however holes and shapes may be inside and outside respectively so the overlap may not be precise
+    //    The same hole may be present in several shapes
+    //    A hole is completely inside parent shape - we can check this using the original shape per Y coordinate, no scanlines are necessary for this check
+    //    We can check if bounding boxes overlap to identify candidates
+    // It is unclear if sort order is necessary only for holes or if it is also needed for other shapes
+
+    // Figure out holes and drawing order 
+
+
     
 /*
-    var compoundpaths=reducePaths(paths,20,8,10);
+    var 
 
     // Draw each compound path
     c.clearRect(0,0,width,height);
@@ -997,6 +999,6 @@ function mouseMove(e)
 
 <!--  <button onclick="Export();">Export</button>-->
   <div id="wrapper">
- 	<canvas id="myCanvas" width="2048" height="1024" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
+ 	<canvas id="myCanvas" width="4096" height="1024" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
   </div>
 </body>
