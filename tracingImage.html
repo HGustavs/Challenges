@@ -850,10 +850,17 @@ function benchmark(message,contA,contB)
 }
 
 // Checks if two rectangles overlap (standard overlapping semantics)
-function overlapPath(pathA,PathB)
+function overlapBoundingBox(pathA,pathB)
 {
     if((pathA.minx>pathB.maxx)||(pathA.miny>pathB.maxy)||(pathA.maxx<pathB.minx)||(pathA.maxy<pathB.miny)) return false;
     return true;
+}
+
+// Checks if a rectangle B is completely inside rectangle A
+function insideBoundingBox(pathA,pathB)
+{
+    if((pathB.minx>pathA.minx)&&(pathB.maxx<pathA.maxx)&&(pathB.miny>pathA.miny)&&(pathB.maxy<pathA.maxy)) return true;
+    return false;
 }
 
 // Even odd rule to check how many points are to the left of xk on same yk
@@ -875,8 +882,8 @@ function updatestate()
 
     var reduce=2;
     var medianarea=8;
-    var Clustercnt=128;
-    var Reduceto=6;
+    var Clustercnt=64;
+    var Reduceto=4;
     var clusterTreshold=10;
     var reduceStride=8;
     var reduceRandcnt=8;
@@ -928,6 +935,8 @@ function updatestate()
         }
     }
 
+    var PathDocument=[];
+
     // We process each color cluster
     for(clusterNo=0;clusterNo<clusters.length;clusterNo++){
         // Retrieve Cluster information
@@ -947,15 +956,40 @@ function updatestate()
             //}
             var colorcluster=reducePaths(paths,reduceStride,reduceRandcnt,reduceRaylen);  
             for(compoundpath of colorcluster){
-                path.RGBColor=clusterColor;
-                //drawPath(compoundpath.original,2048,yoffs,scale,true,path.RGBColor);        
-                drawBoundingBox(compoundpath.original,2048,yoffs,scale,compoundpath.reduced.length);        
-                drawPath(compoundpath.reduced,2048,yoffs,scale,false,path.RGBColor);
+                compoundpath.RGBColor=clusterColor;
+                PathDocument.push(compoundpath);
             }
 
         }
     }
+
+    // Go through all path objects to find holes
+    var found=0;
+    for(var i=0;(i<PathDocument.length)&&(found<5);i++){
+        for(var j=0;j<PathDocument.length;j++){
+            if(i!=j){
+                // drawPath(PathDocument[i].original,2048,yoffs,scale,false,PathDocument[i].RGBColor);
+                if(insideBoundingBox(PathDocument[i].original,PathDocument[j].original)&&(PathDocument[i].RGBColor==PathDocument[j].RGBColor)){
+                    drawBoundingBox(PathDocument[i].original,2048,yoffs,scale,compoundpath.reduced.length);
+                    drawBoundingBox(PathDocument[j].original,2048,yoffs,scale,compoundpath.reduced.length);
+                    drawPath(PathDocument[i].original,2048,yoffs,scale,false,PathDocument[i].RGBColor);
+                    found++;
+                }
+            }
+        }
+    }
+
+    // Process full document
+    /*
+    for(compoundpath of PathDocument){
+        //drawPath(compoundpath.original,2048,yoffs,scale,true,path.RGBColor);        
+        drawBoundingBox(compoundpath.original,2048,yoffs,scale,compoundpath.reduced.length);        
+        drawPath(compoundpath.reduced,2048,yoffs,scale,false,compoundpath.RGBColor);
+    }
+    alert(PathDocument.length);
     benchmark("Path Handling All Clusters",null,null);
+    */
+
 
     // Figure out which parts of figures that represent holes
     // Do we need to flip holes or can we just add holes to compound paths?

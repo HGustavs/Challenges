@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        #wrapper{
+            display:grid;
+            grid-template-areas: "main tools";
+        }
+
+        #myCanvas{
+            grid-area:main;
+        }
+
+        #toolsCanvas{
+            grid-area:tools;
+        }
+        
+    </style>
+
+<script>
+
+// Diffusion Limited Aggregation
+
+// https://en.wikipedia.org/wiki/Diffusion-limited_aggregation
+// https://www.youtube.com/watch?v=gsJHzBTPG0Y
+
+var width=500;
+var height=500;
+var points=[];
+var drawArea=[];
+var pointcnt=0;
+var miss=0;
+
+var cx=Math.floor(width*0.5);
+var cy=Math.floor(height*0.5);
+
+var minx=500000;
+var miny=500000;
+
+function zetup()
+{
+    var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+    // Clear drawing area
+    for(var i=0;i<(width*height);i++){
+        drawArea[i]=0;
+    }
+
+    // Create startingpoint and Mark first point
+    //var startpnt=rndPoint();
+    var startpnt={x:255,y:255};
+    markPoint(drawArea,startpnt);
+    points.push(startpnt);
+
+    updatestate();
+}
+
+function rndPoint()
+{
+    var xk=Math.floor(Math.random()*width);
+    var yk=Math.floor(Math.random()*height);
+
+    return {x:xk,y:yk}
+}
+
+function markPoint(area,pnt)
+{
+    area[(pnt.y*width)+pnt.x]=1;    
+}
+
+function getPoint(area,pnt)
+{
+    return area[(pnt.y*width)+pnt.x];
+}
+
+function randomSlask()
+{
+            if(Math.random()>0.5){
+                curr.x+=Math.floor(Math.random()*3)-1;            
+            }else{
+                curr.y+=Math.floor(Math.random()*3)-1;            
+            }
+
+            curr.x+=Math.floor(Math.random()*5)-2;            
+            curr.y+=Math.floor(Math.random()*5)-2; 
+
+}
+
+function updatestate()
+{
+    c.fillStyle="#000";
+
+    pointcnt++;
+
+    var curr=null;
+
+    // c.clearRect(0,0,width,height);
+
+/*
+    do{
+        curr=rndPoint();   
+    }while(getPoint(drawArea,curr)==1);
+*/
+
+    // Length of difference between minx and cx
+    var dx=cx-minx;
+    var dy=cy-miny;
+    var r=Math.sqrt((dx*dx)+(dy*dy))+2;
+    var ang=Math.random()*2*Math.PI;
+
+    curr={x:cx+(Math.sin(ang)*r),y:cy+(Math.cos(ang)*r)};
+
+    var found=false;
+    for(var i=0;i<1000000;i++){
+        cx=curr.x;
+        cy=curr.y;
+
+        curr.x+=Math.floor(Math.random()*3)-1;            
+        curr.y+=Math.floor(Math.random()*3)-1;            
+
+        // We add bounds checking
+        if(curr.x<0) curr.x=0;
+        if(curr.y<0) curr.y=0;
+        if(curr.x>=width) curr.x=width-1;
+        if(curr.y>=height) curr.y=height-1;
+
+        //c.fillRect(cx,cy,1,1);
+
+        if(getPoint(drawArea,curr)==1){
+            found=true;
+            break;
+        }
+    }
+
+    // We create new point if one was found
+    if(found){
+        if(cx<minx) minx=cx;
+        if(cy<miny) miny=cy;
+
+        c.fillRect(cx,cy,1,1);
+        var foundpnt={x:cx,y:cy};
+        markPoint(drawArea,foundpnt);
+        points.push(foundpnt);        
+    }else{
+        console.log("Miss:",miss++,pointcnt);
+    }
+    //c.fillRect(cx,cy,1,1);
+    //console.log(cx,cy);
+  
+    if(pointcnt<10000) window.requestAnimationFrame(updatestate);
+
+}
+
+function mouseMove(e)
+{
+    var rect = document.getElementById(e.target.id).getBoundingClientRect();
+
+    mx=(e.clientX-rect.left);
+    my=(e.clientY-rect.top);
+
+//    updatestate();
+}
+
+		</script>
+</head>
+<body onload="zetup();">
+
+<!--  <button onclick="Export();">Export</button>-->
+  <div id="wrapper">
+ 	<canvas id="myCanvas" width="1024" height="1024" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
+  </div>
+</body>
