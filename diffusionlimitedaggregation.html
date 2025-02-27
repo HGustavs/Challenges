@@ -87,6 +87,46 @@ function randomSlask()
 
 }
 
+// Data for single tile
+// cnt: Integer containing number of ocurrences of tile
+// checksum: Integer containing checksum of pixels in pixel array
+// pointlist: Array of n*n pixels
+// top: Array of n top pixels
+// left: Array of n left pixels 
+// right: Array of n right pixels
+// bottom: Array of n bottom pixel
+
+// Algorithm: We want to save which tiles appear around tile
+//      Step 0: Fast Redraw
+//      Step 1: Collect Unique Tiles and populate position array
+//      Step 2: Connect potential adjacent tile
+//      Step 3: Connect actual adjacent tile using tile position array 
+
+// checksum - computes a non-unique checksum for the supplied array
+function checksum(thearr)
+{
+
+}
+
+function exportPoints()
+{
+    var exportstr="var points=[\n";
+    for(point of points){
+        exportstr+="  {x:"+point.x+",y:"+point.y+"}\n";
+    }
+    exportstr+="];\n";
+
+    // Make anchor and click it!
+    var anchor = document.createElement("a");
+    var dataBlob = new Blob([exportstr],{type:"application/json"});
+    var objUrl = URL.createObjectURL(dataBlob);
+    anchor.href = objUrl;
+    anchor.innerHTML ="With createObjectURL";
+    anchor.download = "export.json";
+    document.body.appendChild(anchor);
+    anchor.click();
+}
+
 function updatestate()
 {
     c.fillStyle="#000";
@@ -148,7 +188,13 @@ function updatestate()
     //c.fillRect(cx,cy,1,1);
     //console.log(cx,cy);
   
-    if(pointcnt<10000) window.requestAnimationFrame(updatestate);
+    if(pointcnt<20000){
+        setTimeout(updatestate,1); // window.requestAnimationFrame(updatestate);
+    }else{
+        exportPoints();
+    }
+
+    if((pointcnt%1000)==0) console.log("Counted: ",pointcnt);
 
 }
 
