@@ -17,22 +17,33 @@
         
     </style>
 
+    <script>document.write("<script type='text/javascript' src='data/diffusionLimited.js?t=" + Date.now() + "'><\/script>");</script>
+
 <script>
 
 // Diffusion Limited Aggregation
 
 // https://en.wikipedia.org/wiki/Diffusion-limited_aggregation
 // https://www.youtube.com/watch?v=gsJHzBTPG0Y
+// https://www.youtube.com/watch?v=5iSAvzU2WYY (Coding Train Wave Function Collapse Second Iteration)
 
-var width=500;
-var height=500;
-var points=[];
+
+// Tile handling constants
+const screenWidth=512;
+const screenHeight=512;
+const tileWidth=3;
+const tileStep=tileWidth-1;
+const tileStart=-1;
+const tileEnd=1;
+
+var tileSet=[];
+
 var drawArea=[];
 var pointcnt=0;
 var miss=0;
 
-var cx=Math.floor(width*0.5);
-var cy=Math.floor(height*0.5);
+var cx=Math.floor(screenWidth*0.5);
+var cy=Math.floor(screenHeight*0.5);
 
 var minx=500000;
 var miny=500000;
@@ -43,7 +54,7 @@ function zetup()
     c = cc.getContext("2d");
 
     // Clear drawing area
-    for(var i=0;i<(width*height);i++){
+    for(var i=0;i<(screenWidth*screenHeight);i++){
         drawArea[i]=0;
     }
 
@@ -66,7 +77,7 @@ function rndPoint()
 
 function markPoint(area,pnt)
 {
-    area[(pnt.y*width)+pnt.x]=1;    
+    area[(pnt.y*screenWidth)+pnt.x]=1;    
 }
 
 function getPoint(area,pnt)
@@ -112,7 +123,7 @@ function exportPoints()
 {
     var exportstr="var points=[\n";
     for(point of points){
-        exportstr+="  {x:"+point.x+",y:"+point.y+"}\n";
+        exportstr+="  {x:"+point.x+",y:"+point.y+",ox:"+point.ox+",oy:"+point.oy+"}\n";
     }
     exportstr+="];\n";
 
@@ -127,12 +138,9 @@ function exportPoints()
     anchor.click();
 }
 
-function updatestate()
+function updateDiffusionPattern()
 {
-    c.fillStyle="#000";
-
     pointcnt++;
-
     var curr=null;
 
     // c.clearRect(0,0,width,height);
@@ -179,7 +187,7 @@ function updatestate()
         if(cy<miny) miny=cy;
 
         c.fillRect(cx,cy,1,1);
-        var foundpnt={x:cx,y:cy};
+        var foundpnt={x:cx,y:cy,ox:curr.x,oy:curr.y};
         markPoint(drawArea,foundpnt);
         points.push(foundpnt);        
     }else{
@@ -187,14 +195,105 @@ function updatestate()
     }
     //c.fillRect(cx,cy,1,1);
     //console.log(cx,cy);
-  
-    if(pointcnt<20000){
-        setTimeout(updatestate,1); // window.requestAnimationFrame(updatestate);
-    }else{
-        exportPoints();
-    }
+ 
 
     if((pointcnt%1000)==0) console.log("Counted: ",pointcnt);
+
+}
+
+function mod(value,divisor)
+{
+  return ((value % divisor) + divisor) % divisor;
+}
+
+// We compute checksum by adding all elements of the array
+function checkSum(pixelarray)
+{
+    var sum=0;
+    for(var i=0;i<pixelarray.length;i++){
+        sum+=pixelarray[i];
+    }
+    return sum;
+}
+
+// We read N*N RGB triplets into array 
+function readTile(mapdata,xk,yk,tileMin,tileMax)
+{
+    var maparray=[];
+    for(cx=tileMin;cx<=tileMax;cx++){
+        for(cy=tileMin;cy<=tileMax;cy++){
+            var index=((mod(cx+xk,screenWidth))+(mod(cy+yk,screenHeight))*screenWidth)*4;
+            maparray.push(mapdata[index]);
+            maparray.push(mapdata[index+1]);
+            maparray.push(mapdata[index+2]);
+        }
+    }
+    return maparray;
+}
+
+function equalTile(tileArrA,tileArrB)
+{
+    for(var i=0;i<tileArrA.length;i++){
+        if(tileArrA[i]!=tileArrB[i]) return false;
+    }
+    return true;
+}
+
+function makeTiles()
+{
+    var map=c.getImageData(0,0,screenWidth,screenHeight);
+    var mapdata=map.data;
+
+    for(var yk=0;yk<screenHeight;yk+=tileStep){
+        for(var xk=0;xk<screenWidth;xk+=tileStep){
+            // Read tile and compare with current tile set
+            var found=-1;
+            var tileArr=readTile(mapdata,xk,yk,tileStart,tileEnd);
+            var checksum=checkSum(tileArr);
+            // For each tile
+            for(var tileno=0;tileno<tileSet.length;tileno++){
+                // Candidate for tile
+                var tile=tileSet[tileno];
+                if(tile.checksum==checksum){
+                    // Checksum identical -- we compare full array
+                    if(equalTile(tile.tileArr,tileArr)){
+                        found=tileno;
+                        break;
+                    }
+                }
+            }
+            if(found==-1){
+                // No tile was found - we make new tile
+                tileSet.push({tileArr:tileArr,checksum:checksum});
+            }else{
+                // Update tile count of tile and add to tilemap
+            }
+            // Push tile
+        }
+    }
+
+    console.log(tileSet);
+
+}
+
+function updatestate()
+{
+
+    // updateDiffusionPattern();
+    c.fillStyle="#FFF";
+    c.fillRect(0,0,512,512);
+
+    c.fillStyle="#000";
+    for(var i=0;i<points.length;i++){
+        c.fillRect(points[i].x,points[i].y,1,1);
+    }
+
+//    if(pointcnt<20000){
+        // setTimeout(updatestate,1); 
+//        window.requestAnimationFrame(updatestate);
+//    }else{
+        makeTiles();
+//    }
 
 }
 
@@ -214,6 +313,6 @@ function mouseMove(e)
 
 <!--  <button onclick="Export();">Export</button>-->
   <div id="wrapper">
- 	<canvas id="myCanvas" width="1024" height="1024" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
+ 	<canvas id="myCanvas" width="512" height="512" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
   </div>
 </body>
