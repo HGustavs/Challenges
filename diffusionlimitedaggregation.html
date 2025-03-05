@@ -48,6 +48,11 @@ var cy=Math.floor(screenHeight*0.5);
 var minx=500000;
 var miny=500000;
 
+function RGBColor(R,G,B)
+{
+    return "RGB("+Math.floor(R)+","+Math.floor(G)+","+Math.floor(B)+")";
+}
+
 function zetup()
 {
     var cc = document.getElementById("myCanvas");
@@ -97,21 +102,6 @@ function randomSlask()
             curr.y+=Math.floor(Math.random()*5)-2; 
 
 }
-
-// Data for single tile
-// cnt: Integer containing number of ocurrences of tile
-// checksum: Integer containing checksum of pixels in pixel array
-// pointlist: Array of n*n pixels
-// top: Array of n top pixels
-// left: Array of n left pixels 
-// right: Array of n right pixels
-// bottom: Array of n bottom pixel
-
-// Algorithm: We want to save which tiles appear around tile
-//      Step 0: Fast Redraw
-//      Step 1: Collect Unique Tiles and populate position array
-//      Step 2: Connect potential adjacent tile
-//      Step 3: Connect actual adjacent tile using tile position array 
 
 // checksum - computes a non-unique checksum for the supplied array
 function checksum(thearr)
@@ -239,11 +229,53 @@ function equalTile(tileArrA,tileArrB)
     return true;
 }
 
+function drawTilemap(tilemap,tilecnty)
+{
+    c.clearRect(0,0,1024,1024);
+    c.font = "10px arial narrow";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    for(var ty=0;ty<64;ty++){
+        for(var tx=0;tx<64;tx++){
+            var index=(tx+50)+((ty+30)*tilecnty);
+            var tileno=tilemap[index];
+            //c.beginPath();
+            c.fillStyle=RGBColor(30+(tileno*0.5),16+(tileno*0.3),32);
+            c.fillRect(tx*16,ty*16,16,16);
+            if(tileno<100){
+                c.fillStyle="#eee";            
+            }else{
+                c.fillStyle="#000";                        
+            }
+            //c.stroke(); 
+            c.fillText(tilemap[index], (tx*16)+8,(ty*16)+8);
+        }
+    }
+}
+
+function placeTile(tileset,tileno)
+{
+    var found=false;
+    for(tile of tileset){
+        if(tile.no==tileno){
+            tile.cnt++;
+            found=true;
+            break;
+        }    
+    }
+    if(!found){
+        tileset.push({no:tileno,cnt:1});
+    }
+}
+
 function makeTiles()
 {
     var map=c.getImageData(0,0,screenWidth,screenHeight);
     var mapdata=map.data;
 
+    var tilemap=[];
+
+    var tilecnty=0;
     for(var yk=0;yk<screenHeight;yk+=tileStep){
         for(var xk=0;xk<screenWidth;xk+=tileStep){
             // Read tile and compare with current tile set
@@ -264,16 +296,37 @@ function makeTiles()
             }
             if(found==-1){
                 // No tile was found - we make new tile
-                tileSet.push({tileArr:tileArr,checksum:checksum});
+                tilemap.push(tileSet.length);
+                tileSet.push({tileArr:tileArr,checksum:checksum,left:[],right:[],top:[],bottom:[]});
             }else{
                 // Update tile count of tile and add to tilemap
+                tilemap.push(found);            
             }
-            // Push tile
+        }
+        tilecnty++;
+    }
+
+    // Compute adjacencies
+    for(var ty=0;ty<tilecnty;ty++){
+        for(var tx=0;tx<tilecnty;tx++){
+            var tileno=tilemap[(tx)+(ty*tilecnty)];
+            var tileleft=tilemap[(mod(tx-1,tilecnty))+(ty*tilecnty)];
+            var tileright=tilemap[(mod(tx+1,tilecnty))+(ty*tilecnty)];
+            var tiletop=tilemap[tx+(mod(ty-1,tilecnty)*tilecnty)];
+            var tilebottom=tilemap[tx+(mod(ty+1,tilecnty)*tilecnty)];
+            var tile=tileSet[tileno];
+            placeTile(tile.left,tileleft);
+            placeTile(tile.right,tileright);
+            placeTile(tile.top,tiletop);
+            placeTile(tile.bottom,tilebottom);
         }
     }
 
-    console.log(tileSet);
+    // drawTilemap(tilemap,tilecnty);
 
+    // We want to
+
+    console.log(tileSet);
 }
 
 function updatestate()
@@ -313,6 +366,6 @@ function mouseMove(e)
 
 <!--  <button onclick="Export();">Export</button>-->
   <div id="wrapper">
- 	<canvas id="myCanvas" width="512" height="512" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
+ 	<canvas id="myCanvas" width="1024" height="1024" style="border:1px solid #000000;" onmousemove="mouseMove(event);" ></canvas> 
   </div>
 </body>
