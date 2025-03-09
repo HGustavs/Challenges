@@ -1,0 +1,17 @@
+Create a detailed sprite sheet designed for a pixel art-style video game. The main character is a male ghost knight of East Asian descent and his primary weapon is a large hammer. The sprite sheet is exactly 768 pixels wide and 768 pixels tall, comprised of numerous 64x64 pixel sections. This sprite sheet should contain an array of animations including idle, jumping, and running sequences. It should also showcase two different attack animations
+
+Create a detailed sprite sheet designed for a pixel art-style video game. The main character is a scary horned ghost knight of Scandinavian descent and his primary weapon is a large hammer. The sprite sheet is exactly 768 pixels wide and 768 pixels tall, comprised of numerous 64x64 pixel sections. This sprite sheet should contain an array of animations including idle, jumping, and running sequences. It should also showcase two different attack animations
+
+Create a sprite sheet designed for a pixel art-style video game. The main character is a scary steampunk ghost knight of Scandinavian Origin and his primary weapon is a large war hammer. The sprite sheet is comprised of numerous 84x84 pixel sections. This sprite sheet should contain an array of animations including idle, jumping, and running sequences. It should also showcase two different attack animations
+
+Create a sprite sheet designed for a pixel art-style video game. The main character is a scary steampunk ghost knight of Scandinavian Origin and his primary weapon is a laser blaster. The sprite sheet is comprised of numerous sections. This sprite sheet should contain an array of animations including idle, jumping, and running sequences.
+
+Create a sprite sheet designed for a pixel art-style video game. The main character is a friendly steampunk adventurer with the face of a rabbit and his primary weapon is a laser blaster. The sprite sheet is comprised of numerous sections. This sprite sheet should contain an array of animations including idle, jumping, and running sequences.
+
+Create a sprite sheet designed for a pixel art-style video game. The main character is a crazy steampunk prospector with the face of an animal. The sprite sheet is comprised of numerous sections. This sprite sheet should contain an array of animations including idle, jumping, and running sequences.
+
+Create a sprite sheet designed for a “birds eye view” or top-down pixel art-style video game. The main character is a steampunk professor. The sprite sheet is comprised of numerous sections. This sprite sheet should contain an array of animations including idle, jumping, and running sequences.
+
+Generate a 3D isometric sprite sheet of a war tank displayed from every angle of rotation, including all potential animations for a video game. This sheet should encompass the tank's movements, shooting animations, and damage displays in a comprehensive and detail-oriented manner.
+
+Generate a still image that showcases a scene from an epic game set in historical Nusantara. The image should feature captivating 2D pixel art, and the main character who is a legendary hero. The game combines thrilling adventures, exploration of beautiful and culturally rich landscapes, and challenging obstacles for him to overcome. The interface should be user-friendly, with stunning landscapes to navigate, unique characters to meet, and high-quality graphics that create an immersive experience. The overall tone of the image should communicate heroism and an unbeatable spirit of struggle.

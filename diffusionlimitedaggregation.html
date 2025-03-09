@@ -268,6 +268,33 @@ function placeTile(tileset,tileno)
     }
 }
 
+// Update single item in tilemap with new candidates
+function updateCandidates(candidates,tx,ty,tilecntx,tilecnty,tilemap)
+{
+    if(tx<0||ty<0||tx>=tilecntx||ty>=tilecnty) return false;
+
+    var index=tx+(ty*tilecntx);
+    var tilelist=tilemap[index];
+
+    // If tilelist is empty we add all tiles from candidates to tilelist
+    // if tilelist is not empty we copy only tiles that appear in both to new list
+    // and replace tilelsit with that list when finished 
+    if(tilemap[index]==null){
+        tilelist=[];
+        for(candidate of candidates){
+            tilelist.push(candidate);
+        }
+    }else{
+        var newlist=[];
+        for(candidate of candidates){
+            for(tile of tilelist){
+                if(tile.no==candidate.no) newlist.push(tile);
+            }
+        }        
+        tilelist=newlist;
+    }
+}
+
 function makeTiles()
 {
     var map=c.getImageData(0,0,screenWidth,screenHeight);
@@ -322,6 +349,23 @@ function makeTiles()
         }
     }
 
+    tilemap=[];
+
+    for(var i=0;i<(tilecnty*tilecntx);i++) tilemap[i]=null;
+
+    var cnt=0;
+    var tx=250;
+    var ty=250;
+
+    // tx,ty contains tile to be instantiated
+    var index=tx+(ty*tilecntx);
+    var candidates=tilemap[index];
+
+    if(candidates==null){
+    
+    }else{
+        // We have a set of possible tiles
+    }
     // drawTilemap(tilemap,tilecnty);
 
     // We want to
