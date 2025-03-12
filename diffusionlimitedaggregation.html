@@ -295,6 +295,24 @@ function updateCandidates(candidates,tx,ty,tilecntx,tilecnty,tilemap)
     }
 }
 
+// Return a random tile in tilemap
+function getRandomCandidate(candidates)
+{
+    var sum=0;
+    for(candidate of candidates){
+        sum+=candidate.cnt;
+    }
+
+    var rolling=0;
+    for(candidate of candidates){
+        candidate.from=rolling/sum;
+        candidate.to=(rolling+candidate.cnt)/sum;
+        rolling+=candidate.cnt;
+    }
+
+    console.log(candidates);
+}
+
 function makeTiles()
 {
     var map=c.getImageData(0,0,screenWidth,screenHeight);
@@ -324,10 +342,11 @@ function makeTiles()
             if(found==-1){
                 // No tile was found - we make new tile
                 tilemap.push(tileSet.length);
-                tileSet.push({tileArr:tileArr,checksum:checksum,left:[],right:[],top:[],bottom:[]});
+                tileSet.push({tileArr:tileArr,tileno:tileSet.length,tilecnt:1,checksum:checksum,left:[],right:[],top:[],bottom:[]});
             }else{
                 // Update tile count of tile and add to tilemap
-                tilemap.push(found);            
+                tilemap.push(found);
+                tileSet[found].tilecnt++;            
             }
         }
         tilecnty++;
@@ -351,18 +370,24 @@ function makeTiles()
 
     tilemap=[];
 
-    for(var i=0;i<(tilecnty*tilecntx);i++) tilemap[i]=null;
+    for(var i=0;i<(tilecnty*tilecnty);i++) tilemap[i]={tileno:-1,candidates:null};
 
     var cnt=0;
     var tx=250;
     var ty=250;
 
     // tx,ty contains tile to be instantiated
-    var index=tx+(ty*tilecntx);
-    var candidates=tilemap[index];
+    var index=tx+(ty*tilecnty);
+    var candidates=tilemap[index].candidates;
 
+    // Candidates is null which means that any tile is possible
     if(candidates==null){
-    
+        candidates=[];
+        for(tile of tileSet){
+            candidates.push({no:tile.tileno,cnt:tile.tilecnt});
+        }
+        console.log(getRandomCandidate(candidates));
+        //console.log(candidates);
     }else{
         // We have a set of possible tiles
     }
