@@ -127,8 +127,8 @@ applyConstraints() {
     const vy = (this.pos.y - this.prevPos.y) * FRICTION;
 
     let torqueApplied = false;
-    const wallFrictionTorque = 0.15;
-    const velocityThreshold = 0.1;
+    const wallFrictionTorque = 0.55;
+    const velocityThreshold = 0.2;
 
     // Right wall
     if (this.pos.x + this.radius > BOUNDS.right) {
@@ -136,7 +136,7 @@ applyConstraints() {
         this.prevPos.x = this.pos.x + vx * -BOUNCE;
 
         if (Math.abs(vy) > velocityThreshold && !torqueApplied) {
-            this.angularVelocity += vy * wallFrictionTorque / this.inertia;
+            this.angularVelocity -= vy * wallFrictionTorque / this.inertia;
             torqueApplied = true;
         }
     }
@@ -147,7 +147,7 @@ applyConstraints() {
         this.prevPos.x = this.pos.x + vx * -BOUNCE;
 
         if (Math.abs(vy) > velocityThreshold && !torqueApplied) {
-            this.angularVelocity -= vy * wallFrictionTorque / this.inertia;
+            this.angularVelocity += vy * wallFrictionTorque / this.inertia;
             torqueApplied = true;
         }
     }
@@ -158,7 +158,7 @@ applyConstraints() {
         this.prevPos.y = this.pos.y + vy * -BOUNCE;
 
         if (Math.abs(vx) > velocityThreshold && !torqueApplied) {
-            this.angularVelocity -= vx * wallFrictionTorque / this.inertia;
+            this.angularVelocity += vx * wallFrictionTorque / this.inertia;
             torqueApplied = true;
         }
     }
@@ -169,7 +169,7 @@ applyConstraints() {
         this.prevPos.y = this.pos.y + vy * -BOUNCE;
 
         if (Math.abs(vx) > velocityThreshold && !torqueApplied) {
-            this.angularVelocity += vx * wallFrictionTorque / this.inertia;
+            this.angularVelocity -= vx * wallFrictionTorque / this.inertia;
             torqueApplied = true;
         }
     }
