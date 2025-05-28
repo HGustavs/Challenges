@@ -12,6 +12,17 @@
   <canvas id="gameCanvas" width="800" height="600"></canvas>
 
 <script>
+
+/*
+
+I want to make a 2d physics engine in javascript for a game like "Suika Game" that supports gravity and friction using 2d circles and minimal 2d verlet physics. 
+The physics simulation should support angular momentum and weight of the physics objects. The engine should use circles of different sizes each having a  single 
+line from the center of the circle in order to display the angular momentum. The only other graphics should be lines to show the outer limits of the play area.
+
+
+
+*/
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -87,31 +98,48 @@ class Circle {
         this.pos.x += vx;
         this.pos.y += vy + GRAVITY;
 
-        this.angle += this.angularVelocity;
+        this.angle += this.angularVelocity*10;
         this.angularVelocity *= ANGULAR_FRICTION;
     }
 
     applyConstraints() {
-        const vx = (this.pos.x - this.prevPos.x) * FRICTION;
-        const vy = (this.pos.y - this.prevPos.y) * FRICTION;
+    const vx = (this.pos.x - this.prevPos.x) * FRICTION;
+    const vy = (this.pos.y - this.prevPos.y) * FRICTION;
 
-        if (this.pos.x + this.radius > BOUNDS.right) {
-            this.pos.x = BOUNDS.right - this.radius;
-            this.prevPos.x = this.pos.x + vx * -BOUNCE;
-        }
-        if (this.pos.x - this.radius < BOUNDS.left) {
-            this.pos.x = BOUNDS.left + this.radius;
-            this.prevPos.x = this.pos.x + vx * -BOUNCE;
-        }
+    const wallFrictionTorque = 0.15; // Adjust for stronger/weaker spin from wall hits
 
-        if (this.pos.y + this.radius > BOUNDS.bottom) {
-            this.pos.y = BOUNDS.bottom - this.radius;
-            this.prevPos.y = this.pos.y + vy * -BOUNCE;
-        }
-        if (this.pos.y - this.radius < BOUNDS.top) {
-            this.pos.y = BOUNDS.top + this.radius;
-            this.prevPos.y = this.pos.y + vy * -BOUNCE;
-        }
+    // Right wall
+    if (this.pos.x + this.radius > BOUNDS.right) {
+        this.pos.x = BOUNDS.right - this.radius;
+        this.prevPos.x = this.pos.x + vx * -BOUNCE;
+
+        // Apply angular torque from horizontal wall impact
+        this.angularVelocity += vy * wallFrictionTorque / this.inertia;
+    }
+
+    // Left wall
+    if (this.pos.x - this.radius < BOUNDS.left) {
+        this.pos.x = BOUNDS.left + this.radius;
+        this.prevPos.x = this.pos.x + vx * -BOUNCE;
+
+        this.angularVelocity -= vy * wallFrictionTorque / this.inertia;
+    }
+
+    // Bottom wall
+    if (this.pos.y + this.radius > BOUNDS.bottom) {
+        this.pos.y = BOUNDS.bottom - this.radius;
+        this.prevPos.y = this.pos.y + vy * -BOUNCE;
+
+        this.angularVelocity -= vx * wallFrictionTorque / this.inertia;
+    }
+
+    // Top wall
+    if (this.pos.y - this.radius < BOUNDS.top) {
+        this.pos.y = BOUNDS.top + this.radius;
+        this.prevPos.y = this.pos.y + vy * -BOUNCE;
+
+        this.angularVelocity += vx * wallFrictionTorque / this.inertia;
+    }
     }
 
     draw() {
@@ -177,26 +205,43 @@ function resolveCollision(c1, c2) {
         const nx = dx / dist;
         const ny = dy / dist;
 
+        // Separate circles along the normal
         c1.pos.x -= nx * overlap;
         c1.pos.y -= ny * overlap;
         c2.pos.x += nx * overlap;
         c2.pos.y += ny * overlap;
 
+        // Tangent vector (perpendicular to normal)
         const tx = -ny;
         const ty = nx;
 
+        // Velocity of each object
         const vx1 = c1.pos.x - c1.prevPos.x;
         const vy1 = c1.pos.y - c1.prevPos.y;
         const vx2 = c2.pos.x - c2.prevPos.x;
         const vy2 = c2.pos.y - c2.prevPos.y;
 
-        const vt1 = vx1 * tx + vy1 * ty;
-        const vt2 = vx2 * tx + vy2 * ty;
-        const tangentialDelta = vt1 - vt2;
+        // Relative velocity
+        const rvx = vx1 - vx2;
+        const rvy = vy1 - vy2;
 
+        // Tangential component of relative velocity
+        const tangentSpeed = rvx * tx + rvy * ty;
+
+        // Apply tangential friction
+        const frictionCoefficient = 0.1;
+        const frictionImpulse = tangentSpeed * frictionCoefficient;
+
+        // Oppose motion (friction slows sliding)
+        c1.prevPos.x += tx * frictionImpulse / c1.mass;
+        c1.prevPos.y += ty * frictionImpulse / c1.mass;
+        c2.prevPos.x -= tx * frictionImpulse / c2.mass;
+        c2.prevPos.y -= ty * frictionImpulse / c2.mass;
+
+        // Angular torque from tangential velocity
         const torqueFactor = 0.05;
-        c1.angularVelocity -= (tangentialDelta * torqueFactor) / c1.inertia;
-        c2.angularVelocity += (tangentialDelta * torqueFactor) / c2.inertia;
+        c1.angularVelocity -= (tangentSpeed * torqueFactor) / c1.inertia;
+        c2.angularVelocity += (tangentSpeed * torqueFactor) / c2.inertia;
 
         // MERGE
         const canMerge = c1.level === c2.level && c1.level < CIRCLE_SIZES.length - 1;
