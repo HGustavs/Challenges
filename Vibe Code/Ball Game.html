@@ -1,0 +1,322 @@
+<html>
+<body>
+  <div style="position: absolute; top: 10px; left: 10px; font-size: 24px; color: #333;">
+    Score: <span id="scoreDisplay">0</span>
+  </div>
+  <div style="position: absolute; top: 40px; left: 10px; font-size: 20px; color: #666;">
+    Combo: <span id="comboDisplay">0</span>x
+  </div>
+  <div id="gameOverScreen" style="display: none; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); font-size: 36px; color: red; background: white;
+    padding: 20px; border: 2px solid black;">Game Over</div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// ========== CONFIG ========== //
+const GRAVITY = 0.2;
+const FRICTION = 0.995;
+const ANGULAR_FRICTION = 0.99;
+const BOUNCE = 0.9;
+const BOUNDS = {
+    left: 0,
+    right: canvas.width,
+    top: 0,
+    bottom: canvas.height
+};
+
+const CIRCLE_SIZES = [16, 24, 32, 40, 48, 64, 80, 100];
+const SCORE_VALUES = CIRCLE_SIZES.map((_, i) => Math.pow(2, i + 1) * 10);
+
+let score = 0;
+let comboCount = 0;
+let comboTimer = null;
+const COMBO_TIMEOUT = 2000;
+
+let gameOver = false;
+let ID_COUNTER = 0;
+let circles = [];
+let dragging = false;
+let currentCircle = null;
+
+// ========== COLOR UTILS ========== //
+function hsvToRgb(h, s, v) {
+    let f = (n, k = (n + h / 60) % 6) =>
+        v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+    const r = Math.round(f(5) * 255);
+    const g = Math.round(f(3) * 255);
+    const b = Math.round(f(1) * 255);
+    return { r, g, b, toString: () => `rgb(${r}, ${g}, ${b})` };
+}
+
+function darkenColor({ r, g, b }, factor = 0.6) {
+    return `rgb(${Math.floor(r * factor)}, ${Math.floor(g * factor)}, ${Math.floor(b * factor)})`;
+}
+
+const COLOR_PAIRS = CIRCLE_SIZES.map((_, i, arr) => {
+    const hue = (i / arr.length) * 360;
+    const base = hsvToRgb(hue, 0.85, 0.85);
+    return {
+        fill: base.toString(),
+        dark: darkenColor(base)
+    };
+});
+
+// ========== CIRCLE CLASS ========== //
+class Circle {
+    constructor(x, y, _, __, level = 0) {
+        this.id = ID_COUNTER++;
+        this.level = level;
+        this.radius = CIRCLE_SIZES[level];
+        this.mass = this.radius * 0.1;
+        this.inertia = 0.5 * this.mass * this.radius * this.radius;
+        this.pos = { x, y };
+        this.prevPos = { x: x - Math.random() * 0.5, y: y - Math.random() * 0.5 };
+        this.angle = Math.random() * Math.PI * 2;
+        this.angularVelocity = (Math.random() - 0.5) * 0.02;
+    }
+
+    update() {
+        const vx = (this.pos.x - this.prevPos.x) * FRICTION;
+        const vy = (this.pos.y - this.prevPos.y) * FRICTION;
+
+        this.prevPos.x = this.pos.x;
+        this.prevPos.y = this.pos.y;
+        this.pos.x += vx;
+        this.pos.y += vy + GRAVITY;
+
+        this.angle += this.angularVelocity;
+        this.angularVelocity *= ANGULAR_FRICTION;
+    }
+
+    applyConstraints() {
+        const vx = (this.pos.x - this.prevPos.x) * FRICTION;
+        const vy = (this.pos.y - this.prevPos.y) * FRICTION;
+
+        if (this.pos.x + this.radius > BOUNDS.right) {
+            this.pos.x = BOUNDS.right - this.radius;
+            this.prevPos.x = this.pos.x + vx * -BOUNCE;
+        }
+        if (this.pos.x - this.radius < BOUNDS.left) {
+            this.pos.x = BOUNDS.left + this.radius;
+            this.prevPos.x = this.pos.x + vx * -BOUNCE;
+        }
+
+        if (this.pos.y + this.radius > BOUNDS.bottom) {
+            this.pos.y = BOUNDS.bottom - this.radius;
+            this.prevPos.y = this.pos.y + vy * -BOUNCE;
+        }
+        if (this.pos.y - this.radius < BOUNDS.top) {
+            this.pos.y = BOUNDS.top + this.radius;
+            this.prevPos.y = this.pos.y + vy * -BOUNCE;
+        }
+    }
+
+    draw() {
+        const colors = COLOR_PAIRS[this.level] || { fill: "#ccc", dark: "#666" };
+
+        // Main fill
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = colors.fill;
+        ctx.fill();
+        ctx.stroke();
+
+/*
+        // Crash-test wedge
+        ctx.beginPath();
+        ctx.moveTo(this.pos.x, this.pos.y);
+        const startAngle = this.angle;
+        const endAngle = this.angle + Math.PI / 4;
+        ctx.arc(this.pos.x, this.pos.y, this.radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = colors.dark;
+        ctx.fill();
+*/
+        // Angular momentum line
+        const endX = this.pos.x + Math.cos(this.angle) * this.radius;
+        const endY = this.pos.y + Math.sin(this.angle) * this.radius;
+        ctx.beginPath();
+        ctx.moveTo(this.pos.x, this.pos.y);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = colors.dark;
+        ctx.stroke();
+    }
+}
+
+// ========== SPAWN UTILS ========== //
+function getRandomCircleLevel() {
+    const weights = [6, 4, 2, 1];
+    const total = weights.reduce((a, b) => a + b, 0);
+    const r = Math.random() * total;
+    let sum = 0;
+    for (let i = 0; i < weights.length; i++) {
+        sum += weights[i];
+        if (r < sum) return i;
+    }
+    return 0;
+}
+
+// ========== COLLISION + MERGE ========== //
+const mergedPairs = new Set();
+
+function getMergeKey(c1, c2) {
+    return [c1, c2].sort((a, b) => a.id - b.id).map(c => c.id).join("-");
+}
+
+function resolveCollision(c1, c2) {
+    const dx = c2.pos.x - c1.pos.x;
+    const dy = c2.pos.y - c1.pos.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const minDist = c1.radius + c2.radius;
+
+    if (dist < minDist) {
+        const overlap = 0.5 * (minDist - dist);
+        const nx = dx / dist;
+        const ny = dy / dist;
+
+        c1.pos.x -= nx * overlap;
+        c1.pos.y -= ny * overlap;
+        c2.pos.x += nx * overlap;
+        c2.pos.y += ny * overlap;
+
+        const tx = -ny;
+        const ty = nx;
+
+        const vx1 = c1.pos.x - c1.prevPos.x;
+        const vy1 = c1.pos.y - c1.prevPos.y;
+        const vx2 = c2.pos.x - c2.prevPos.x;
+        const vy2 = c2.pos.y - c2.prevPos.y;
+
+        const vt1 = vx1 * tx + vy1 * ty;
+        const vt2 = vx2 * tx + vy2 * ty;
+        const tangentialDelta = vt1 - vt2;
+
+        const torqueFactor = 0.05;
+        c1.angularVelocity -= (tangentialDelta * torqueFactor) / c1.inertia;
+        c2.angularVelocity += (tangentialDelta * torqueFactor) / c2.inertia;
+
+        // MERGE
+        const canMerge = c1.level === c2.level && c1.level < CIRCLE_SIZES.length - 1;
+        const mergeKey = getMergeKey(c1, c2);
+        if (canMerge && !mergedPairs.has(mergeKey)) {
+            mergedPairs.add(mergeKey);
+
+            // Combo scoring
+            comboCount++;
+            const multiplier = 1 + comboCount * 0.25;
+            const baseScore = SCORE_VALUES[c1.level + 1];
+            const totalScore = Math.floor(baseScore * multiplier);
+
+            score += totalScore;
+            document.getElementById("scoreDisplay").textContent = score;
+            document.getElementById("comboDisplay").textContent = comboCount;
+
+            if (comboTimer) clearTimeout(comboTimer);
+            comboTimer = setTimeout(() => {
+                comboCount = 0;
+                document.getElementById("comboDisplay").textContent = comboCount;
+            }, COMBO_TIMEOUT);
+
+            const midX = (c1.pos.x + c2.pos.x) / 2;
+            const midY = (c1.pos.y + c2.pos.y) / 2;
+            const newLevel = c1.level + 1;
+
+            setTimeout(() => {
+                circles = circles.filter(c => c !== c1 && c !== c2);
+                const merged = new Circle(midX, midY, CIRCLE_SIZES[newLevel], undefined, newLevel);
+                merged.prevPos.x = midX;
+                merged.prevPos.y = midY - 1;
+                circles.push(merged);
+            }, 0);
+        }
+    }
+}
+
+// ========== MOUSE EVENTS ========== //
+canvas.addEventListener("mousedown", (e) => {
+    if (dragging || currentCircle || gameOver) return;
+    dragging = true;
+    const level = getRandomCircleLevel();
+    const x = e.offsetX;
+    const y = 50;
+    currentCircle = new Circle(x, y, CIRCLE_SIZES[level], undefined, level);
+});
+
+canvas.addEventListener("mousemove", (e) => {
+    if (dragging && currentCircle) {
+        currentCircle.pos.x = e.offsetX;
+        currentCircle.prevPos.x = e.offsetX;
+    }
+});
+
+canvas.addEventListener("mouseup", () => {
+    if (dragging && currentCircle) {
+        const blocked = circles.some(c => {
+            const dx = c.pos.x - currentCircle.pos.x;
+            const dy = c.pos.y - currentCircle.pos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            return dist < c.radius + currentCircle.radius;
+        });
+
+        if (blocked) {
+            gameOver = true;
+            document.getElementById("gameOverScreen").style.display = "block";
+        } else {
+            circles.push(currentCircle);
+        }
+
+        currentCircle = null;
+        dragging = false;
+    }
+});
+
+// ========== MAIN GAME LOOP ========== //
+function update() {
+    if (gameOver) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.beginPath();
+    ctx.moveTo(BOUNDS.left, BOUNDS.top);
+    ctx.lineTo(BOUNDS.right, BOUNDS.top);
+    ctx.lineTo(BOUNDS.right, BOUNDS.bottom);
+    ctx.lineTo(BOUNDS.left, BOUNDS.bottom);
+    ctx.closePath();
+    ctx.stroke();
+
+    for (let i = 0; i < circles.length; i++) {
+        circles[i].update();
+    }
+
+    const ITERATIONS = 4;
+    mergedPairs.clear();
+    for (let k = 0; k < ITERATIONS; k++) {
+        for (let i = 0; i < circles.length; i++) {
+            for (let j = i + 1; j < circles.length; j++) {
+                resolveCollision(circles[i], circles[j]);
+            }
+            circles[i].applyConstraints();
+        }
+    }
+
+    for (let i = 0; i < circles.length; i++) {
+        circles[i].draw();
+    }
+
+    if (currentCircle) {
+        currentCircle.draw();
+    }
+
+    requestAnimationFrame(update);
+}
+
+update();
+
+</script>
+
+</body>
+
+</html>

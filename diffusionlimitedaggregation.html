@@ -310,7 +310,13 @@ function getRandomCandidate(candidates)
         rolling+=candidate.cnt;
     }
 
-    console.log(candidates);
+    var rnd=Math.random();
+
+    for(candidate of candidates){
+        if(rnd>candidate.from&&rnd<candidate.to) return candidate;
+    }
+    return false;
+
 }
 
 function makeTiles()
@@ -379,6 +385,7 @@ function makeTiles()
     // tx,ty contains tile to be instantiated
     var index=tx+(ty*tilecnty);
     var candidates=tilemap[index].candidates;
+    var chosen=null
 
     // Candidates is null which means that any tile is possible
     if(candidates==null){
@@ -386,16 +393,15 @@ function makeTiles()
         for(tile of tileSet){
             candidates.push({no:tile.tileno,cnt:tile.tilecnt});
         }
-        console.log(getRandomCandidate(candidates));
-        //console.log(candidates);
+        chosen=getRandomCandidate(candidates);
     }else{
         // We have a set of possible tiles
+        chosen=getRandomCandidate(candidates);
     }
-    // drawTilemap(tilemap,tilecnty);
 
-    // We want to
+    // Now we update tile map to reflect that tile X has been chosen...
 
-    console.log(tileSet);
+    console.log(chosen);
 }
 
 function updatestate()
