@@ -19,7 +19,27 @@ I want to make a 2d physics engine in javascript for a game like "Suika Game" th
 The physics simulation should support angular momentum and weight of the physics objects. The engine should use circles of different sizes each having a  single 
 line from the center of the circle in order to display the angular momentum. The only other graphics should be lines to show the outer limits of the play area.
 
+I want better collision stability and slower initial movement of circles.
 
+Add moment of inertia and Add torque transfer to to physics simulation
+
+Please add better support for friction between the circles and the friction against sides of the box does not seem to affect the angular velocity of the circles. 
+Please resolve this bug.
+
+dd merging when same sized circles collide and also add the drag to drop mechanic for creating new circles. New circles should be randomly assigned from the 
+four smallest circles. Each smaller size of circle should be increasingly common in the randomization.
+
+Circles that touch both the bottom and sides of the boundary seem to get never ending angular volocity
+
+Add scoring including increasingly high scores for larger circles and also add game over detection
+
+Add combo score multipliers
+
+Fill each circle using a unique color, equally distributed around the color wheel. Avoid completely white and completely black circles.
+
+Each circle should be drawn using a dark / light version of the circle color similar to the look of crash test dummy reference marks. 
+These marks have two colors, a lighter and a darker color and are meant to be easily visible. Each circle should have a unique combination 
+of a color and the corresponding darker color.
 
 */
 
@@ -29,7 +49,7 @@ const ctx = canvas.getContext('2d');
 // ========== CONFIG ========== //
 const GRAVITY = 0.2;
 const FRICTION = 0.995;
-const ANGULAR_FRICTION = 0.99;
+const ANGULAR_FRICTION = 0.98;
 const BOUNCE = 0.9;
 const BOUNDS = {
     left: 0,
@@ -98,23 +118,27 @@ class Circle {
         this.pos.x += vx;
         this.pos.y += vy + GRAVITY;
 
-        this.angle += this.angularVelocity*10;
+        this.angle += this.angularVelocity;
         this.angularVelocity *= ANGULAR_FRICTION;
     }
 
-    applyConstraints() {
+applyConstraints() {
     const vx = (this.pos.x - this.prevPos.x) * FRICTION;
     const vy = (this.pos.y - this.prevPos.y) * FRICTION;
 
-    const wallFrictionTorque = 0.15; // Adjust for stronger/weaker spin from wall hits
+    let torqueApplied = false;
+    const wallFrictionTorque = 0.15;
+    const velocityThreshold = 0.1;
 
     // Right wall
     if (this.pos.x + this.radius > BOUNDS.right) {
         this.pos.x = BOUNDS.right - this.radius;
         this.prevPos.x = this.pos.x + vx * -BOUNCE;
 
-        // Apply angular torque from horizontal wall impact
-        this.angularVelocity += vy * wallFrictionTorque / this.inertia;
+        if (Math.abs(vy) > velocityThreshold && !torqueApplied) {
+            this.angularVelocity += vy * wallFrictionTorque / this.inertia;
+            torqueApplied = true;
+        }
     }
 
     // Left wall
@@ -122,7 +146,10 @@ class Circle {
         this.pos.x = BOUNDS.left + this.radius;
         this.prevPos.x = this.pos.x + vx * -BOUNCE;
 
-        this.angularVelocity -= vy * wallFrictionTorque / this.inertia;
+        if (Math.abs(vy) > velocityThreshold && !torqueApplied) {
+            this.angularVelocity -= vy * wallFrictionTorque / this.inertia;
+            torqueApplied = true;
+        }
     }
 
     // Bottom wall
@@ -130,7 +157,10 @@ class Circle {
         this.pos.y = BOUNDS.bottom - this.radius;
         this.prevPos.y = this.pos.y + vy * -BOUNCE;
 
-        this.angularVelocity -= vx * wallFrictionTorque / this.inertia;
+        if (Math.abs(vx) > velocityThreshold && !torqueApplied) {
+            this.angularVelocity -= vx * wallFrictionTorque / this.inertia;
+            torqueApplied = true;
+        }
     }
 
     // Top wall
@@ -138,9 +168,15 @@ class Circle {
         this.pos.y = BOUNDS.top + this.radius;
         this.prevPos.y = this.pos.y + vy * -BOUNCE;
 
-        this.angularVelocity += vx * wallFrictionTorque / this.inertia;
+        if (Math.abs(vx) > velocityThreshold && !torqueApplied) {
+            this.angularVelocity += vx * wallFrictionTorque / this.inertia;
+            torqueApplied = true;
+        }
     }
-    }
+
+    // Apply small rolling resistance to dampen endless spin
+    this.angularVelocity *= 0.98;
+}
 
     draw() {
         const colors = COLOR_PAIRS[this.level] || { fill: "#ccc", dark: "#666" };
