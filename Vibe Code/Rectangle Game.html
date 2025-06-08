@@ -45,7 +45,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 const GRAVITY = 0.2;
-const NUM_SQUARES = 10;
+const NUM_SQUARES = 50;
 const MIN_SIZE = 30;
 const MAX_SIZE = 70;
 const DAMPING = 0.98;
@@ -76,7 +76,7 @@ class Vec2 {
 
   normalize() {
     const len = this.length();
-    return len === 0 ? new Vec2(0, 0) : new Vec2(this.x / len, this.y / len);
+    return len === 0 ? new Vec2(0, 0) : this.scale(1 / len);
   }
 
   rotate(angle) {
@@ -132,8 +132,13 @@ class Square {
     this.velocity.y += GRAVITY;
     this.pos = this.pos.add(this.velocity);
     this.angle += this.angularVelocity;
+
     this.velocity = this.velocity.scale(DAMPING);
     this.angularVelocity *= DAMPING;
+
+    // Cap rotation speed to prevent instability
+    this.angularVelocity = Math.max(-0.5, Math.min(0.5, this.angularVelocity));
+
     this.updateVertices();
     this.enforceBounds();
   }
@@ -166,10 +171,9 @@ class Square {
     const angle = this.angle % (2 * Math.PI);
     const normalizedAngle = ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-    const ANGLE_THRESHOLD = 0.03;     // radians ~1.7°
+    const ANGLE_THRESHOLD = 0.03;
     const ANGULAR_VELOCITY_THRESHOLD = 0.01;
 
-    // If close to 0 and stable, snap to 0
     if (Math.abs(normalizedAngle) < ANGLE_THRESHOLD &&
         Math.abs(this.angularVelocity) < ANGULAR_VELOCITY_THRESHOLD) {
       this.angle -= normalizedAngle;
@@ -177,14 +181,12 @@ class Square {
       return;
     }
 
-  // Otherwise, use soft torque toward 0
-  const stiffness = 0.02;
-  const damping = 0.15;
-  const torque = -normalizedAngle * stiffness - this.angularVelocity * damping;
+    const stiffness = 0.02;
+    const damping = 0.15;
+    const torque = -normalizedAngle * stiffness - this.angularVelocity * damping;
 
-  this.angularVelocity += torque;
-}
-
+    this.angularVelocity += torque;
+  }
 
   draw(ctx) {
     this.updateVertices();
@@ -207,7 +209,7 @@ class Square {
   }
 }
 
-// SAT helpers
+// --- SAT Collision Detection with MTV ---
 function projectPolygon(axis, vertices) {
   let min = Vec2.dot(axis, vertices[0]);
   let max = min;
@@ -219,69 +221,66 @@ function projectPolygon(axis, vertices) {
   return { min, max };
 }
 
-function overlapOnAxis(axis, vertsA, vertsB) {
-  const projA = projectPolygon(axis, vertsA);
-  const projB = projectPolygon(axis, vertsB);
-  return projA.max >= projB.min && projB.max >= projA.min;
-}
-
 function getAxes(triangle) {
   const axes = [];
   for (let i = 0; i < triangle.length; i++) {
     const p1 = triangle[i];
     const p2 = triangle[(i + 1) % triangle.length];
     const edge = p2.sub(p1);
-    const normal = new Vec2(-edge.y, edge.x);
-    const len = normal.length();
-    axes.push(new Vec2(normal.x / len, normal.y / len));
+    const normal = new Vec2(-edge.y, edge.x).normalize();
+    axes.push(normal);
   }
   return axes;
 }
 
 function triangleSATCollision(triA, triB) {
   const axes = [...getAxes(triA), ...getAxes(triB)];
+
+  let minOverlap = Infinity;
+  let smallestAxis = null;
+
   for (const axis of axes) {
-    if (!overlapOnAxis(axis, triA, triB)) return false;
+    const projA = projectPolygon(axis, triA);
+    const projB = projectPolygon(axis, triB);
+
+    const overlap = Math.min(projA.max, projB.max) - Math.max(projA.min, projB.min);
+    if (overlap <= 0) return null;
+
+    if (overlap < minOverlap) {
+      minOverlap = overlap;
+      smallestAxis = axis;
+    }
   }
-  return true;
+
+  return smallestAxis.scale(minOverlap);
 }
 
-// Collision resolution
-function applyCollisionResponse(a, b, contactPoint) {
-  const pushDir = a.pos.sub(b.pos);
-  const dist = Math.max(pushDir.length(), 0.001);
-  const resolveVec = pushDir.normalize().scale(1);
-
-  a.velocity = a.velocity.add(resolveVec.scale(0.1));
-  b.velocity = b.velocity.sub(resolveVec.scale(0.1));
-
-  const ra = contactPoint.sub(a.pos);
-  const rb = contactPoint.sub(b.pos);
-
-  const torqueA = (ra.x * resolveVec.y - ra.y * resolveVec.x);
-  const torqueB = (rb.x * -resolveVec.y - rb.y * -resolveVec.x);
-
-  a.angularVelocity += torqueA / a.inertia;
-  b.angularVelocity += torqueB / b.inertia;
-
-  a.pos = a.pos.add(resolveVec.scale(0.5));
-  b.pos = b.pos.sub(resolveVec.scale(0.5));
-}
-
+// --- Collision Resolution ---
 function resolveCollisions() {
-  for (let i = 0; i < squares.length; i++) {
-    for (let j = i + 1; j < squares.length; j++) {
-      const a = squares[i];
-      const b = squares[j];
-      const trisA = a.getTriangles();
-      const trisB = b.getTriangles();
+  const ITERATIONS = 5;
 
-      for (const triA of trisA) {
-        for (const triB of trisB) {
-          if (triangleSATCollision(triA, triB)) {
-            const contactPoint = a.pos.add(b.pos).scale(0.5);
-            applyCollisionResponse(a, b, contactPoint);
-            break;
+  for (let iter = 0; iter < ITERATIONS; iter++) {
+    for (let i = 0; i < squares.length; i++) {
+      for (let j = i + 1; j < squares.length; j++) {
+        const a = squares[i];
+        const b = squares[j];
+        const trisA = a.getTriangles();
+        const trisB = b.getTriangles();
+
+        for (const triA of trisA) {
+          for (const triB of trisB) {
+            const mtv = triangleSATCollision(triA, triB);
+            if (mtv) {
+              const correction = mtv.scale(0.5);
+              a.pos = a.pos.add(correction);
+              b.pos = b.pos.sub(correction);
+
+              a.velocity = a.velocity.add(correction.scale(0.1));
+              b.velocity = b.velocity.sub(correction.scale(0.1));
+
+              a.updateVertices();
+              b.updateVertices();
+            }
           }
         }
       }
@@ -289,6 +288,7 @@ function resolveCollisions() {
   }
 }
 
+// --- Initialization ---
 function random(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -297,12 +297,13 @@ function createSquares() {
   for (let i = 0; i < NUM_SQUARES; i++) {
     const size = random(MIN_SIZE, MAX_SIZE);
     const x = random(size, canvas.width - size);
-    const y = random(size, canvas.height / 2);
+    const y = random(0, canvas.height / 2);
     const angle = random(0, Math.PI * 2);
     squares.push(new Square(x, y, size, angle));
   }
 }
 
+// --- Main Loop ---
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
