@@ -113,6 +113,7 @@ class Square {
     this.velocity.y += GRAVITY;
     this.pos = this.pos.add(this.velocity);
     this.angle += this.angularVelocity;
+
     this.velocity = this.velocity.scale(DAMPING);
     this.angularVelocity *= DAMPING;
     this.angularVelocity = Math.max(-0.5, Math.min(0.5, this.angularVelocity));
@@ -202,7 +203,7 @@ class Square {
   }
 }
 
-// --- SAT with MTV ---
+// SAT + MTV
 function projectPolygon(axis, verts) {
   let min = Vec2.dot(axis, verts[0]);
   let max = min;
@@ -249,7 +250,7 @@ function isRestingContact(a, b, mtv) {
   return vertical && bAbove && speed < 1.0;
 }
 
-// --- Collision Resolution with depth compensation ---
+// Updated collision resolution
 function resolveCollisions() {
   const ITERATIONS = 5;
   for (let iter = 0; iter < ITERATIONS; iter++) {
@@ -265,13 +266,27 @@ function resolveCollisions() {
             const mtv = triangleSATCollision(triA, triB);
             if (mtv) {
               const penetration = mtv.length();
-              const correctionStrength = Math.min(1, Math.sqrt(penetration) * 0.2);
-              let pushA = mtv.scale(0.1 * correctionStrength);
-              let pushB = mtv.scale(0.9 * correctionStrength);
+
+              // Ignore minor overlaps
+              if (penetration < 0.5) continue;
+
+              const maxCorrection = 2.0;
+              const limitedMTV = mtv.normalize().scale(Math.min(penetration, maxCorrection));
+
+              // Adaptive correction strength
+              let correctionStrength = 0.3;
+              if (penetration > 5) correctionStrength = 0.1;
+              else if (penetration > 2) correctionStrength = 0.2;
+              else if (penetration < 1) correctionStrength = 0.5;
+
+              let pushA = limitedMTV.scale(0.1 * correctionStrength);
+              let pushB = limitedMTV.scale(0.9 * correctionStrength);
+
               if (isRestingContact(a, b, mtv)) {
                 pushA = pushA.scale(0.3);
                 pushB = pushB.scale(0.3);
               }
+
               a.pos = a.pos.add(pushA);
               b.pos = b.pos.sub(pushB);
               a.velocity = a.velocity.add(pushA.scale(0.05));
@@ -286,7 +301,7 @@ function resolveCollisions() {
   }
 }
 
-// --- Init ---
+// Init
 function random(min, max) {
   return Math.random() * (max - min) + min;
 }
