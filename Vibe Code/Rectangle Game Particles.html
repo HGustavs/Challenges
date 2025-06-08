@@ -53,6 +53,18 @@ The rectangle is overcorrecting and rotating violently. We want the angle adjust
         Estimate angular velocity from angle difference and apply friction.
         Avoid directly subtracting from angle in the correction loop — instead use physical damping over time.
 
+Now we are back to the same condition where the rectangle is resting on one corner and not rotating to come to rest.
+    When a corner hits a wall, generate torque to rotate the rectangle into a more stable (resting) position — without deforming the shape and without violent reactions.
+    Solution: Torque From Collision Impulses
+    We'll:
+        Detect how much each corner penetrates the boundary.
+        Compute a reaction force at the corner (to push it inside).
+        Apply this force to:
+            Translate the center (linear velocity).
+            Add angular velocity, based on the lever arm from center to corner.
+    This mimics a proper reaction torque and naturally allows the rectangle to rotate and settle.
+
+
 */
 
 const canvas = document.getElementById("canvas");
@@ -78,77 +90,78 @@ class RigidRectangle {
 
   computePoints(pos = this.pos, angle = this.angle) {
     const hw = this.w / 2, hh = this.h / 2;
-    const c = Math.cos(angle);
-    const s = Math.sin(angle);
+    const c = Math.cos(angle), s = Math.sin(angle);
 
-    const corners = [
+    const local = [
       {x: -hw, y: -hh},
       {x: hw, y: -hh},
       {x: hw, y: hh},
       {x: -hw, y: hh}
     ];
 
-    return corners.map(p => ({
+    return local.map(p => ({
       x: pos.x + p.x * c - p.y * s,
-      y: pos.y + p.x * s + p.y * c
+      y: pos.y + p.x * s + p.y * c,
+      lx: p.x, ly: p.y // local coordinates
     }));
   }
 
   verlet() {
-    // Linear velocity
+    // Compute velocities
     const vx = (this.pos.x - this.oldPos.x) * linearFriction;
     const vy = (this.pos.y - this.oldPos.y) * linearFriction + gravity;
-
-    // Angular velocity
     const va = (this.angle - this.oldAngle) * angularFriction;
 
-    // Store current
+    // Store current as old
     this.oldPos.x = this.pos.x;
     this.oldPos.y = this.pos.y;
     this.oldAngle = this.angle;
 
-    // Integrate motion
+    // Integrate position
     this.pos.x += vx;
     this.pos.y += vy;
     this.angle += va;
 
-    // Gently dampen rotation if out of bounds
-    this.correctToBounds();
+    // Reaction forces may add velocity/rotation:
+    this.applyBoundaryForces();
 
-    // Update points
+    // Recompute points from new state
     this.points = this.computePoints();
   }
 
-  correctToBounds() {
-    let pts = this.computePoints();
-    let maxIter = 10;
-    while (maxIter-- > 0) {
-      let corrected = false;
-      pts = this.computePoints();
+  applyBoundaryForces() {
+    let torque = 0;
+    let impulse = { x: 0, y: 0 };
 
-      for (let p of pts) {
-        let dx = 0, dy = 0;
-        if (p.x < 0) dx = 0 - p.x;
-        if (p.x > canvas.width) dx = canvas.width - p.x;
-        if (p.y < 0) dy = 0 - p.y;
-        if (p.y > canvas.height) dy = canvas.height - p.y;
+    const stiffness = 0.5;
+    const points = this.computePoints();
 
-        if (dx !== 0 || dy !== 0) {
-          // Shift center only, don't directly touch angle
-          this.pos.x += dx * 0.5;
-          this.pos.y += dy * 0.5;
+    for (let p of points) {
+      let fx = 0, fy = 0;
 
-          // Slightly reduce angular velocity to help settle
-          const va = (this.angle - this.oldAngle) * 0.9;
-          this.angle = this.oldAngle + va;
+      if (p.x < 0) fx = -p.x;
+      else if (p.x > canvas.width) fx = canvas.width - p.x;
 
-          corrected = true;
-          break;
-        }
+      if (p.y < 0) fy = -p.y;
+      else if (p.y > canvas.height) fy = canvas.height - p.y;
+
+      if (fx !== 0 || fy !== 0) {
+        // Add impulse to center
+        impulse.x += fx;
+        impulse.y += fy;
+
+        // Torque = r x F
+        torque += (p.lx * fy - p.ly * fx);
       }
-
-      if (!corrected) break;
     }
+
+    // Apply force to center position (linear correction)
+    this.pos.x += impulse.x * stiffness;
+    this.pos.y += impulse.y * stiffness;
+
+    // Apply torque (angular correction)
+    const angularVel = (this.angle - this.oldAngle) + torque * 0.001;
+    this.angle = this.oldAngle + angularVel;
   }
 
   draw() {
@@ -163,7 +176,7 @@ class RigidRectangle {
   }
 }
 
-const rect = new RigidRectangle(250, 50, 100, 60, 0.5);
+const rect = new RigidRectangle(250, 50, 100, 60, 0.6);
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
