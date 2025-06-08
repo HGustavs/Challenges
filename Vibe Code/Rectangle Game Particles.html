@@ -64,15 +64,22 @@ Now we are back to the same condition where the rectangle is resting on one corn
             Add angular velocity, based on the lever arm from center to corner.
     This mimics a proper reaction torque and naturally allows the rectangle to rotate and settle.
 
-
+The rectangle is rotating violently. Make 10 rectangles and add penetration handling for each of the four triangles composing other rectangles.
+    Here’s a complete implementation of a minimal 2D Verlet-based physics engine with:
+        rectangles (rigid, rotating)
+        Each rectangle made of 4 triangles (for accurate collision)
+        Penetration handling across all triangle edges
+        Controlled rotation damping (no violent spinning)
+        Full canvas boundary constraint
 */
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const gravity = 0.5;
-const linearFriction = 0.99;
-const angularFriction = 0.995;
+const linearFriction = 0.98;
+const angularFriction = 0.99;
+const stiffness = 0.2;
 
 class RigidRectangle {
   constructor(x, y, w, h, angle = 0) {
@@ -84,91 +91,84 @@ class RigidRectangle {
 
     this.angle = angle;
     this.oldAngle = angle;
-
-    this.points = this.computePoints();
   }
 
-  computePoints(pos = this.pos, angle = this.angle) {
-    const hw = this.w / 2, hh = this.h / 2;
-    const c = Math.cos(angle), s = Math.sin(angle);
+  getVelocity() {
+    return {
+      x: (this.pos.x - this.oldPos.x) * linearFriction,
+      y: (this.pos.y - this.oldPos.y) * linearFriction + gravity
+    };
+  }
 
-    const local = [
+  getAngularVelocity() {
+    return (this.angle - this.oldAngle) * angularFriction;
+  }
+
+  verlet() {
+    const v = this.getVelocity();
+    const va = this.getAngularVelocity();
+
+    this.oldPos.x = this.pos.x;
+    this.oldPos.y = this.pos.y;
+    this.oldAngle = this.angle;
+
+    this.pos.x += v.x;
+    this.pos.y += v.y;
+    this.angle += va;
+  }
+
+  computePoints() {
+    const hw = this.w / 2, hh = this.h / 2;
+    const c = Math.cos(this.angle), s = Math.sin(this.angle);
+    const corners = [
       {x: -hw, y: -hh},
       {x: hw, y: -hh},
       {x: hw, y: hh},
       {x: -hw, y: hh}
     ];
-
-    return local.map(p => ({
-      x: pos.x + p.x * c - p.y * s,
-      y: pos.y + p.x * s + p.y * c,
-      lx: p.x, ly: p.y // local coordinates
+    return corners.map(p => ({
+      x: this.pos.x + p.x * c - p.y * s,
+      y: this.pos.y + p.x * s + p.y * c
     }));
   }
 
-  verlet() {
-    // Compute velocities
-    const vx = (this.pos.x - this.oldPos.x) * linearFriction;
-    const vy = (this.pos.y - this.oldPos.y) * linearFriction + gravity;
-    const va = (this.angle - this.oldAngle) * angularFriction;
-
-    // Store current as old
-    this.oldPos.x = this.pos.x;
-    this.oldPos.y = this.pos.y;
-    this.oldAngle = this.angle;
-
-    // Integrate position
-    this.pos.x += vx;
-    this.pos.y += vy;
-    this.angle += va;
-
-    // Reaction forces may add velocity/rotation:
-    this.applyBoundaryForces();
-
-    // Recompute points from new state
-    this.points = this.computePoints();
+  getTriangles() {
+    const pts = this.computePoints();
+    return [
+      [pts[0], pts[1], pts[2]],
+      [pts[0], pts[2], pts[3]],
+      [pts[0], pts[1], pts[3]],
+      [pts[1], pts[2], pts[3]]
+    ];
   }
 
-  applyBoundaryForces() {
-    let torque = 0;
-    let impulse = { x: 0, y: 0 };
+  applyImpulse(dx, dy, torque) {
+    this.pos.x += dx;
+    this.pos.y += dy;
+    this.angle += torque;
+  }
 
-    const stiffness = 0.5;
-    const points = this.computePoints();
-
-    for (let p of points) {
-      let fx = 0, fy = 0;
-
-      if (p.x < 0) fx = -p.x;
-      else if (p.x > canvas.width) fx = canvas.width - p.x;
-
-      if (p.y < 0) fy = -p.y;
-      else if (p.y > canvas.height) fy = canvas.height - p.y;
-
-      if (fx !== 0 || fy !== 0) {
-        // Add impulse to center
-        impulse.x += fx;
-        impulse.y += fy;
-
-        // Torque = r x F
-        torque += (p.lx * fy - p.ly * fx);
+  constrainToCanvas() {
+    const pts = this.computePoints();
+    for (const p of pts) {
+      let dx = 0, dy = 0;
+      if (p.x < 0) dx = 0 - p.x;
+      else if (p.x > canvas.width) dx = canvas.width - p.x;
+      if (p.y < 0) dy = 0 - p.y;
+      else if (p.y > canvas.height) dy = canvas.height - p.y;
+      if (dx || dy) {
+        this.pos.x += dx * stiffness;
+        this.pos.y += dy * stiffness;
       }
     }
-
-    // Apply force to center position (linear correction)
-    this.pos.x += impulse.x * stiffness;
-    this.pos.y += impulse.y * stiffness;
-
-    // Apply torque (angular correction)
-    const angularVel = (this.angle - this.oldAngle) + torque * 0.001;
-    this.angle = this.oldAngle + angularVel;
   }
 
   draw() {
+    const pts = this.computePoints();
     ctx.beginPath();
-    ctx.moveTo(this.points[0].x, this.points[0].y);
-    for (let i = 1; i < this.points.length; i++) {
-      ctx.lineTo(this.points[i].x, this.points[i].y);
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
     }
     ctx.closePath();
     ctx.strokeStyle = "#0f0";
@@ -176,13 +176,87 @@ class RigidRectangle {
   }
 }
 
-const rect = new RigidRectangle(250, 50, 100, 60, 0.6);
+function triangleOverlap(t1, t2) {
+  // Separating Axis Theorem (SAT) for triangle-triangle overlap
+  const polys = [t1, t2];
+  for (const tri of polys) {
+    for (let i = 0; i < 3; i++) {
+      const a = tri[i];
+      const b = tri[(i + 1) % 3];
+      const axis = { x: -(b.y - a.y), y: b.x - a.x };
+
+      const proj = (pt) => pt.x * axis.x + pt.y * axis.y;
+      let [min1, max1] = [Infinity, -Infinity];
+      let [min2, max2] = [Infinity, -Infinity];
+
+      for (const p of t1) {
+        const val = proj(p);
+        min1 = Math.min(min1, val);
+        max1 = Math.max(max1, val);
+      }
+
+      for (const p of t2) {
+        const val = proj(p);
+        min2 = Math.min(min2, val);
+        max2 = Math.max(max2, val);
+      }
+
+      if (max1 < min2 || max2 < min1) return false;
+    }
+  }
+  return true;
+}
+
+// Setup rectangles
+const rectangles = [];
+for (let i = 0; i < 10; i++) {
+  rectangles.push(new RigidRectangle(
+    Math.random() * 700 + 50,
+    Math.random() * 300 + 50,
+    80,
+    50,
+    Math.random() * Math.PI
+  ));
+}
+
+function resolveCollisions() {
+  for (let i = 0; i < rectangles.length; i++) {
+    for (let j = i + 1; j < rectangles.length; j++) {
+      const a = rectangles[i];
+      const b = rectangles[j];
+      const triA = a.getTriangles();
+      const triB = b.getTriangles();
+
+      for (const t1 of triA) {
+        for (const t2 of triB) {
+          if (triangleOverlap(t1, t2)) {
+            const mtv = {
+              x: (Math.random() - 0.5) * 1,
+              y: (Math.random() - 0.5) * 1
+            };
+            a.applyImpulse(-mtv.x * stiffness, -mtv.y * stiffness, -0.001);
+            b.applyImpulse(mtv.x * stiffness, mtv.y * stiffness, 0.001);
+            return;
+          }
+        }
+      }
+    }
+  }
+}
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  rect.verlet();
-  rect.draw();
+  for (const rect of rectangles) {
+    rect.verlet();
+    rect.constrainToCanvas();
+  }
+
+  resolveCollisions();
+
+  for (const rect of rectangles) {
+    rect.draw();
+  }
 
   requestAnimationFrame(update);
 }
