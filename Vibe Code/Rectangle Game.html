@@ -57,22 +57,37 @@ class Vec2 {
     this.x = x;
     this.y = y;
   }
+
   add(v) {
     return new Vec2(this.x + v.x, this.y + v.y);
   }
+
   sub(v) {
     return new Vec2(this.x - v.x, this.y - v.y);
   }
+
   scale(s) {
     return new Vec2(this.x * s, this.y * s);
   }
-  normalize() {
-    const len = Math.hypot(this.x, this.y);
-    return len === 0 ? new Vec2(0, 0) : new Vec2(this.x / len, this.y / len);
-  }
+
   length() {
     return Math.hypot(this.x, this.y);
   }
+
+  normalize() {
+    const len = this.length();
+    return len === 0 ? new Vec2(0, 0) : new Vec2(this.x / len, this.y / len);
+  }
+
+  rotate(angle) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return new Vec2(
+      this.x * cos - this.y * sin,
+      this.x * sin + this.y * cos
+    );
+  }
+
   static dot(a, b) {
     return a.x * b.x + a.y * b.y;
   }
