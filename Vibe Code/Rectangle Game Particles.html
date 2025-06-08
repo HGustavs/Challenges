@@ -119,17 +119,16 @@ The complete code has been added and cleaned up with all the new features:
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+canvas.width = innerWidth / 2;
+canvas.height = innerHeight / 2;
 
-// --- Constants ---
 const GRAVITY = 0.25;
 const LINEAR_FRICTION = 0.95;
 const ANGULAR_FRICTION = 0.9;
-const STATIC_CORRECTION_THRESHOLD = 0.005;
 const REST_THRESHOLD = 0.05;
 const REST_FRAMES_REQUIRED = 10;
 const GLOBAL_MTV_DECAY = 0.2;
+const REST_IMPULSE_SCALE = 0.1;
 
 class RigidRectangle {
   constructor(x, y, w, h, angle = 0) {
@@ -153,16 +152,13 @@ class RigidRectangle {
 
   verlet() {
     if (this.asleep) return;
-
     const v = this.getVelocity();
     this.oldPos = { ...this.pos };
     this.oldAngle = this.angle;
-
     this.pos.x += v.x;
     this.pos.y += v.y + GRAVITY;
     this.angle += this.angularVelocity;
-
-    this.clampToBounds();
+    this.enforceBoundaryConstraints();
     this.detectRest();
   }
 
@@ -185,26 +181,29 @@ class RigidRectangle {
     this.asleep = false;
   }
 
-  clampToBounds() {
+  enforceBoundaryConstraints() {
     const pts = this.getPoints();
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const center = this.pos;
+    let totalDX = 0, totalDY = 0, totalDA = 0;
     for (const p of pts) {
-      if (p.x < minX) minX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y > maxY) maxY = p.y;
-    }
-    const dx = (minX < 0) ? -minX : (maxX > canvas.width ? canvas.width - maxX : 0);
-    const dy = (minY < 0) ? -minY : (maxY > canvas.height ? canvas.height - maxY : 0);
-    this.pos.x += dx;
-    this.pos.y += dy;
-  }
+      let dx = 0, dy = 0;
+      if (p.x < 0) dx = -p.x;
+      else if (p.x > canvas.width) dx = canvas.width - p.x;
+      if (p.y < 0) dy = -p.y;
+      else if (p.y > canvas.height) dy = canvas.height - p.y;
 
-  computeCurrentAngle() {
-    const pts = this.getPoints();
-    const dx = pts[1].x - pts[0].x;
-    const dy = pts[1].y - pts[0].y;
-    return Math.atan2(dy, dx);
+      if (dx !== 0 || dy !== 0) {
+        totalDX += dx;
+        totalDY += dy;
+
+        const rx = p.x - center.x;
+        const ry = p.y - center.y;
+        const perp = (dx * -ry + dy * rx) / (rx * rx + ry * ry + 0.0001);
+        totalDA += perp * 0.1;
+      }
+    }
+
+    this.applyImpulse(totalDX * 0.25, totalDY * 0.25, totalDA);
   }
 
   updateAngularVelocity() {
@@ -212,6 +211,13 @@ class RigidRectangle {
     this.angularVelocity = (newAngle - this.oldAngle) * ANGULAR_FRICTION;
     this.oldAngle = this.angle;
     this.angle = newAngle;
+  }
+
+  computeCurrentAngle() {
+    const pts = this.getPoints();
+    const dx = pts[1].x - pts[0].x;
+    const dy = pts[1].y - pts[0].y;
+    return Math.atan2(dy, dx);
   }
 
   getPoints() {
@@ -247,6 +253,7 @@ class RigidRectangle {
     ctx.closePath();
     ctx.stroke();
 
+    // Draw triangles
     const tris = this.getTriangles();
     ctx.strokeStyle = "#0f08";
     for (const t of tris) {
@@ -336,18 +343,21 @@ function resolveCollisions(iterations = 4) {
           for (const tb of b.getTriangles()) {
             const mtv = triangleMTV(ta, tb);
             if (mtv) {
-              const dx = mtv.x * GLOBAL_MTV_DECAY;
-              const dy = mtv.y * GLOBAL_MTV_DECAY;
+              let dx = mtv.x * GLOBAL_MTV_DECAY;
+              let dy = mtv.y * GLOBAL_MTV_DECAY;
 
-              // Debug MTV
+              const aScale = a.asleep ? REST_IMPULSE_SCALE : 0.5;
+              const bScale = b.asleep ? REST_IMPULSE_SCALE : 0.5;
+
+              a.applyImpulse(-dx * aScale, -dy * aScale, -0.0005);
+              b.applyImpulse(dx * bScale, dy * bScale, 0.0005);
+
+              // Debug MTV line
               ctx.strokeStyle = "lime";
               ctx.beginPath();
               ctx.moveTo(a.pos.x, a.pos.y);
               ctx.lineTo(a.pos.x + dx * 10, a.pos.y + dy * 10);
               ctx.stroke();
-
-              a.applyImpulse(-dx, -dy, -0.0005);
-              b.applyImpulse(dx, dy, 0.0005);
             }
           }
         }
