@@ -58,39 +58,19 @@ class Vec2 {
     this.y = y;
   }
 
-  add(v) {
-    return new Vec2(this.x + v.x, this.y + v.y);
-  }
-
-  sub(v) {
-    return new Vec2(this.x - v.x, this.y - v.y);
-  }
-
-  scale(s) {
-    return new Vec2(this.x * s, this.y * s);
-  }
-
-  length() {
-    return Math.hypot(this.x, this.y);
-  }
-
+  add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
+  sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
+  scale(s) { return new Vec2(this.x * s, this.y * s); }
+  length() { return Math.hypot(this.x, this.y); }
   normalize() {
     const len = this.length();
     return len === 0 ? new Vec2(0, 0) : this.scale(1 / len);
   }
-
   rotate(angle) {
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    return new Vec2(
-      this.x * cos - this.y * sin,
-      this.x * sin + this.y * cos
-    );
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    return new Vec2(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
   }
-
-  static dot(a, b) {
-    return a.x * b.x + a.y * b.y;
-  }
+  static dot(a, b) { return a.x * b.x + a.y * b.y; }
 }
 
 class Square {
@@ -110,10 +90,8 @@ class Square {
   getVertices() {
     const half = this.size / 2;
     const points = [
-      new Vec2(-half, -half),
-      new Vec2(half, -half),
-      new Vec2(half, half),
-      new Vec2(-half, half)
+      new Vec2(-half, -half), new Vec2(half, -half),
+      new Vec2(half, half), new Vec2(-half, half)
     ];
     return points.map(p => p.rotate(this.angle).add(this.pos));
   }
@@ -136,19 +114,15 @@ class Square {
     this.velocity.y += GRAVITY;
     this.pos = this.pos.add(this.velocity);
     this.angle += this.angularVelocity;
-
     this.velocity = this.velocity.scale(DAMPING);
     this.angularVelocity *= DAMPING;
-
     this.angularVelocity = Math.max(-0.5, Math.min(0.5, this.angularVelocity));
-
     this.updateVertices();
     this.enforceBounds();
   }
 
   enforceBounds() {
     const half = this.size / 2;
-
     if (this.pos.x < half) {
       this.pos.x = half;
       this.velocity.x *= -0.5;
@@ -156,7 +130,6 @@ class Square {
       this.pos.x = canvas.width - half;
       this.velocity.x *= -0.5;
     }
-
     if (this.pos.y > canvas.height - half) {
       this.pos.y = canvas.height - half;
       this.velocity.y *= -0.5;
@@ -164,9 +137,9 @@ class Square {
   }
 
   trySleep() {
-    const lowVelocity = this.velocity.length() < 0.1;
-    const lowRotation = Math.abs(this.angularVelocity) < 0.01;
-    if (lowVelocity && lowRotation) {
+    const lowVel = this.velocity.length() < 0.1;
+    const lowRot = Math.abs(this.angularVelocity) < 0.01;
+    if (lowVel && lowRot) {
       this.sleepCounter++;
       if (this.sleepCounter > 30) {
         this.sleeping = true;
@@ -182,34 +155,29 @@ class Square {
   isResting() {
     const half = this.size / 2;
     const nearBottom = Math.abs(this.pos.y + half - canvas.height) < 2;
-    const almostStill = this.velocity.length() < 0.3 && Math.abs(this.angularVelocity) < 0.01;
-    return nearBottom || almostStill;
+    const still = this.velocity.length() < 0.3 && Math.abs(this.angularVelocity) < 0.01;
+    return nearBottom || still;
   }
 
   autoStraighten() {
     const angle = this.angle % (2 * Math.PI);
-    const normalizedAngle = ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
-
+    const normAngle = ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
     const ANGLE_THRESHOLD = 0.03;
     const ANGULAR_VELOCITY_THRESHOLD = 0.01;
-
-    if (Math.abs(normalizedAngle) < ANGLE_THRESHOLD &&
+    if (Math.abs(normAngle) < ANGLE_THRESHOLD &&
         Math.abs(this.angularVelocity) < ANGULAR_VELOCITY_THRESHOLD) {
-      this.angle -= normalizedAngle;
+      this.angle -= normAngle;
       this.angularVelocity = 0;
       return;
     }
-
     const stiffness = 0.02;
     const damping = 0.15;
-    const torque = -normalizedAngle * stiffness - this.angularVelocity * damping;
-
+    const torque = -normAngle * stiffness - this.angularVelocity * damping;
     this.angularVelocity += torque;
   }
 
   draw(ctx) {
     this.updateVertices();
-
     ctx.fillStyle = '#0f0';
     ctx.beginPath();
     ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
@@ -235,24 +203,22 @@ class Square {
   }
 }
 
-// --- SAT Collision Detection with MTV ---
-function projectPolygon(axis, vertices) {
-  let min = Vec2.dot(axis, vertices[0]);
+// --- SAT with MTV ---
+function projectPolygon(axis, verts) {
+  let min = Vec2.dot(axis, verts[0]);
   let max = min;
-  for (let i = 1; i < vertices.length; i++) {
-    const p = Vec2.dot(axis, vertices[i]);
+  for (let i = 1; i < verts.length; i++) {
+    const p = Vec2.dot(axis, verts[i]);
     if (p < min) min = p;
     if (p > max) max = p;
   }
   return { min, max };
 }
 
-function getAxes(triangle) {
+function getAxes(tri) {
   const axes = [];
-  for (let i = 0; i < triangle.length; i++) {
-    const p1 = triangle[i];
-    const p2 = triangle[(i + 1) % triangle.length];
-    const edge = p2.sub(p1);
+  for (let i = 0; i < tri.length; i++) {
+    const edge = tri[(i + 1) % tri.length].sub(tri[i]);
     const normal = new Vec2(-edge.y, edge.x).normalize();
     axes.push(normal);
   }
@@ -261,59 +227,58 @@ function getAxes(triangle) {
 
 function triangleSATCollision(triA, triB) {
   const axes = [...getAxes(triA), ...getAxes(triB)];
-
   let minOverlap = Infinity;
   let smallestAxis = null;
-
   for (const axis of axes) {
     const projA = projectPolygon(axis, triA);
     const projB = projectPolygon(axis, triB);
-
     const overlap = Math.min(projA.max, projB.max) - Math.max(projA.min, projB.min);
     if (overlap <= 0) return null;
-
     if (overlap < minOverlap) {
       minOverlap = overlap;
       smallestAxis = axis;
     }
   }
-
   return smallestAxis.scale(minOverlap);
+}
+
+// --- Resting Contact Check ---
+function isRestingContact(a, b, mtv) {
+  const upward = new Vec2(0, -1);
+  const mtvDir = mtv.normalize();
+  const vertical = Vec2.dot(mtvDir, upward) > 0.7;
+  const bAbove = b.pos.y < a.pos.y;
+  const speed = b.velocity.sub(a.velocity).length();
+  return vertical && bAbove && speed < 1.0;
 }
 
 // --- Collision Resolution ---
 function resolveCollisions() {
   const ITERATIONS = 5;
-
-  // Sort once per iteration to resolve bottom-up
   for (let iter = 0; iter < ITERATIONS; iter++) {
-    const sortedSquares = [...squares].sort((a, b) => b.pos.y - a.pos.y); // bottom to top
-
-    for (let i = 0; i < sortedSquares.length; i++) {
-      const a = sortedSquares[i];
-      for (let j = i + 1; j < sortedSquares.length; j++) {
-        const b = sortedSquares[j];
-
+    const sorted = [...squares].sort((a, b) => b.pos.y - a.pos.y);
+    for (let i = 0; i < sorted.length; i++) {
+      const a = sorted[i];
+      for (let j = i + 1; j < sorted.length; j++) {
+        const b = sorted[j];
         const trisA = a.getTriangles();
         const trisB = b.getTriangles();
-
         for (const triA of trisA) {
           for (const triB of trisB) {
             const mtv = triangleSATCollision(triA, triB);
             if (mtv) {
-              // Always push top square (b) more than bottom (a)
+              const isResting = isRestingContact(a, b, mtv);
               const correction = mtv;
-
-              const totalPush = correction.scale(1.0);
-              const pushA = totalPush.scale(0.1); // push bottom slightly
-              const pushB = totalPush.scale(0.9); // push top mostly
-
+              let pushA = correction.scale(0.1);
+              let pushB = correction.scale(0.9);
+              if (isResting) {
+                pushA = pushA.scale(0.2);
+                pushB = pushB.scale(0.2);
+              }
               a.pos = a.pos.add(pushA);
               b.pos = b.pos.sub(pushB);
-
-              a.velocity = a.velocity.add(pushA.scale(0.1));
-              b.velocity = b.velocity.sub(pushB.scale(0.1));
-
+              a.velocity = a.velocity.add(pushA.scale(0.05));
+              b.velocity = b.velocity.sub(pushB.scale(0.05));
               a.updateVertices();
               b.updateVertices();
             }
@@ -324,7 +289,7 @@ function resolveCollisions() {
   }
 }
 
-// --- Setup ---
+// --- Init + Loop ---
 function random(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -339,24 +304,15 @@ function createSquares() {
   }
 }
 
-// --- Game Loop ---
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (const square of squares) {
-    square.applyPhysics();
-    square.trySleep();
-    if (square.isResting()) {
-      square.autoStraighten();
-    }
+  for (const s of squares) {
+    s.applyPhysics();
+    s.trySleep();
+    if (s.isResting()) s.autoStraighten();
   }
-
   resolveCollisions();
-
-  for (const square of squares) {
-    square.draw(ctx);
-  }
-
+  for (const s of squares) s.draw(ctx);
   requestAnimationFrame(gameLoop);
 }
 
