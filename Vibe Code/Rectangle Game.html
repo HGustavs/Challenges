@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Triangle Physics Squares</title>
+  <style>
+    canvas { background: #111; display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<script>
+
+/*
+
+Lets make a small game using javascript and html5 canvas and a minimal physics engine. The screen consists of a number of randomly placed squares. Each square is composed of two right angle triangles. Each square has a width from 30 to 70 pixels. A minimal physics engine makes sure that the squares do not overlap using collision detection of the triangles and overlapping constraints. The squares start with random rotation angles.
+
+🧱 Step-by-Step Plan
+    HTML Canvas Setup
+    Define the Square & Triangle Classes
+    Triangle-Based Collision Detection
+    Physics Loop to update positions and resolve overlaps
+    Rendering Loop to draw the scene
+
+
+*/
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const NUM_SQUARES = 10;
+const MIN_SIZE = 30;
+const MAX_SIZE = 70;
+
+const squares = [];
+
+class Vec2 {
+  constructor(x, y) { this.x = x; this.y = y; }
+  add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
+  sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
+  rotate(angle) {
+    return new Vec2(
+      this.x * Math.cos(angle) - this.y * Math.sin(angle),
+      this.x * Math.sin(angle) + this.y * Math.cos(angle)
+    );
+  }
+  static dot(a, b) { return a.x * b.x + a.y * b.y; }
+}
+
+class Square {
+  constructor(x, y, size, angle) {
+    this.pos = new Vec2(x, y);
+    this.size = size;
+    this.angle = angle;
+    this.vertices = this.getVertices();
+  }
+
+  getVertices() {
+    const half = this.size / 2;
+    const points = [
+      new Vec2(-half, -half),
+      new Vec2(half, -half),
+      new Vec2(half, half),
+      new Vec2(-half, half)
+    ];
+    return points.map(p => p.rotate(this.angle).add(this.pos));
+  }
+
+  updateVertices() {
+    this.vertices = this.getVertices();
+  }
+
+  draw(ctx) {
+    // Split into two triangles (0-1-2) and (2-3-0)
+    this.updateVertices();
+    ctx.fillStyle = '#0f0';
+    ctx.beginPath();
+    ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
+    ctx.lineTo(this.vertices[1].x, this.vertices[1].y);
+    ctx.lineTo(this.vertices[2].x, this.vertices[2].y);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#00f';
+    ctx.beginPath();
+    ctx.moveTo(this.vertices[2].x, this.vertices[2].y);
+    ctx.lineTo(this.vertices[3].x, this.vertices[3].y);
+    ctx.lineTo(this.vertices[0].x, this.vertices[0].y);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function random(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function createSquares() {
+  for (let i = 0; i < NUM_SQUARES; i++) {
+    const size = random(MIN_SIZE, MAX_SIZE);
+    const x = random(size, canvas.width - size);
+    const y = random(size, canvas.height - size);
+    const angle = random(0, Math.PI * 2);
+    const square = new Square(x, y, size, angle);
+    squares.push(square);
+  }
+}
+
+function isColliding(a, b) {
+  // AABB check for simplicity
+  const getAABB = (verts) => {
+    const xs = verts.map(v => v.x);
+    const ys = verts.map(v => v.y);
+    return {
+      minX: Math.min(...xs),
+      maxX: Math.max(...xs),
+      minY: Math.min(...ys),
+      maxY: Math.max(...ys),
+    };
+  };
+
+  const aBox = getAABB(a.vertices);
+  const bBox = getAABB(b.vertices);
+
+  return !(aBox.maxX < bBox.minX || aBox.minX > bBox.maxX ||
+           aBox.maxY < bBox.minY || aBox.minY > bBox.maxY);
+}
+
+function resolveCollisions() {
+  for (let i = 0; i < squares.length; i++) {
+    for (let j = i + 1; j < squares.length; j++) {
+      const a = squares[i];
+      const b = squares[j];
+      if (isColliding(a, b)) {
+        const pushDir = a.pos.sub(b.pos);
+        const push = pushDir;
+        const factor = 0.5;
+        a.pos = a.pos.add(pushDir);
+        b.pos = b.pos.sub(pushDir);
+        a.updateVertices();
+        b.updateVertices();
+      }
+    }
+  }
+}
+
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  resolveCollisions();
+  for (const square of squares) {
+    square.draw(ctx);
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+createSquares();
+gameLoop();
+
+</script>
+</body>
+</html>
+
+

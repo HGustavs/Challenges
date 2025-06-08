@@ -49,8 +49,9 @@ const ctx = canvas.getContext('2d');
 // ========== CONFIG ========== //
 const GRAVITY = 0.2;
 const FRICTION = 0.995;
-const ANGULAR_FRICTION = 0.98;
+const ANGULAR_FRICTION = 0.995; // slows spin slowly
 const BOUNCE = 0.9;
+
 const BOUNDS = {
     left: 0,
     right: canvas.width,
@@ -122,74 +123,64 @@ class Circle {
         this.angularVelocity *= ANGULAR_FRICTION;
     }
 
-applyConstraints() {
-    const vx = (this.pos.x - this.prevPos.x) * FRICTION;
-    const vy = (this.pos.y - this.prevPos.y) * FRICTION;
+    applyConstraints() {
+        const vx = (this.pos.x - this.prevPos.x) * FRICTION;
+        const vy = (this.pos.y - this.prevPos.y) * FRICTION;
 
-    let torqueApplied = false;
-    const wallFrictionTorque = 0.55;
-    const velocityThreshold = 0.2;
+        let torqueApplied = false;
+        const wallFrictionTorque = 0.4;
+        const velocityThreshold = 0.1;
 
-    // Right wall
-    if (this.pos.x + this.radius > BOUNDS.right) {
-        this.pos.x = BOUNDS.right - this.radius;
-        this.prevPos.x = this.pos.x + vx * -BOUNCE;
-
-        if (Math.abs(vy) > velocityThreshold && !torqueApplied) {
-            this.angularVelocity -= vy * wallFrictionTorque / this.inertia;
-            torqueApplied = true;
+        if (this.pos.x + this.radius > BOUNDS.right) {
+            this.pos.x = BOUNDS.right - this.radius;
+            this.prevPos.x = this.pos.x + vx * -BOUNCE;
+            if (Math.abs(vy) > velocityThreshold && !torqueApplied) {
+                this.angularVelocity += vy * wallFrictionTorque / this.inertia;
+                torqueApplied = true;
+            }
         }
-    }
 
-    // Left wall
-    if (this.pos.x - this.radius < BOUNDS.left) {
-        this.pos.x = BOUNDS.left + this.radius;
-        this.prevPos.x = this.pos.x + vx * -BOUNCE;
-
-        if (Math.abs(vy) > velocityThreshold && !torqueApplied) {
-            this.angularVelocity += vy * wallFrictionTorque / this.inertia;
-            torqueApplied = true;
+        if (this.pos.x - this.radius < BOUNDS.left) {
+            this.pos.x = BOUNDS.left + this.radius;
+            this.prevPos.x = this.pos.x + vx * -BOUNCE;
+            if (Math.abs(vy) > velocityThreshold && !torqueApplied) {
+                this.angularVelocity -= vy * wallFrictionTorque / this.inertia;
+                torqueApplied = true;
+            }
         }
-    }
 
-    // Bottom wall
-    if (this.pos.y + this.radius > BOUNDS.bottom) {
-        this.pos.y = BOUNDS.bottom - this.radius;
-        this.prevPos.y = this.pos.y + vy * -BOUNCE;
-
-        if (Math.abs(vx) > velocityThreshold && !torqueApplied) {
-            this.angularVelocity += vx * wallFrictionTorque / this.inertia;
-            torqueApplied = true;
+        if (this.pos.y + this.radius > BOUNDS.bottom) {
+            this.pos.y = BOUNDS.bottom - this.radius;
+            this.prevPos.y = this.pos.y + vy * -BOUNCE;
+            if (Math.abs(vx) > velocityThreshold && !torqueApplied) {
+                this.angularVelocity -= vx * wallFrictionTorque / this.inertia;
+                torqueApplied = true;
+            }
         }
-    }
 
-    // Top wall
-    if (this.pos.y - this.radius < BOUNDS.top) {
-        this.pos.y = BOUNDS.top + this.radius;
-        this.prevPos.y = this.pos.y + vy * -BOUNCE;
-
-        if (Math.abs(vx) > velocityThreshold && !torqueApplied) {
-            this.angularVelocity -= vx * wallFrictionTorque / this.inertia;
-            torqueApplied = true;
+        if (this.pos.y - this.radius < BOUNDS.top) {
+            this.pos.y = BOUNDS.top + this.radius;
+            this.prevPos.y = this.pos.y + vy * -BOUNCE;
+            if (Math.abs(vx) > velocityThreshold && !torqueApplied) {
+                this.angularVelocity += vx * wallFrictionTorque / this.inertia;
+                torqueApplied = true;
+            }
         }
-    }
 
-    // Apply small rolling resistance to dampen endless spin
-    this.angularVelocity *= 0.98;
-}
+        // Rolling resistance to limit infinite spinning
+        this.angularVelocity *= 0.98;
+    }
 
     draw() {
         const colors = COLOR_PAIRS[this.level] || { fill: "#ccc", dark: "#666" };
 
-        // Main fill
         ctx.beginPath();
         ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = colors.fill;
         ctx.fill();
         ctx.stroke();
 
-/*
-        // Crash-test wedge
+        // Crash test dark wedge
         ctx.beginPath();
         ctx.moveTo(this.pos.x, this.pos.y);
         const startAngle = this.angle;
@@ -198,10 +189,11 @@ applyConstraints() {
         ctx.closePath();
         ctx.fillStyle = colors.dark;
         ctx.fill();
-*/
+
         // Angular momentum line
-        const endX = this.pos.x + Math.cos(this.angle) * this.radius;
-        const endY = this.pos.y + Math.sin(this.angle) * this.radius;
+        const lineLength = this.radius * 1.2;
+        const endX = this.pos.x + Math.cos(this.angle) * lineLength;
+        const endY = this.pos.y + Math.sin(this.angle) * lineLength;
         ctx.beginPath();
         ctx.moveTo(this.pos.x, this.pos.y);
         ctx.lineTo(endX, endY);
@@ -241,41 +233,34 @@ function resolveCollision(c1, c2) {
         const nx = dx / dist;
         const ny = dy / dist;
 
-        // Separate circles along the normal
+        // Resolve penetration
         c1.pos.x -= nx * overlap;
         c1.pos.y -= ny * overlap;
         c2.pos.x += nx * overlap;
         c2.pos.y += ny * overlap;
 
-        // Tangent vector (perpendicular to normal)
+        // Friction and torque
         const tx = -ny;
         const ty = nx;
 
-        // Velocity of each object
         const vx1 = c1.pos.x - c1.prevPos.x;
         const vy1 = c1.pos.y - c1.prevPos.y;
         const vx2 = c2.pos.x - c2.prevPos.x;
         const vy2 = c2.pos.y - c2.prevPos.y;
 
-        // Relative velocity
         const rvx = vx1 - vx2;
         const rvy = vy1 - vy2;
-
-        // Tangential component of relative velocity
         const tangentSpeed = rvx * tx + rvy * ty;
 
-        // Apply tangential friction
         const frictionCoefficient = 0.1;
         const frictionImpulse = tangentSpeed * frictionCoefficient;
 
-        // Oppose motion (friction slows sliding)
         c1.prevPos.x += tx * frictionImpulse / c1.mass;
         c1.prevPos.y += ty * frictionImpulse / c1.mass;
         c2.prevPos.x -= tx * frictionImpulse / c2.mass;
         c2.prevPos.y -= ty * frictionImpulse / c2.mass;
 
-        // Angular torque from tangential velocity
-        const torqueFactor = 0.05;
+        const torqueFactor = 0.2;
         c1.angularVelocity -= (tangentSpeed * torqueFactor) / c1.inertia;
         c2.angularVelocity += (tangentSpeed * torqueFactor) / c2.inertia;
 
