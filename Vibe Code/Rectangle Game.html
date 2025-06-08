@@ -44,23 +44,38 @@ Please add rotation physics and  triangle-triangle SAT for realistic collisions.
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+const GRAVITY = 0.2;
 const NUM_SQUARES = 10;
 const MIN_SIZE = 30;
 const MAX_SIZE = 70;
+const DAMPING = 0.98;
 
 const squares = [];
 
 class Vec2 {
-  constructor(x, y) { this.x = x; this.y = y; }
-  add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
-  sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
-  rotate(angle) {
-    return new Vec2(
-      this.x * Math.cos(angle) - this.y * Math.sin(angle),
-      this.x * Math.sin(angle) + this.y * Math.cos(angle)
-    );
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
   }
-  static dot(a, b) { return a.x * b.x + a.y * b.y; }
+  add(v) {
+    return new Vec2(this.x + v.x, this.y + v.y);
+  }
+  sub(v) {
+    return new Vec2(this.x - v.x, this.y - v.y);
+  }
+  scale(s) {
+    return new Vec2(this.x * s, this.y * s);
+  }
+  normalize() {
+    const len = Math.hypot(this.x, this.y);
+    return len === 0 ? new Vec2(0, 0) : new Vec2(this.x / len, this.y / len);
+  }
+  length() {
+    return Math.hypot(this.x, this.y);
+  }
+  static dot(a, b) {
+    return a.x * b.x + a.y * b.y;
+  }
 }
 
 class Square {
@@ -68,9 +83,10 @@ class Square {
     this.pos = new Vec2(x, y);
     this.size = size;
     this.angle = angle;
-    this.angularVelocity = (Math.random() - 0.5) * 0.01;
+    this.velocity = new Vec2(0, 0);
+    this.angularVelocity = (Math.random() - 0.5) * 0.02;
     this.mass = 1;
-    this.inertia = (1 / 6) * this.mass * size * size; // Approx for square
+    this.inertia = (1 / 6) * this.mass * size * size;
     this.vertices = this.getVertices();
   }
 
@@ -97,13 +113,36 @@ class Square {
     this.vertices = this.getVertices();
   }
 
-  applyRotation() {
+  applyPhysics() {
+    this.velocity.y += GRAVITY;
+    this.pos = this.pos.add(this.velocity);
     this.angle += this.angularVelocity;
+    this.velocity = this.velocity.scale(DAMPING);
+    this.angularVelocity *= DAMPING;
     this.updateVertices();
+    this.enforceBounds();
+  }
+
+  enforceBounds() {
+    const half = this.size / 2;
+
+    if (this.pos.x < half) {
+      this.pos.x = half;
+      this.velocity.x *= -0.5;
+    } else if (this.pos.x > canvas.width - half) {
+      this.pos.x = canvas.width - half;
+      this.velocity.x *= -0.5;
+    }
+
+    if (this.pos.y > canvas.height - half) {
+      this.pos.y = canvas.height - half;
+      this.velocity.y *= -0.5;
+    }
   }
 
   draw(ctx) {
     this.updateVertices();
+
     ctx.fillStyle = '#0f0';
     ctx.beginPath();
     ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
@@ -122,42 +161,7 @@ class Square {
   }
 }
 
-function random(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
-function createSquares() {
-  for (let i = 0; i < NUM_SQUARES; i++) {
-    const size = random(MIN_SIZE, MAX_SIZE);
-    const x = random(size, canvas.width - size);
-    const y = random(size, canvas.height - size);
-    const angle = random(0, Math.PI * 2);
-    const square = new Square(x, y, size, angle);
-    squares.push(square);
-  }
-}
-
-function isColliding(a, b) {
-  // AABB check for simplicity
-  const getAABB = (verts) => {
-    const xs = verts.map(v => v.x);
-    const ys = verts.map(v => v.y);
-    return {
-      minX: Math.min(...xs),
-      maxX: Math.max(...xs),
-      minY: Math.min(...ys),
-      maxY: Math.max(...ys),
-    };
-  };
-
-  const aBox = getAABB(a.vertices);
-  const bBox = getAABB(b.vertices);
-
-  return !(aBox.maxX < bBox.minX || aBox.minX > bBox.maxX ||
-           aBox.maxY < bBox.minY || aBox.minY > bBox.maxY);
-}
-
-// ---------- SAT Collision Detection ----------
+// SAT Helpers
 function projectPolygon(axis, vertices) {
   let min = Vec2.dot(axis, vertices[0]);
   let max = min;
@@ -181,21 +185,22 @@ function getAxes(triangle) {
     const p1 = triangle[i];
     const p2 = triangle[(i + 1) % triangle.length];
     const edge = p2.sub(p1);
-    const normal = new Vec2(-edge.y, edge.x); // Perpendicular
-    const len = Math.hypot(normal.x, normal.y);
+    const normal = new Vec2(-edge.y, edge.x);
+    const len = normal.length();
     axes.push(new Vec2(normal.x / len, normal.y / len));
   }
   return axes;
 }
 
 function triangleSATCollision(triA, triB) {
-  const axes = [getAxes(triA), getAxes(triB)];
+  const axes = [...getAxes(triA), ...getAxes(triB)];
   for (const axis of axes) {
     if (!overlapOnAxis(axis, triA, triB)) return false;
   }
   return true;
 }
 
+// Collision Resolver
 function resolveCollisions() {
   for (let i = 0; i < squares.length; i++) {
     for (let j = i + 1; j < squares.length; j++) {
@@ -217,15 +222,19 @@ function resolveCollisions() {
       }
 
       if (collided) {
-        // Push apart based on position vector
-        const pushVec = a.pos.sub(b.pos);
-        const length = Math.max(pushVec.x * pushVec.x + pushVec.y * pushVec.y, 0.001);
-        const displacement = new Vec2(pushVec.x / length, pushVec.y / length);
+        // Push apart
+        const pushDir = a.pos.sub(b.pos);
+        const dist = Math.max(pushDir.length(), 0.001);
+        const resolveVec = pushDir.normalize().scale(1);
 
-        a.pos = a.pos.add(displacement);
-        b.pos = b.pos.sub(displacement);
+        a.pos = a.pos.add(resolveVec.scale(0.5));
+        b.pos = b.pos.sub(resolveVec.scale(0.5));
 
-        // Apply angular impulse
+        // Invert velocity to simulate bounce
+        a.velocity = a.velocity.add(resolveVec.scale(0.1));
+        b.velocity = b.velocity.sub(resolveVec.scale(0.1));
+
+        // Spin reaction
         a.angularVelocity += 0.001 * (Math.random() - 0.5);
         b.angularVelocity += 0.001 * (Math.random() - 0.5);
 
@@ -236,11 +245,27 @@ function resolveCollisions() {
   }
 }
 
+// Helpers
+function random(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function createSquares() {
+  for (let i = 0; i < NUM_SQUARES; i++) {
+    const size = random(MIN_SIZE, MAX_SIZE);
+    const x = random(size, canvas.width - size);
+    const y = random(size, canvas.height / 2);
+    const angle = random(0, Math.PI * 2);
+    squares.push(new Square(x, y, size, angle));
+  }
+}
+
+// Main Loop
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (const square of squares) {
-    square.applyRotation();
+    square.applyPhysics();
   }
 
   resolveCollisions();
