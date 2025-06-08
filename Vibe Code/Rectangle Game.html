@@ -285,11 +285,15 @@ function triangleSATCollision(triA, triB) {
 function resolveCollisions() {
   const ITERATIONS = 5;
 
+  // Sort once per iteration to resolve bottom-up
   for (let iter = 0; iter < ITERATIONS; iter++) {
-    for (let i = 0; i < squares.length; i++) {
-      for (let j = i + 1; j < squares.length; j++) {
-        const a = squares[i];
-        const b = squares[j];
+    const sortedSquares = [...squares].sort((a, b) => b.pos.y - a.pos.y); // bottom to top
+
+    for (let i = 0; i < sortedSquares.length; i++) {
+      const a = sortedSquares[i];
+      for (let j = i + 1; j < sortedSquares.length; j++) {
+        const b = sortedSquares[j];
+
         const trisA = a.getTriangles();
         const trisB = b.getTriangles();
 
@@ -297,15 +301,18 @@ function resolveCollisions() {
           for (const triB of trisB) {
             const mtv = triangleSATCollision(triA, triB);
             if (mtv) {
-              const relativeVelocity = a.velocity.sub(b.velocity).length();
-              const scaleFactor = Math.min(1, relativeVelocity * 2);
+              // Always push top square (b) more than bottom (a)
+              const correction = mtv;
 
-              const correction = mtv.scale(0.5 * scaleFactor);
-              a.pos = a.pos.add(correction);
-              b.pos = b.pos.sub(correction);
+              const totalPush = correction.scale(1.0);
+              const pushA = totalPush.scale(0.1); // push bottom slightly
+              const pushB = totalPush.scale(0.9); // push top mostly
 
-              a.velocity = a.velocity.add(correction.scale(0.05));
-              b.velocity = b.velocity.sub(correction.scale(0.05));
+              a.pos = a.pos.add(pushA);
+              b.pos = b.pos.sub(pushB);
+
+              a.velocity = a.velocity.add(pushA.scale(0.1));
+              b.velocity = b.velocity.sub(pushB.scale(0.1));
 
               a.updateVertices();
               b.updateVertices();
