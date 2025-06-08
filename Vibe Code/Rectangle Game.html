@@ -13,6 +13,8 @@
 
 /*
 
+https://chatgpt.com/g/g-WOATA9rAK-code-companion/c/68453248-85c4-8002-9d50-2167f84fc48c
+
 Lets make a small game using javascript and html5 canvas and a minimal physics engine. The screen consists of a number of randomly placed squares. Each square is composed of two right angle triangles. Each square has a width from 30 to 70 pixels. A minimal physics engine makes sure that the squares do not overlap using collision detection of the triangles and overlapping constraints. The squares start with random rotation angles.
 
 🧱 Step-by-Step Plan
@@ -30,7 +32,7 @@ Please add rotation physics and  triangle-triangle SAT for realistic collisions.
         Torque from collisions
         Moment of inertia (approximated)
  
- Add gravity and physics constraints so that squares do not overlap
+Add gravity and physics constraints so that squares do not overlap
 
     Apply gravity: A vertical acceleration pulling each square down.
     Add position constraints to keep squares:
@@ -39,6 +41,73 @@ Please add rotation physics and  triangle-triangle SAT for realistic collisions.
     Improve collision response:
         Basic impulse when overlapping.
         Positional correction to prevent sticking.
+
+The corrections are even more energetic now. How about iterating the squares based on the y coordinate to decrease the number of interactions.
+    Sort squares by y descending (bottom first).
+    In resolveCollisions():
+        Only allow squares above to move more than those below.
+        Or: fix bottom square, push only the top square (one-sided resolution).
+
+This is much better, the corrections are still too violent and lack detection of resting contacts.
+    
+    1. Resting Contact Detection
+    Detect when a square is in contact with another square from above and moving slowly.
+    ✅ 2. Suppressed Correction for Resting Contacts
+    If a square is:
+        Barely moving
+        Resting on something below
+        Then: skip or dampen MTV correction to allow it to stay still.
+
+Compensate for penetration depth and reduce the corrections. The squares now rest but after a very long time, and the corrections are very violent at the beginning.
+    
+    Compute the penetration depth (mtv.length()).
+    Apply less correction the deeper the penetration is.
+    Introduce a penetration compensation curve (e.g. sqrt or log).
+
+This is better but the corrections are still too violent and rest is achieved after too long time.
+    ✅ Overlap threshold tolerance (don’t correct if overlap is <1px).
+    ✅ Cap max MTV correction per frame (to avoid over-push).
+    ✅ Strong damping on low-speed corrections (reduces jitter when nearly at rest).
+    ✅ (Optionally) Friction or stacking weight in the future.
+
+This is clearly worse. We are back to the very large overlaps from the earlier implementation
+
+    Let’s use position biasing, like Box2D does:
+        📌 Bias = percentage of penetration corrected per iteration
+    We’ll fix this by:
+        Removing sqrt-based scaling.
+        Adding linear bias: e.g. correct 20% of penetration per iteration.
+        Iterating enough times to fully resolve collisions.
+
+Corrections are still too violent and needs to achieve rest many times faster than currently. Suggest an approach that can achieve rest much faster.
+
+    Recommended Approach: Impulse-Based Resolution + Velocity Clamping + Energy Removal
+    What We’ll Do Instead:
+    Step	Purpose
+    1. 🧠 Use velocity-based impulse resolution	Instead of only position-correcting
+    2. 🧘‍♂️ Damp relative velocity after contact	So things lose energy and settle fast
+    3. ⏱ Limit max speed after correction	Prevents bouncing and jitter
+    4. 🪵 Apply post-contact friction	Helps top squares “settle into place”
+
+The violence of corrections is reduced but the overlaps have now increased instead. Can we fix the initial condition by finding a new starting position if new square overlaps with existing square. Can the physics also be improved if the square is composed of four triangles instead of two triangles?
+
+    Part 1: Fixing Overlap on Spawn (Initial Condition)
+        Right now, squares are dropped randomly and can start overlapped. That forces physics to resolve deep intersections, which is:
+        Unphysical
+        Slow to correct
+        Causes large energy input early
+    Part 2: Using 4 Triangles Instead of 2
+        Yes — switching from 2 triangles to 4 right-angle triangles per square has clear benefits:
+        🔍 Current (2 triangles):
+        Side	Weakness
+        Diagonal only	Fewer edges = fewer SAT axes
+        Misses edge-edge overlaps	Less accurate for small contacts
+        ✅ 4 Triangles (Split square into 4 right-angle tris):
+        Benefit	Why it Helps
+        🔺 More triangles = More collision edges	Better axis coverage in SAT
+        📏 More precise shape resolution	Small overlaps are resolved more reliably
+        🧱 Prevents over-rotation on contact	Diagonals don’t dominate as much
+
 */
 
 const canvas = document.getElementById('gameCanvas');

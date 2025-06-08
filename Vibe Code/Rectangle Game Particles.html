@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Verlet Rectangular Physics</title>
+  <style>
+    canvas { background: #111; display: block; margin: auto; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="400"></canvas>
+<script>
+
+/*
+
+A minimal particle based verlet physics engine using html5 canvas for rectangular objects consisting of four points and represented using four triangles. The four points are recomputed from velocity and angle each frame. After that the points are updated using gravity and constraints for penetrating into adjacent triangles. From the adjusted points the velocity and angular velocity for the rectangle is updated. 
+
+Creating a minimal Verlet-based physics engine for rectangles using HTML5 canvas, with rectangular objects represented using four points and four triangles, involves several key components:
+    Verlet integration for point motion
+    Rectangular objects made of 4 points
+    Gravity and collision constraints
+    Triangle-based collision detection
+    Updating velocity and angular velocity from adjusted positions
+
+*/
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const dt = 1;             // Time step
+const gravity = 0.5;
+const friction = 0.99;
+const bounce = 0.5;
+
+// Point class using Verlet integration
+class Point {
+  constructor(x, y) {
+    this.pos = {x, y};
+    this.old = {x, y};
+  }
+
+  update() {
+    const vx = (this.pos.x - this.old.x) * friction;
+    const vy = (this.pos.y - this.old.y) * friction;
+
+    this.old.x = this.pos.x;
+    this.old.y = this.pos.y;
+    this.pos.x += vx;
+    this.pos.y += vy + gravity;
+  }
+
+  constrain() {
+    if (this.pos.y > canvas.height) {
+      this.pos.y = canvas.height;
+      this.old.y = this.pos.y + (this.old.y - this.pos.y) * bounce;
+    }
+    if (this.pos.x < 0) {
+      this.pos.x = 0;
+      this.old.x = this.pos.x + (this.old.x - this.pos.x) * bounce;
+    } else if (this.pos.x > canvas.width) {
+      this.pos.x = canvas.width;
+      this.old.x = this.pos.x + (this.old.x - this.pos.x) * bounce;
+    }
+  }
+}
+
+// A rectangle defined by 4 points (clockwise) and 4 constraints (edges)
+class Rectangle {
+  constructor(x, y, w, h, angle = 0) {
+    this.cx = x;
+    this.cy = y;
+    this.angle = angle;
+    this.w = w;
+    this.h = h;
+    this.points = [];
+    this.updatePoints();
+  }
+
+  updatePoints() {
+    const cos = Math.cos(this.angle);
+    const sin = Math.sin(this.angle);
+    const hw = this.w / 2, hh = this.h / 2;
+
+    const localPoints = [
+      {x: -hw, y: -hh},
+      {x: hw, y: -hh},
+      {x: hw, y: hh},
+      {x: -hw, y: hh},
+    ];
+
+    if (this.points.length === 0) {
+      for (let i = 0; i < 4; i++) {
+        const lx = localPoints[i].x, ly = localPoints[i].y;
+        const gx = this.cx + lx * cos - ly * sin;
+        const gy = this.cy + lx * sin + ly * cos;
+        this.points.push(new Point(gx, gy));
+      }
+    } else {
+      for (let i = 0; i < 4; i++) {
+        const lx = localPoints[i].x, ly = localPoints[i].y;
+        const gx = this.cx + lx * cos - ly * sin;
+        const gy = this.cy + lx * sin + ly * cos;
+        this.points[i].pos.x = gx;
+        this.points[i].pos.y = gy;
+      }
+    }
+  }
+
+  simulate() {
+    for (let p of this.points) {
+      p.update();
+    }
+
+    this.applyConstraints();
+    for (let p of this.points) {
+      p.constrain();
+    }
+
+    this.computeState();
+  }
+
+  applyConstraints() {
+    const iterations = 2;
+    for (let it = 0; it < iterations; it++) {
+      for (let i = 0; i < 4; i++) {
+        const a = this.points[i];
+        const b = this.points[(i + 1) % 4];
+        const dx = b.pos.x - a.pos.x;
+        const dy = b.pos.y - a.pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const target = i % 2 === 0 ? this.w : this.h;
+        const diff = (dist - target) / dist / 2;
+        const offsetX = dx * diff;
+        const offsetY = dy * diff;
+
+        a.pos.x += offsetX;
+        a.pos.y += offsetY;
+        b.pos.x -= offsetX;
+        b.pos.y -= offsetY;
+      }
+    }
+  }
+
+  computeState() {
+    // Compute center from average of points
+    let cx = 0, cy = 0;
+    for (let p of this.points) {
+      cx += p.pos.x;
+      cy += p.pos.y;
+    }
+    cx /= 4;
+    cy /= 4;
+
+    // Estimate angle from edge 0-1
+    const dx = this.points[1].pos.x - this.points[0].pos.x;
+    const dy = this.points[1].pos.y - this.points[0].pos.y;
+    const angle = Math.atan2(dy, dx);
+
+    // Estimate velocities
+    const vx = cx - this.cx;
+    const vy = cy - this.cy;
+    const av = angle - this.angle;
+
+    this.cx = cx;
+    this.cy = cy;
+    this.angle = angle;
+    this.vx = vx;
+    this.vy = vy;
+    this.av = av;
+  }
+
+  draw() {
+    ctx.beginPath();
+    ctx.moveTo(this.points[0].pos.x, this.points[0].pos.y);
+    for (let i = 1; i < 4; i++) {
+      ctx.lineTo(this.points[i].pos.x, this.points[i].pos.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "#0f0";
+    ctx.stroke();
+  }
+}
+
+const rect = new Rectangle(300, 50, 80, 40);
+
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  rect.simulate();
+  rect.draw();
+
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+</body>
+</html>
