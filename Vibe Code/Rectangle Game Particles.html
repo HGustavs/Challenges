@@ -89,6 +89,19 @@ The overlapping problem has been solved expertly, but the rectangles are over co
         Overcompensation
         Wild spinning or jitter
         Energetically "exploding" simulations
+
+This is slightly better but the correction is still far too large and now the rectangles are not rotating correctly when crossing the canvas boundaries.
+    1. Apply Correction Per-Point, Not Just to Center
+    Instead of adjusting the center, check and apply constraints on each corner of the rectangle — similar to standard Verlet stick constraints:
+        If a corner is out of bounds, push it back in
+        Adjust center and angle based on that correction
+    This allows proper rotational feedback during wall contact.
+    2. Reduce Correction Energy Gradually
+    Rather than a constant damping factor, apply:
+        Smaller impulses per iteration
+        A smooth falloff using a decay curve (e.g. quadratic or sigmoid)
+    This avoids oscillation or violent spin-up from constraint corrections.
+
 */
 
 const canvas = document.getElementById("canvas");
@@ -96,19 +109,17 @@ const ctx = canvas.getContext("2d");
 
 const gravity = 0.5;
 const linearFriction = 0.98;
-const angularFriction = 0.99;
+const angularFriction = 0.98;
 const stiffness = 0.2;
-const dampingFactor = 0.15;
+const correctionScale = 0.02;
 const maxAngularVelocity = 0.2;
 
 class RigidRectangle {
   constructor(x, y, w, h, angle = 0) {
     this.w = w;
     this.h = h;
-
     this.pos = { x, y };
     this.oldPos = { x, y };
-
     this.angle = angle;
     this.oldAngle = angle;
   }
@@ -171,17 +182,38 @@ class RigidRectangle {
 
   constrainToCanvas() {
     const pts = this.computePoints();
+    let totalDX = 0, totalDY = 0, totalTorque = 0;
+
     for (const p of pts) {
       let dx = 0, dy = 0;
-      if (p.x < 0) dx = 0 - p.x;
+      if (p.x < 0) dx = -p.x;
       else if (p.x > canvas.width) dx = canvas.width - p.x;
-      if (p.y < 0) dy = 0 - p.y;
+      if (p.y < 0) dy = -p.y;
       else if (p.y > canvas.height) dy = canvas.height - p.y;
+
       if (dx || dy) {
-        this.pos.x += dx * stiffness;
-        this.pos.y += dy * stiffness;
+        const relX = p.x - this.pos.x;
+        const relY = p.y - this.pos.y;
+
+        const torque = relX * dy - relY * dx;
+
+        totalDX += dx;
+        totalDY += dy;
+        totalTorque += torque;
+
+        // Optional: visualize boundary correction vector
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x + dx, p.y + dy);
+        ctx.strokeStyle = "orange";
+        ctx.stroke();
       }
     }
+
+    const len = pts.length;
+    this.pos.x += (totalDX / len) * 0.5;
+    this.pos.y += (totalDY / len) * 0.5;
+    this.angle += totalTorque * 0.0003;
   }
 
   draw() {
@@ -260,7 +292,7 @@ function triangleMTV(t1, t2) {
   } : null;
 }
 
-function resolveCollisions(iterations = 3) {
+function resolveCollisions(iterations = 2) {
   for (let k = 0; k < iterations; k++) {
     for (let i = 0; i < rectangles.length; i++) {
       for (let j = i + 1; j < rectangles.length; j++) {
@@ -284,11 +316,10 @@ function resolveCollisions(iterations = 3) {
               ctx.lineWidth = 0.8;
               ctx.stroke();
 
-              // Apply damped impulse
-              const dx = mtv.x * 0.5 * stiffness * dampingFactor;
-              const dy = mtv.y * 0.5 * stiffness * dampingFactor;
-              a.applyImpulse(-dx, -dy, -0.0005);
-              b.applyImpulse( dx,  dy,  0.0005);
+              const dx = mtv.x * correctionScale;
+              const dy = mtv.y * correctionScale;
+              a.applyImpulse(-dx, -dy, -0.0002);
+              b.applyImpulse( dx,  dy,  0.0002);
             }
           }
         }
@@ -325,11 +356,11 @@ function update() {
     rect.constrainToCanvas();
   }
 
-  resolveCollisions(3);
+  resolveCollisions();
 
   for (const rect of rectangles) {
     rect.draw();
-    rect.drawDebug(); // visualize triangles
+    rect.drawDebug();
   }
 
   requestAnimationFrame(update);
