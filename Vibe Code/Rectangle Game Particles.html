@@ -71,6 +71,12 @@ The rectangle is rotating violently. Make 10 rectangles and add penetration hand
         Penetration handling across all triangle edges
         Controlled rotation damping (no violent spinning)
         Full canvas boundary constraint
+
+Add each additional rectangle after 30 frames to reduce overlap of rectangles
+    To stagger the addition of rectangles (1 every 30 frames), we can:
+        Initialize an empty array of rectangles.
+        Use a frameCount to track frames.
+        Add a new rectangle every 30 frames until all 10 are added.        
 */
 
 const canvas = document.getElementById("canvas");
@@ -177,7 +183,6 @@ class RigidRectangle {
 }
 
 function triangleOverlap(t1, t2) {
-  // Separating Axis Theorem (SAT) for triangle-triangle overlap
   const polys = [t1, t2];
   for (const tri of polys) {
     for (let i = 0; i < 3; i++) {
@@ -207,16 +212,20 @@ function triangleOverlap(t1, t2) {
   return true;
 }
 
-// Setup rectangles
+// Rectangle storage
 const rectangles = [];
-for (let i = 0; i < 10; i++) {
-  rectangles.push(new RigidRectangle(
+let totalRectangles = 10;
+let frameCount = 0;
+
+function spawnRectangle() {
+  const rect = new RigidRectangle(
     Math.random() * 700 + 50,
-    Math.random() * 300 + 50,
+    Math.random() * 200 + 50,
     80,
     50,
     Math.random() * Math.PI
-  ));
+  );
+  rectangles.push(rect);
 }
 
 function resolveCollisions() {
@@ -246,6 +255,13 @@ function resolveCollisions() {
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  frameCount++;
+
+  // Add one rectangle every 30 frames
+  if (rectangles.length < totalRectangles && frameCount % 30 === 0) {
+    spawnRectangle();
+  }
 
   for (const rect of rectangles) {
     rect.verlet();
