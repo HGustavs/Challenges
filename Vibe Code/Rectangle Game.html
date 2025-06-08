@@ -155,6 +155,22 @@ class Square {
     }
   }
 
+  isResting() {
+    const half = this.size / 2;
+    const nearBottom = Math.abs(this.pos.y + half - canvas.height) < 2;
+    const almostStill = this.velocity.length() < 0.5 && Math.abs(this.angularVelocity) < 0.01;
+    return nearBottom && almostStill;
+  }
+
+  autoStraighten() {
+    const snapSpeed = 0.02;
+    const angle = this.angle % (2 * Math.PI);
+    if (Math.abs(angle) > 0.01) {
+      const correction = -Math.sign(angle) * snapSpeed;
+      this.angularVelocity += correction;
+    }
+  }
+
   draw(ctx) {
     this.updateVertices();
 
@@ -176,7 +192,7 @@ class Square {
   }
 }
 
-// SAT Helpers
+// SAT helpers
 function projectPolygon(axis, vertices) {
   let min = Vec2.dot(axis, vertices[0]);
   let max = min;
@@ -215,7 +231,28 @@ function triangleSATCollision(triA, triB) {
   return true;
 }
 
-// Collision Resolver
+// Collision resolution
+function applyCollisionResponse(a, b, contactPoint) {
+  const pushDir = a.pos.sub(b.pos);
+  const dist = Math.max(pushDir.length(), 0.001);
+  const resolveVec = pushDir.normalize().scale(1);
+
+  a.velocity = a.velocity.add(resolveVec.scale(0.1));
+  b.velocity = b.velocity.sub(resolveVec.scale(0.1));
+
+  const ra = contactPoint.sub(a.pos);
+  const rb = contactPoint.sub(b.pos);
+
+  const torqueA = (ra.x * resolveVec.y - ra.y * resolveVec.x);
+  const torqueB = (rb.x * -resolveVec.y - rb.y * -resolveVec.x);
+
+  a.angularVelocity += torqueA / a.inertia;
+  b.angularVelocity += torqueB / b.inertia;
+
+  a.pos = a.pos.add(resolveVec.scale(0.5));
+  b.pos = b.pos.sub(resolveVec.scale(0.5));
+}
+
 function resolveCollisions() {
   for (let i = 0; i < squares.length; i++) {
     for (let j = i + 1; j < squares.length; j++) {
@@ -224,43 +261,19 @@ function resolveCollisions() {
       const trisA = a.getTriangles();
       const trisB = b.getTriangles();
 
-      let collided = false;
-
       for (const triA of trisA) {
         for (const triB of trisB) {
           if (triangleSATCollision(triA, triB)) {
-            collided = true;
+            const contactPoint = a.pos.add(b.pos).scale(0.5);
+            applyCollisionResponse(a, b, contactPoint);
             break;
           }
         }
-        if (collided) break;
-      }
-
-      if (collided) {
-        // Push apart
-        const pushDir = a.pos.sub(b.pos);
-        const dist = Math.max(pushDir.length(), 0.001);
-        const resolveVec = pushDir.normalize().scale(1);
-
-        a.pos = a.pos.add(resolveVec.scale(0.5));
-        b.pos = b.pos.sub(resolveVec.scale(0.5));
-
-        // Invert velocity to simulate bounce
-        a.velocity = a.velocity.add(resolveVec.scale(0.1));
-        b.velocity = b.velocity.sub(resolveVec.scale(0.1));
-
-        // Spin reaction
-        a.angularVelocity += 0.001 * (Math.random() - 0.5);
-        b.angularVelocity += 0.001 * (Math.random() - 0.5);
-
-        a.updateVertices();
-        b.updateVertices();
       }
     }
   }
 }
 
-// Helpers
 function random(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -275,12 +288,14 @@ function createSquares() {
   }
 }
 
-// Main Loop
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (const square of squares) {
     square.applyPhysics();
+    if (square.isResting()) {
+      square.autoStraighten();
+    }
   }
 
   resolveCollisions();
