@@ -102,6 +102,8 @@ class Square {
     this.angularVelocity = (Math.random() - 0.5) * 0.02;
     this.mass = 1;
     this.inertia = (1 / 6) * this.mass * size * size;
+    this.sleepCounter = 0;
+    this.sleeping = false;
     this.vertices = this.getVertices();
   }
 
@@ -129,6 +131,8 @@ class Square {
   }
 
   applyPhysics() {
+    if (this.sleeping) return;
+
     this.velocity.y += GRAVITY;
     this.pos = this.pos.add(this.velocity);
     this.angle += this.angularVelocity;
@@ -136,7 +140,6 @@ class Square {
     this.velocity = this.velocity.scale(DAMPING);
     this.angularVelocity *= DAMPING;
 
-    // Cap rotation speed to prevent instability
     this.angularVelocity = Math.max(-0.5, Math.min(0.5, this.angularVelocity));
 
     this.updateVertices();
@@ -160,11 +163,27 @@ class Square {
     }
   }
 
+  trySleep() {
+    const lowVelocity = this.velocity.length() < 0.1;
+    const lowRotation = Math.abs(this.angularVelocity) < 0.01;
+    if (lowVelocity && lowRotation) {
+      this.sleepCounter++;
+      if (this.sleepCounter > 30) {
+        this.sleeping = true;
+        this.velocity = new Vec2(0, 0);
+        this.angularVelocity = 0;
+      }
+    } else {
+      this.sleepCounter = 0;
+      this.sleeping = false;
+    }
+  }
+
   isResting() {
     const half = this.size / 2;
     const nearBottom = Math.abs(this.pos.y + half - canvas.height) < 2;
-    const almostStill = this.velocity.length() < 0.5 && Math.abs(this.angularVelocity) < 0.01;
-    return nearBottom && almostStill;
+    const almostStill = this.velocity.length() < 0.3 && Math.abs(this.angularVelocity) < 0.01;
+    return nearBottom || almostStill;
   }
 
   autoStraighten() {
@@ -206,6 +225,13 @@ class Square {
     ctx.lineTo(this.vertices[0].x, this.vertices[0].y);
     ctx.closePath();
     ctx.fill();
+
+    if (this.sleeping) {
+      ctx.fillStyle = "#f00";
+      ctx.beginPath();
+      ctx.arc(this.pos.x, this.pos.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }
 
@@ -271,12 +297,15 @@ function resolveCollisions() {
           for (const triB of trisB) {
             const mtv = triangleSATCollision(triA, triB);
             if (mtv) {
-              const correction = mtv.scale(0.5);
+              const relativeVelocity = a.velocity.sub(b.velocity).length();
+              const scaleFactor = Math.min(1, relativeVelocity * 2);
+
+              const correction = mtv.scale(0.5 * scaleFactor);
               a.pos = a.pos.add(correction);
               b.pos = b.pos.sub(correction);
 
-              a.velocity = a.velocity.add(correction.scale(0.1));
-              b.velocity = b.velocity.sub(correction.scale(0.1));
+              a.velocity = a.velocity.add(correction.scale(0.05));
+              b.velocity = b.velocity.sub(correction.scale(0.05));
 
               a.updateVertices();
               b.updateVertices();
@@ -288,7 +317,7 @@ function resolveCollisions() {
   }
 }
 
-// --- Initialization ---
+// --- Setup ---
 function random(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -303,12 +332,13 @@ function createSquares() {
   }
 }
 
-// --- Main Loop ---
+// --- Game Loop ---
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (const square of squares) {
     square.applyPhysics();
+    square.trySleep();
     if (square.isResting()) {
       square.autoStraighten();
     }
