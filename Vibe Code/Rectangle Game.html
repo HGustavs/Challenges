@@ -50,8 +50,9 @@ const MIN_SIZE = 30;
 const MAX_SIZE = 70;
 const DAMPING = 0.98;
 const SOLVER_ITERATIONS = 10;
-const CORRECTION_BIAS = 0.2; // Correct 20% of overlap per iteration
-const OVERLAP_EPSILON = 0.5; // Ignore <0.5px overlaps
+const POSITION_CORRECTION_FRACTION = 0.05; // 5% of penetration
+const OVERLAP_EPSILON = 0.2;
+const MAX_VELOCITY = 5;
 
 const squares = [];
 
@@ -120,6 +121,11 @@ class Square {
     this.velocity = this.velocity.scale(DAMPING);
     this.angularVelocity *= DAMPING;
     this.angularVelocity = Math.max(-0.5, Math.min(0.5, this.angularVelocity));
+
+    // Clamp linear velocity
+    this.velocity.x = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, this.velocity.x));
+    this.velocity.y = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, this.velocity.y));
+
     this.updateVertices();
     this.enforceBounds();
   }
@@ -253,7 +259,7 @@ function isRestingContact(a, b, mtv) {
   return vertical && bAbove && speed < 1.0;
 }
 
-// Final collision resolution
+// Final collision resolver: impulse + friction + soft correction
 function resolveCollisions() {
   for (let iter = 0; iter < SOLVER_ITERATIONS; iter++) {
     const sorted = [...squares].sort((a, b) => b.pos.y - a.pos.y);
@@ -266,27 +272,32 @@ function resolveCollisions() {
         for (const triA of trisA) {
           for (const triB of trisB) {
             const mtv = triangleSATCollision(triA, triB);
-            if (mtv) {
-              const penetration = mtv.length();
-              if (penetration < OVERLAP_EPSILON) continue;
+            if (!mtv) continue;
 
-              const correction = mtv.normalize().scale(penetration * CORRECTION_BIAS);
+            const normal = mtv.normalize();
+            const penetration = mtv.length();
 
-              let pushA = correction.scale(0.1);
-              let pushB = correction.scale(0.9);
-
-              if (isRestingContact(a, b, mtv)) {
-                pushA = pushA.scale(0.3);
-                pushB = pushB.scale(0.3);
-              }
-
-              a.pos = a.pos.add(pushA);
-              b.pos = b.pos.sub(pushB);
-              a.velocity = a.velocity.add(pushA.scale(0.05));
-              b.velocity = b.velocity.sub(pushB.scale(0.05));
-              a.updateVertices();
-              b.updateVertices();
+            if (penetration > OVERLAP_EPSILON) {
+              const correction = normal.scale(penetration * POSITION_CORRECTION_FRACTION);
+              a.pos = a.pos.add(correction.scale(0.5));
+              b.pos = b.pos.sub(correction.scale(0.5));
             }
+
+            const relVel = b.velocity.sub(a.velocity);
+            const sepVel = Vec2.dot(relVel, normal);
+            if (sepVel < 0) {
+              const impulse = normal.scale(-sepVel * 0.5);
+              a.velocity = a.velocity.sub(impulse);
+              b.velocity = b.velocity.add(impulse);
+            }
+
+            if (isRestingContact(a, b, mtv)) {
+              a.velocity.x *= 0.9;
+              b.velocity.x *= 0.9;
+            }
+
+            a.updateVertices();
+            b.updateVertices();
           }
         }
       }
