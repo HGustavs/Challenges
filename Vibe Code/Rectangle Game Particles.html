@@ -102,6 +102,13 @@ This is slightly better but the correction is still far too large and now the re
         A smooth falloff using a decay curve (e.g. quadratic or sigmoid)
     This avoids oscillation or violent spin-up from constraint corrections.
 
+The rectangles are now rotating correctly but the corrections are still too large, and increasing when new rectangles are added. Can sorting the collisions and constraint resolutions vertically be helpful?
+    When many rectangles are added, deep overlaps occur — especially in lower rectangles that now have to resolve against many others on top of them. Since constraint resolution is order-sensitive, this leads to:
+        Large corrections being compounded
+        Unstable torques and jitter
+        Rectangles “exploding” or “spinning up” on contact
+
+
 */
 
 const canvas = document.getElementById("canvas");
@@ -292,11 +299,14 @@ function triangleMTV(t1, t2) {
   } : null;
 }
 
-function resolveCollisions(iterations = 2) {
+function resolveCollisions(iterations = 4) {
   for (let k = 0; k < iterations; k++) {
+    // Sort rectangles top-to-bottom
+    rectangles.sort((a, b) => a.pos.y - b.pos.y);
+
     for (let i = 0; i < rectangles.length; i++) {
+      const a = rectangles[i];
       for (let j = i + 1; j < rectangles.length; j++) {
-        const a = rectangles[i];
         const b = rectangles[j];
         const triA = a.getTriangles();
         const triB = b.getTriangles();
@@ -308,7 +318,7 @@ function resolveCollisions(iterations = 2) {
               const cx = (a.pos.x + b.pos.x) / 2;
               const cy = (a.pos.y + b.pos.y) / 2;
 
-              // Draw MTV vector
+              // MTV debug line
               ctx.beginPath();
               ctx.moveTo(cx, cy);
               ctx.lineTo(cx + mtv.x, cy + mtv.y);
@@ -316,10 +326,14 @@ function resolveCollisions(iterations = 2) {
               ctx.lineWidth = 0.8;
               ctx.stroke();
 
-              const dx = mtv.x * correctionScale;
-              const dy = mtv.y * correctionScale;
-              a.applyImpulse(-dx, -dy, -0.0002);
-              b.applyImpulse( dx,  dy,  0.0002);
+              // Decay based on index: deeper = smaller push
+              const decay = 1 - (i / rectangles.length);
+              const dx = mtv.x * correctionScale * decay;
+              const dy = mtv.y * correctionScale * decay;
+
+              // Apply MTV as impulse
+              a.applyImpulse(-dx, -dy, -0.0002 * decay);
+              b.applyImpulse( dx,  dy,  0.0002 * decay);
             }
           }
         }
