@@ -57,7 +57,6 @@ class Vec2 {
     this.x = x;
     this.y = y;
   }
-
   add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
   sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
   scale(s) { return new Vec2(this.x * s, this.y * s); }
@@ -209,8 +208,8 @@ function projectPolygon(axis, verts) {
   let max = min;
   for (let i = 1; i < verts.length; i++) {
     const p = Vec2.dot(axis, verts[i]);
-    if (p < min) min = p;
-    if (p > max) max = p;
+    min = Math.min(min, p);
+    max = Math.max(max, p);
   }
   return { min, max };
 }
@@ -219,8 +218,7 @@ function getAxes(tri) {
   const axes = [];
   for (let i = 0; i < tri.length; i++) {
     const edge = tri[(i + 1) % tri.length].sub(tri[i]);
-    const normal = new Vec2(-edge.y, edge.x).normalize();
-    axes.push(normal);
+    axes.push(new Vec2(-edge.y, edge.x).normalize());
   }
   return axes;
 }
@@ -242,7 +240,6 @@ function triangleSATCollision(triA, triB) {
   return smallestAxis.scale(minOverlap);
 }
 
-// --- Resting Contact Check ---
 function isRestingContact(a, b, mtv) {
   const upward = new Vec2(0, -1);
   const mtvDir = mtv.normalize();
@@ -252,7 +249,7 @@ function isRestingContact(a, b, mtv) {
   return vertical && bAbove && speed < 1.0;
 }
 
-// --- Collision Resolution ---
+// --- Collision Resolution with depth compensation ---
 function resolveCollisions() {
   const ITERATIONS = 5;
   for (let iter = 0; iter < ITERATIONS; iter++) {
@@ -267,13 +264,13 @@ function resolveCollisions() {
           for (const triB of trisB) {
             const mtv = triangleSATCollision(triA, triB);
             if (mtv) {
-              const isResting = isRestingContact(a, b, mtv);
-              const correction = mtv;
-              let pushA = correction.scale(0.1);
-              let pushB = correction.scale(0.9);
-              if (isResting) {
-                pushA = pushA.scale(0.2);
-                pushB = pushB.scale(0.2);
+              const penetration = mtv.length();
+              const correctionStrength = Math.min(1, Math.sqrt(penetration) * 0.2);
+              let pushA = mtv.scale(0.1 * correctionStrength);
+              let pushB = mtv.scale(0.9 * correctionStrength);
+              if (isRestingContact(a, b, mtv)) {
+                pushA = pushA.scale(0.3);
+                pushB = pushB.scale(0.3);
               }
               a.pos = a.pos.add(pushA);
               b.pos = b.pos.sub(pushB);
@@ -289,7 +286,7 @@ function resolveCollisions() {
   }
 }
 
-// --- Init + Loop ---
+// --- Init ---
 function random(min, max) {
   return Math.random() * (max - min) + min;
 }
