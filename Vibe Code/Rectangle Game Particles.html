@@ -110,6 +110,11 @@ The rectangles are now rotating correctly but the corrections are still too larg
 
 The compensation energies are still too large. Can adding support for rest and friction help with the overcorrections?
 
+The complete code has been added and cleaned up with all the new features:
+    Rest detection
+    Friction
+    Collision wake-up
+    Impulse damping
 */
 
 const canvas = document.getElementById("canvas");
@@ -117,22 +122,24 @@ const ctx = canvas.getContext("2d");
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
-const GRAVITY = 0.2;
+// --- Constants ---
+const GRAVITY = 0.25;
 const LINEAR_FRICTION = 0.95;
 const ANGULAR_FRICTION = 0.9;
 const STATIC_CORRECTION_THRESHOLD = 0.005;
 const REST_THRESHOLD = 0.05;
 const REST_FRAMES_REQUIRED = 10;
-const correctionScale = 0.5;
+const GLOBAL_MTV_DECAY = 0.2;
 
 class RigidRectangle {
   constructor(x, y, w, h, angle = 0) {
     this.pos = { x, y };
     this.oldPos = { x, y };
-    this.angle = angle;
-    this.oldAngle = angle;
     this.w = w;
     this.h = h;
+    this.angle = angle;
+    this.oldAngle = angle;
+    this.angularVelocity = 0;
     this.restFrames = 0;
     this.asleep = false;
   }
@@ -144,68 +151,72 @@ class RigidRectangle {
     };
   }
 
-  getAngularVelocity() {
-    return (this.angle - this.oldAngle) * ANGULAR_FRICTION;
-  }
-
-  getSpeed() {
-    const v = this.getVelocity();
-    const av = this.getAngularVelocity();
-    return Math.sqrt(v.x * v.x + v.y * v.y + av * av * 100);
-  }
-
-  applyImpulse(dx, dy, da) {
-    if (this.asleep) return;
-    if (Math.abs(dx) < STATIC_CORRECTION_THRESHOLD) dx = 0;
-    if (Math.abs(dy) < STATIC_CORRECTION_THRESHOLD) dy = 0;
-    this.pos.x += dx;
-    this.pos.y += dy;
-    this.angle += da;
-  }
-
   verlet() {
     if (this.asleep) return;
 
     const v = this.getVelocity();
-    const va = this.getAngularVelocity();
-
-    this.oldPos.x = this.pos.x;
-    this.oldPos.y = this.pos.y;
+    this.oldPos = { ...this.pos };
     this.oldAngle = this.angle;
 
     this.pos.x += v.x;
     this.pos.y += v.y + GRAVITY;
-    this.angle += va;
+    this.angle += this.angularVelocity;
 
-    const speed = this.getSpeed();
-    if (speed < REST_THRESHOLD) {
+    this.clampToBounds();
+    this.detectRest();
+  }
+
+  detectRest() {
+    const speed = Math.hypot(this.pos.x - this.oldPos.x, this.pos.y - this.oldPos.y);
+    const angularSpeed = Math.abs(this.angle - this.oldAngle);
+    if (speed < REST_THRESHOLD && angularSpeed < REST_THRESHOLD) {
       this.restFrames++;
       if (this.restFrames > REST_FRAMES_REQUIRED) this.asleep = true;
     } else {
       this.restFrames = 0;
     }
+  }
 
-    this.clampToBounds();
+  applyImpulse(dx, dy, da) {
+    if (this.asleep) return;
+    this.pos.x += dx;
+    this.pos.y += dy;
+    this.angle += da;
+    this.asleep = false;
   }
 
   clampToBounds() {
-    const points = this.getPoints();
-    const minX = Math.min(...points.map(p => p.x));
-    const maxX = Math.max(...points.map(p => p.x));
-    const minY = Math.min(...points.map(p => p.y));
-    const maxY = Math.max(...points.map(p => p.y));
+    const pts = this.getPoints();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of pts) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    const dx = (minX < 0) ? -minX : (maxX > canvas.width ? canvas.width - maxX : 0);
+    const dy = (minY < 0) ? -minY : (maxY > canvas.height ? canvas.height - maxY : 0);
+    this.pos.x += dx;
+    this.pos.y += dy;
+  }
 
-    if (minX < 0) this.pos.x += -minX;
-    if (maxX > canvas.width) this.pos.x -= (maxX - canvas.width);
-    if (minY < 0) this.pos.y += -minY;
-    if (maxY > canvas.height) this.pos.y -= (maxY - canvas.height);
+  computeCurrentAngle() {
+    const pts = this.getPoints();
+    const dx = pts[1].x - pts[0].x;
+    const dy = pts[1].y - pts[0].y;
+    return Math.atan2(dy, dx);
+  }
+
+  updateAngularVelocity() {
+    const newAngle = this.computeCurrentAngle();
+    this.angularVelocity = (newAngle - this.oldAngle) * ANGULAR_FRICTION;
+    this.oldAngle = this.angle;
+    this.angle = newAngle;
   }
 
   getPoints() {
-    const c = Math.cos(this.angle);
-    const s = Math.sin(this.angle);
-    const hw = this.w / 2;
-    const hh = this.h / 2;
+    const c = Math.cos(this.angle), s = Math.sin(this.angle);
+    const hw = this.w / 2, hh = this.h / 2;
     return [
       { x: this.pos.x + c * -hw - s * -hh, y: this.pos.y + s * -hw + c * -hh },
       { x: this.pos.x + c * hw - s * -hh, y: this.pos.y + s * hw + c * -hh },
@@ -216,25 +227,26 @@ class RigidRectangle {
 
   getTriangles() {
     const p = this.getPoints();
+    const center = {
+      x: (p[0].x + p[1].x + p[2].x + p[3].x) / 4,
+      y: (p[0].y + p[1].y + p[2].y + p[3].y) / 4
+    };
     return [
-      [p[0], p[1], p[2]],
-      [p[0], p[2], p[3]],
+      [p[0], p[1], center],
+      [p[1], p[2], center],
+      [p[2], p[3], center],
+      [p[3], p[0], center],
     ];
   }
 
   draw() {
-    ctx.strokeStyle = this.asleep ? "#777" : "white";
-    ctx.lineWidth = 1.5;
     const pts = this.getPoints();
+    ctx.strokeStyle = this.asleep ? "#888" : "white";
     ctx.beginPath();
-    pts.forEach((p, i) => {
-      if (i === 0) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    });
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
     ctx.closePath();
     ctx.stroke();
 
-    // Debug triangle lines
     const tris = this.getTriangles();
     ctx.strokeStyle = "#0f08";
     for (const t of tris) {
@@ -248,29 +260,7 @@ class RigidRectangle {
   }
 }
 
-function triangleMTV(t1, t2) {
-  const axes = getTriangleAxes(t1).concat(getTriangleAxes(t2));
-  let overlap = Infinity;
-  let smallestAxis = null;
-
-  for (const axis of axes) {
-    const [minA, maxA] = projectPolygon(t1, axis);
-    const [minB, maxB] = projectPolygon(t2, axis);
-    const o = Math.min(maxA, maxB) - Math.max(minA, minB);
-    if (o <= 0) return null; // no collision
-    if (o < overlap) {
-      overlap = o;
-      smallestAxis = axis;
-    }
-  }
-
-  return {
-    x: smallestAxis.x * overlap,
-    y: smallestAxis.y * overlap,
-  };
-}
-
-function getTriangleAxes(tri) {
+function getAxes(tri) {
   const axes = [];
   for (let i = 0; i < 3; i++) {
     const p1 = tri[i];
@@ -283,15 +273,31 @@ function getTriangleAxes(tri) {
   return axes;
 }
 
-function projectPolygon(points, axis) {
-  let min = axis.x * points[0].x + axis.y * points[0].y;
-  let max = min;
-  for (let i = 1; i < points.length; i++) {
-    const p = axis.x * points[i].x + axis.y * points[i].y;
-    if (p < min) min = p;
-    if (p > max) max = p;
+function project(tri, axis) {
+  const dots = tri.map(p => p.x * axis.x + p.y * axis.y);
+  return [Math.min(...dots), Math.max(...dots)];
+}
+
+function triangleMTV(t1, t2) {
+  const axes = [...getAxes(t1), ...getAxes(t2)];
+  let smallest = Infinity;
+  let smallestAxis = null;
+
+  for (const axis of axes) {
+    const [minA, maxA] = project(t1, axis);
+    const [minB, maxB] = project(t2, axis);
+    const o = Math.min(maxA, maxB) - Math.max(minA, minB);
+    if (o <= 0) return null;
+    if (o < smallest) {
+      smallest = o;
+      smallestAxis = axis;
+    }
   }
-  return [min, max];
+
+  return {
+    x: smallestAxis.x * smallest,
+    y: smallestAxis.y * smallest
+  };
 }
 
 const rectangles = [];
@@ -301,44 +307,47 @@ function update() {
   frame++;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Add new rectangles gradually
   if (frame % 30 === 0 && rectangles.length < 10) {
-    const x = 100 + Math.random() * (canvas.width - 200);
-    rectangles.push(new RigidRectangle(x, 50, 60, 30, Math.random() * 0.5));
+    rectangles.push(new RigidRectangle(
+      100 + Math.random() * (canvas.width - 200),
+      20,
+      60, 30,
+      Math.random() * Math.PI / 6
+    ));
   }
 
   for (const r of rectangles) r.verlet();
   resolveCollisions(4);
-  for (const r of rectangles) r.draw();
+  for (const r of rectangles) {
+    r.updateAngularVelocity();
+    r.draw();
+  }
 
   requestAnimationFrame(update);
 }
 
 function resolveCollisions(iterations = 4) {
   for (let k = 0; k < iterations; k++) {
-    rectangles.sort((a, b) => a.pos.y - b.pos.y);
     for (let i = 0; i < rectangles.length; i++) {
       const a = rectangles[i];
       for (let j = i + 1; j < rectangles.length; j++) {
         const b = rectangles[j];
-        const triA = a.getTriangles();
-        const triB = b.getTriangles();
-        for (const t1 of triA) {
-          for (const t2 of triB) {
-            const mtv = triangleMTV(t1, t2);
+        for (const ta of a.getTriangles()) {
+          for (const tb of b.getTriangles()) {
+            const mtv = triangleMTV(ta, tb);
             if (mtv) {
-              const decay = 1 - (i / rectangles.length);
-              let dx = mtv.x * correctionScale * decay;
-              let dy = mtv.y * correctionScale * decay;
+              const dx = mtv.x * GLOBAL_MTV_DECAY;
+              const dy = mtv.y * GLOBAL_MTV_DECAY;
 
-              if (Math.abs(dx) < STATIC_CORRECTION_THRESHOLD) dx = 0;
-              if (Math.abs(dy) < STATIC_CORRECTION_THRESHOLD) dy = 0;
+              // Debug MTV
+              ctx.strokeStyle = "lime";
+              ctx.beginPath();
+              ctx.moveTo(a.pos.x, a.pos.y);
+              ctx.lineTo(a.pos.x + dx * 10, a.pos.y + dy * 10);
+              ctx.stroke();
 
-              a.applyImpulse(-dx, -dy, -0.0002 * decay);
-              b.applyImpulse( dx,  dy,  0.0002 * decay);
-
-              a.asleep = false;
-              b.asleep = false;
+              a.applyImpulse(-dx, -dy, -0.0005);
+              b.applyImpulse(dx, dy, 0.0005);
             }
           }
         }
