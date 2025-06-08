@@ -76,7 +76,15 @@ Add each additional rectangle after 30 frames to reduce overlap of rectangles
     To stagger the addition of rectangles (1 every 30 frames), we can:
         Initialize an empty array of rectangles.
         Use a frameCount to track frames.
-        Add a new rectangle every 30 frames until all 10 are added.        
+        Add a new rectangle every 30 frames until all 10 are added.
+
+The rectangles are regularly overlapping. Make use of triangle intersection constraints to make sure that the rectangles do not overlap
+    To prevent rectangle overlap reliably, we’ll use triangle intersection constraints between all triangles from different rectangles. When overlap is detected, we’ll:
+        Compute the Minimum Translation Vector (MTV) to resolve the overlap.
+        Apply displacement and torque to both rectangles in opposite directions using the MTV.
+        Iterate constraints multiple times for stability.
+
+
 */
 
 const canvas = document.getElementById("canvas");
@@ -182,37 +190,77 @@ class RigidRectangle {
   }
 }
 
-function triangleOverlap(t1, t2) {
+function triangleMTV(t1, t2) {
+  let smallestOverlap = Infinity;
+  let mtvAxis = null;
+
   const polys = [t1, t2];
   for (const tri of polys) {
     for (let i = 0; i < 3; i++) {
       const a = tri[i];
       const b = tri[(i + 1) % 3];
       const axis = { x: -(b.y - a.y), y: b.x - a.x };
+      const len = Math.hypot(axis.x, axis.y);
+      if (len === 0) continue;
+      axis.x /= len;
+      axis.y /= len;
 
-      const proj = (pt) => pt.x * axis.x + pt.y * axis.y;
-      let [min1, max1] = [Infinity, -Infinity];
-      let [min2, max2] = [Infinity, -Infinity];
+      const project = (pt) => pt.x * axis.x + pt.y * axis.y;
+
+      let [minA, maxA] = [Infinity, -Infinity];
+      let [minB, maxB] = [Infinity, -Infinity];
 
       for (const p of t1) {
-        const val = proj(p);
-        min1 = Math.min(min1, val);
-        max1 = Math.max(max1, val);
+        const val = project(p);
+        minA = Math.min(minA, val);
+        maxA = Math.max(maxA, val);
       }
 
       for (const p of t2) {
-        const val = proj(p);
-        min2 = Math.min(min2, val);
-        max2 = Math.max(max2, val);
+        const val = project(p);
+        minB = Math.min(minB, val);
+        maxB = Math.max(maxB, val);
       }
 
-      if (max1 < min2 || max2 < min1) return false;
+      const overlap = Math.min(maxA, maxB) - Math.max(minA, minB);
+      if (overlap <= 0) return null;
+
+      if (overlap < smallestOverlap) {
+        smallestOverlap = overlap;
+        mtvAxis = { x: axis.x, y: axis.y };
+      }
     }
   }
-  return true;
+
+  return {
+    x: mtvAxis.x * smallestOverlap,
+    y: mtvAxis.y * smallestOverlap
+  };
 }
 
-// Rectangle storage
+function resolveCollisions(iterations = 5) {
+  for (let k = 0; k < iterations; k++) {
+    for (let i = 0; i < rectangles.length; i++) {
+      for (let j = i + 1; j < rectangles.length; j++) {
+        const a = rectangles[i];
+        const b = rectangles[j];
+        const triA = a.getTriangles();
+        const triB = b.getTriangles();
+
+        for (const t1 of triA) {
+          for (const t2 of triB) {
+            const mtv = triangleMTV(t1, t2);
+            if (mtv) {
+              a.applyImpulse(-mtv.x * 0.5 * stiffness, -mtv.y * 0.5 * stiffness, -0.001);
+              b.applyImpulse(mtv.x * 0.5 * stiffness, mtv.y * 0.5 * stiffness, 0.001);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 const rectangles = [];
 let totalRectangles = 10;
 let frameCount = 0;
@@ -228,37 +276,10 @@ function spawnRectangle() {
   rectangles.push(rect);
 }
 
-function resolveCollisions() {
-  for (let i = 0; i < rectangles.length; i++) {
-    for (let j = i + 1; j < rectangles.length; j++) {
-      const a = rectangles[i];
-      const b = rectangles[j];
-      const triA = a.getTriangles();
-      const triB = b.getTriangles();
-
-      for (const t1 of triA) {
-        for (const t2 of triB) {
-          if (triangleOverlap(t1, t2)) {
-            const mtv = {
-              x: (Math.random() - 0.5) * 1,
-              y: (Math.random() - 0.5) * 1
-            };
-            a.applyImpulse(-mtv.x * stiffness, -mtv.y * stiffness, -0.001);
-            b.applyImpulse(mtv.x * stiffness, mtv.y * stiffness, 0.001);
-            return;
-          }
-        }
-      }
-    }
-  }
-}
-
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   frameCount++;
 
-  // Add one rectangle every 30 frames
   if (rectangles.length < totalRectangles && frameCount % 30 === 0) {
     spawnRectangle();
   }
@@ -268,7 +289,7 @@ function update() {
     rect.constrainToCanvas();
   }
 
-  resolveCollisions();
+  resolveCollisions(5);
 
   for (const rect of rectangles) {
     rect.draw();
