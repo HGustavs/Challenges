@@ -50,7 +50,7 @@ const MIN_SIZE = 30;
 const MAX_SIZE = 70;
 const DAMPING = 0.98;
 const SOLVER_ITERATIONS = 10;
-const POSITION_CORRECTION_FRACTION = 0.05; // 5% of penetration
+const POSITION_CORRECTION_FRACTION = 0.05;
 const OVERLAP_EPSILON = 0.2;
 const MAX_VELOCITY = 5;
 
@@ -101,9 +101,17 @@ class Square {
 
   getTriangles() {
     this.updateVertices();
+    const v = this.vertices;
+    const center = new Vec2(
+      (v[0].x + v[1].x + v[2].x + v[3].x) / 4,
+      (v[0].y + v[1].y + v[2].y + v[3].y) / 4
+    );
+
     return [
-      [this.vertices[0], this.vertices[1], this.vertices[2]],
-      [this.vertices[2], this.vertices[3], this.vertices[0]]
+      [v[0], center, v[1]],
+      [v[1], center, v[2]],
+      [v[2], center, v[3]],
+      [v[3], center, v[0]]
     ];
   }
 
@@ -120,9 +128,8 @@ class Square {
 
     this.velocity = this.velocity.scale(DAMPING);
     this.angularVelocity *= DAMPING;
-    this.angularVelocity = Math.max(-0.5, Math.min(0.5, this.angularVelocity));
 
-    // Clamp linear velocity
+    this.angularVelocity = Math.max(-0.5, Math.min(0.5, this.angularVelocity));
     this.velocity.x = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, this.velocity.x));
     this.velocity.y = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, this.velocity.y));
 
@@ -190,16 +197,9 @@ class Square {
     ctx.fillStyle = '#0f0';
     ctx.beginPath();
     ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
-    ctx.lineTo(this.vertices[1].x, this.vertices[1].y);
-    ctx.lineTo(this.vertices[2].x, this.vertices[2].y);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#00f';
-    ctx.beginPath();
-    ctx.moveTo(this.vertices[2].x, this.vertices[2].y);
-    ctx.lineTo(this.vertices[3].x, this.vertices[3].y);
-    ctx.lineTo(this.vertices[0].x, this.vertices[0].y);
+    for (let i = 1; i < this.vertices.length; i++) {
+      ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
+    }
     ctx.closePath();
     ctx.fill();
 
@@ -259,7 +259,6 @@ function isRestingContact(a, b, mtv) {
   return vertical && bAbove && speed < 1.0;
 }
 
-// Final collision resolver: impulse + friction + soft correction
 function resolveCollisions() {
   for (let iter = 0; iter < SOLVER_ITERATIONS; iter++) {
     const sorted = [...squares].sort((a, b) => b.pos.y - a.pos.y);
@@ -305,19 +304,38 @@ function resolveCollisions() {
   }
 }
 
-// Init + Loop
-function random(min, max) {
-  return Math.random() * (max - min) + min;
+// Non-overlapping spawn
+function intersectsExisting(square, existing) {
+  const newTris = square.getTriangles();
+  for (const other of existing) {
+    const otherTris = other.getTriangles();
+    for (const triA of newTris) {
+      for (const triB of otherTris) {
+        if (triangleSATCollision(triA, triB)) return true;
+      }
+    }
+  }
+  return false;
 }
 
 function createSquares() {
+  let attempts = 0;
   for (let i = 0; i < NUM_SQUARES; i++) {
-    const size = random(MIN_SIZE, MAX_SIZE);
-    const x = random(size, canvas.width - size);
-    const y = random(0, canvas.height / 2);
-    const angle = random(0, Math.PI * 2);
-    squares.push(new Square(x, y, size, angle));
+    let square;
+    do {
+      const size = random(MIN_SIZE, MAX_SIZE);
+      const x = random(size, canvas.width - size);
+      const y = random(0, canvas.height / 2);
+      const angle = random(0, Math.PI * 2);
+      square = new Square(x, y, size, angle);
+      attempts++;
+    } while (intersectsExisting(square, squares) && attempts < 100);
+    squares.push(square);
   }
+}
+
+function random(min, max) {
+  return Math.random() * (max - min) + min;
 }
 
 function gameLoop() {
@@ -334,6 +352,7 @@ function gameLoop() {
 
 createSquares();
 gameLoop();
+
 
 </script>
 </body>
