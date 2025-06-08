@@ -16,24 +16,42 @@
 https://chatgpt.com/c/6845eeb7-48b0-8002-ab78-4303e6b13547
 
 A minimal particle based verlet physics engine using html5 canvas for rectangular objects consisting of four points and represented using four triangles. The four points are recomputed from velocity and angle each frame. After that the points are updated using gravity and constraints for penetrating into adjacent triangles. From the adjusted points the velocity and angular velocity for the rectangle is updated. 
-
-Creating a minimal Verlet-based physics engine for rectangles using HTML5 canvas, with rectangular objects represented using four points and four triangles, involves several key components:
-    Verlet integration for point motion
-    Rectangular objects made of 4 points
-    Gravity and collision constraints
-    Triangle-based collision detection
-    Updating velocity and angular velocity from adjusted positions
+    Creating a minimal Verlet-based physics engine for rectangles using HTML5 canvas, with rectangular objects represented using four points and four triangles, involves several key components:
+        Verlet integration for point motion
+        Rectangular objects made of 4 points
+        Gravity and collision constraints
+        Triangle-based collision detection
+        Updating velocity and angular velocity from adjusted positions
 
 The square must retain its initial shape every frame update and no point may pass outside the canvas boundaries.
+    To enforce that:
+        The square retains its initial shape exactly (i.e., all edge lengths and angles remain constant).
+        No point may pass outside the canvas boundaries.
+    We need to:
+        Keep the four corners constrained as a rigid body using rigid body dynamics principles, not soft constraint corrections.
+        After integrating motion, project the rigid body (rectangle) based on its center position and orientation.
+        Clamp each point inside the canvas bounds.
+        Update the rectangle’s velocity and angular velocity from how much the center and angle changed.
 
-To enforce that:
-    The square retains its initial shape exactly (i.e., all edge lengths and angles remain constant).
-    No point may pass outside the canvas boundaries.
-We need to:
-    Keep the four corners constrained as a rigid body using rigid body dynamics principles, not soft constraint corrections.
-    After integrating motion, project the rigid body (rectangle) based on its center position and orientation.
-    Clamp each point inside the canvas bounds.
-    Update the rectangle’s velocity and angular velocity from how much the center and angle changed.
+The rectangle currently does not rotate correctly when one corner crosses the boundary of the canvas.
+    Goal:
+        Ensure the rectangle rotates correctly while constraining each corner inside the canvas, without deforming the shape.
+    We need to:
+        Simulate velocity & angular velocity via Verlet (from position/angle delta).
+        Update center and rotation as usual.
+        Recalculate corners based on rigid transformation.
+        Iteratively project the rigid body inside canvas bounds using minimal translation and angle adjustment without breaking rigidity.
+
+The rectangle is overcorrecting and rotating violently. We want the angle adjustments to be less violent and achieve rest after angular correction.
+    Goal:
+        Keep the rectangle fully within bounds, even after rotation.
+        Preserve rigidity (no distortion).
+        Reduce angle corrections smoothly, allowing the object to settle naturally.
+    Key Changes:
+        Clamp corners by nudging center only, not angle directly.
+        Dampen angular velocity smoothly, rather than forcibly reducing angle.
+        Estimate angular velocity from angle difference and apply friction.
+        Avoid directly subtracting from angle in the correction loop — instead use physical damping over time.
 
 */
 
@@ -41,7 +59,8 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const gravity = 0.5;
-const friction = 0.99;
+const linearFriction = 0.99;
+const angularFriction = 0.995;
 
 class RigidRectangle {
   constructor(x, y, w, h, angle = 0) {
@@ -57,10 +76,10 @@ class RigidRectangle {
     this.points = this.computePoints();
   }
 
-  computePoints() {
+  computePoints(pos = this.pos, angle = this.angle) {
     const hw = this.w / 2, hh = this.h / 2;
-    const c = Math.cos(this.angle);
-    const s = Math.sin(this.angle);
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
 
     const corners = [
       {x: -hw, y: -hh},
@@ -70,52 +89,65 @@ class RigidRectangle {
     ];
 
     return corners.map(p => ({
-      x: this.pos.x + p.x * c - p.y * s,
-      y: this.pos.y + p.x * s + p.y * c
+      x: pos.x + p.x * c - p.y * s,
+      y: pos.y + p.x * s + p.y * c
     }));
   }
 
   verlet() {
-    // Compute velocity
-    const vx = (this.pos.x - this.oldPos.x) * friction;
-    const vy = (this.pos.y - this.oldPos.y) * friction + gravity;
-    const va = (this.angle - this.oldAngle) * friction;
+    // Linear velocity
+    const vx = (this.pos.x - this.oldPos.x) * linearFriction;
+    const vy = (this.pos.y - this.oldPos.y) * linearFriction + gravity;
 
-    // Save current state
+    // Angular velocity
+    const va = (this.angle - this.oldAngle) * angularFriction;
+
+    // Store current
     this.oldPos.x = this.pos.x;
     this.oldPos.y = this.pos.y;
     this.oldAngle = this.angle;
 
-    // Integrate
+    // Integrate motion
     this.pos.x += vx;
     this.pos.y += vy;
     this.angle += va;
 
-    // Clamp rectangle inside canvas
-    this.clampToBounds();
+    // Gently dampen rotation if out of bounds
+    this.correctToBounds();
 
-    // Recompute points
+    // Update points
     this.points = this.computePoints();
   }
 
-  clampToBounds() {
+  correctToBounds() {
     let pts = this.computePoints();
+    let maxIter = 10;
+    while (maxIter-- > 0) {
+      let corrected = false;
+      pts = this.computePoints();
 
-    let dx = 0, dy = 0;
-    for (const p of pts) {
-      if (p.x < 0) dx = Math.max(dx, 0 - p.x);
-      if (p.x > canvas.width) dx = Math.min(dx, canvas.width - p.x);
-      if (p.y < 0) dy = Math.max(dy, 0 - p.y);
-      if (p.y > canvas.height) dy = Math.min(dy, canvas.height - p.y);
-    }
+      for (let p of pts) {
+        let dx = 0, dy = 0;
+        if (p.x < 0) dx = 0 - p.x;
+        if (p.x > canvas.width) dx = canvas.width - p.x;
+        if (p.y < 0) dy = 0 - p.y;
+        if (p.y > canvas.height) dy = canvas.height - p.y;
 
-    // Apply shift
-    this.pos.x += dx;
-    this.pos.y += dy;
+        if (dx !== 0 || dy !== 0) {
+          // Shift center only, don't directly touch angle
+          this.pos.x += dx * 0.5;
+          this.pos.y += dy * 0.5;
 
-    // If rectangle was moved, damp rotation to avoid jitter
-    if (dx !== 0 || dy !== 0) {
-      this.angle = this.oldAngle;  // Freeze rotation on contact
+          // Slightly reduce angular velocity to help settle
+          const va = (this.angle - this.oldAngle) * 0.9;
+          this.angle = this.oldAngle + va;
+
+          corrected = true;
+          break;
+        }
+      }
+
+      if (!corrected) break;
     }
   }
 
@@ -131,7 +163,7 @@ class RigidRectangle {
   }
 }
 
-const rect = new RigidRectangle(200, 50, 80, 60, 0.3);
+const rect = new RigidRectangle(250, 50, 100, 60, 0.5);
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
