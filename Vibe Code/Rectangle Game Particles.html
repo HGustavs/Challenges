@@ -13,6 +13,8 @@
 
 /*
 
+https://chatgpt.com/c/6845eeb7-48b0-8002-ab78-4303e6b13547
+
 A minimal particle based verlet physics engine using html5 canvas for rectangular objects consisting of four points and represented using four triangles. The four points are recomputed from velocity and angle each frame. After that the points are updated using gravity and constraints for penetrating into adjacent triangles. From the adjusted points the velocity and angular velocity for the rectangle is updated. 
 
 Creating a minimal Verlet-based physics engine for rectangles using HTML5 canvas, with rectangular objects represented using four points and four triangles, involves several key components:
@@ -22,158 +24,106 @@ Creating a minimal Verlet-based physics engine for rectangles using HTML5 canvas
     Triangle-based collision detection
     Updating velocity and angular velocity from adjusted positions
 
+The square must retain its initial shape every frame update and no point may pass outside the canvas boundaries.
+
+To enforce that:
+    The square retains its initial shape exactly (i.e., all edge lengths and angles remain constant).
+    No point may pass outside the canvas boundaries.
+We need to:
+    Keep the four corners constrained as a rigid body using rigid body dynamics principles, not soft constraint corrections.
+    After integrating motion, project the rigid body (rectangle) based on its center position and orientation.
+    Clamp each point inside the canvas bounds.
+    Update the rectangle’s velocity and angular velocity from how much the center and angle changed.
+
 */
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const dt = 1;             // Time step
 const gravity = 0.5;
 const friction = 0.99;
-const bounce = 0.5;
 
-// Point class using Verlet integration
-class Point {
-  constructor(x, y) {
-    this.pos = {x, y};
-    this.old = {x, y};
-  }
-
-  update() {
-    const vx = (this.pos.x - this.old.x) * friction;
-    const vy = (this.pos.y - this.old.y) * friction;
-
-    this.old.x = this.pos.x;
-    this.old.y = this.pos.y;
-    this.pos.x += vx;
-    this.pos.y += vy + gravity;
-  }
-
-  constrain() {
-    if (this.pos.y > canvas.height) {
-      this.pos.y = canvas.height;
-      this.old.y = this.pos.y + (this.old.y - this.pos.y) * bounce;
-    }
-    if (this.pos.x < 0) {
-      this.pos.x = 0;
-      this.old.x = this.pos.x + (this.old.x - this.pos.x) * bounce;
-    } else if (this.pos.x > canvas.width) {
-      this.pos.x = canvas.width;
-      this.old.x = this.pos.x + (this.old.x - this.pos.x) * bounce;
-    }
-  }
-}
-
-// A rectangle defined by 4 points (clockwise) and 4 constraints (edges)
-class Rectangle {
+class RigidRectangle {
   constructor(x, y, w, h, angle = 0) {
-    this.cx = x;
-    this.cy = y;
-    this.angle = angle;
     this.w = w;
     this.h = h;
-    this.points = [];
-    this.updatePoints();
+
+    this.pos = { x, y };
+    this.oldPos = { x, y };
+
+    this.angle = angle;
+    this.oldAngle = angle;
+
+    this.points = this.computePoints();
   }
 
-  updatePoints() {
-    const cos = Math.cos(this.angle);
-    const sin = Math.sin(this.angle);
+  computePoints() {
     const hw = this.w / 2, hh = this.h / 2;
+    const c = Math.cos(this.angle);
+    const s = Math.sin(this.angle);
 
-    const localPoints = [
+    const corners = [
       {x: -hw, y: -hh},
       {x: hw, y: -hh},
       {x: hw, y: hh},
-      {x: -hw, y: hh},
+      {x: -hw, y: hh}
     ];
 
-    if (this.points.length === 0) {
-      for (let i = 0; i < 4; i++) {
-        const lx = localPoints[i].x, ly = localPoints[i].y;
-        const gx = this.cx + lx * cos - ly * sin;
-        const gy = this.cy + lx * sin + ly * cos;
-        this.points.push(new Point(gx, gy));
-      }
-    } else {
-      for (let i = 0; i < 4; i++) {
-        const lx = localPoints[i].x, ly = localPoints[i].y;
-        const gx = this.cx + lx * cos - ly * sin;
-        const gy = this.cy + lx * sin + ly * cos;
-        this.points[i].pos.x = gx;
-        this.points[i].pos.y = gy;
-      }
-    }
+    return corners.map(p => ({
+      x: this.pos.x + p.x * c - p.y * s,
+      y: this.pos.y + p.x * s + p.y * c
+    }));
   }
 
-  simulate() {
-    for (let p of this.points) {
-      p.update();
-    }
+  verlet() {
+    // Compute velocity
+    const vx = (this.pos.x - this.oldPos.x) * friction;
+    const vy = (this.pos.y - this.oldPos.y) * friction + gravity;
+    const va = (this.angle - this.oldAngle) * friction;
 
-    this.applyConstraints();
-    for (let p of this.points) {
-      p.constrain();
-    }
+    // Save current state
+    this.oldPos.x = this.pos.x;
+    this.oldPos.y = this.pos.y;
+    this.oldAngle = this.angle;
 
-    this.computeState();
+    // Integrate
+    this.pos.x += vx;
+    this.pos.y += vy;
+    this.angle += va;
+
+    // Clamp rectangle inside canvas
+    this.clampToBounds();
+
+    // Recompute points
+    this.points = this.computePoints();
   }
 
-  applyConstraints() {
-    const iterations = 2;
-    for (let it = 0; it < iterations; it++) {
-      for (let i = 0; i < 4; i++) {
-        const a = this.points[i];
-        const b = this.points[(i + 1) % 4];
-        const dx = b.pos.x - a.pos.x;
-        const dy = b.pos.y - a.pos.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const target = i % 2 === 0 ? this.w : this.h;
-        const diff = (dist - target) / dist / 2;
-        const offsetX = dx * diff;
-        const offsetY = dy * diff;
+  clampToBounds() {
+    let pts = this.computePoints();
 
-        a.pos.x += offsetX;
-        a.pos.y += offsetY;
-        b.pos.x -= offsetX;
-        b.pos.y -= offsetY;
-      }
+    let dx = 0, dy = 0;
+    for (const p of pts) {
+      if (p.x < 0) dx = Math.max(dx, 0 - p.x);
+      if (p.x > canvas.width) dx = Math.min(dx, canvas.width - p.x);
+      if (p.y < 0) dy = Math.max(dy, 0 - p.y);
+      if (p.y > canvas.height) dy = Math.min(dy, canvas.height - p.y);
     }
-  }
 
-  computeState() {
-    // Compute center from average of points
-    let cx = 0, cy = 0;
-    for (let p of this.points) {
-      cx += p.pos.x;
-      cy += p.pos.y;
+    // Apply shift
+    this.pos.x += dx;
+    this.pos.y += dy;
+
+    // If rectangle was moved, damp rotation to avoid jitter
+    if (dx !== 0 || dy !== 0) {
+      this.angle = this.oldAngle;  // Freeze rotation on contact
     }
-    cx /= 4;
-    cy /= 4;
-
-    // Estimate angle from edge 0-1
-    const dx = this.points[1].pos.x - this.points[0].pos.x;
-    const dy = this.points[1].pos.y - this.points[0].pos.y;
-    const angle = Math.atan2(dy, dx);
-
-    // Estimate velocities
-    const vx = cx - this.cx;
-    const vy = cy - this.cy;
-    const av = angle - this.angle;
-
-    this.cx = cx;
-    this.cy = cy;
-    this.angle = angle;
-    this.vx = vx;
-    this.vy = vy;
-    this.av = av;
   }
 
   draw() {
     ctx.beginPath();
-    ctx.moveTo(this.points[0].pos.x, this.points[0].pos.y);
-    for (let i = 1; i < 4; i++) {
-      ctx.lineTo(this.points[i].pos.x, this.points[i].pos.y);
+    ctx.moveTo(this.points[0].x, this.points[0].y);
+    for (let i = 1; i < this.points.length; i++) {
+      ctx.lineTo(this.points[i].x, this.points[i].y);
     }
     ctx.closePath();
     ctx.strokeStyle = "#0f0";
@@ -181,18 +131,19 @@ class Rectangle {
   }
 }
 
-const rect = new Rectangle(300, 50, 80, 40);
+const rect = new RigidRectangle(200, 50, 80, 60, 0.3);
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  rect.simulate();
+  rect.verlet();
   rect.draw();
 
   requestAnimationFrame(update);
 }
 
 update();
+
 </script>
 </body>
 </html>
