@@ -164,15 +164,27 @@ class Square {
 
   autoStraighten() {
     const angle = this.angle % (2 * Math.PI);
-    const stiffness = 0.05;     // How strong the rotation pull is
-    const damping = 0.1;        // Damping coefficient to stop wobble
-
-    // Normalize angle to [-π, π] to ensure shortest path to 0
     const normalizedAngle = ((angle + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-    const torque = -normalizedAngle * stiffness - this.angularVelocity * damping;
-    this.angularVelocity += torque;
-  }
+    const ANGLE_THRESHOLD = 0.03;     // radians ~1.7°
+    const ANGULAR_VELOCITY_THRESHOLD = 0.01;
+
+    // If close to 0 and stable, snap to 0
+    if (Math.abs(normalizedAngle) < ANGLE_THRESHOLD &&
+        Math.abs(this.angularVelocity) < ANGULAR_VELOCITY_THRESHOLD) {
+      this.angle -= normalizedAngle;
+      this.angularVelocity = 0;
+      return;
+    }
+
+  // Otherwise, use soft torque toward 0
+  const stiffness = 0.02;
+  const damping = 0.15;
+  const torque = -normalizedAngle * stiffness - this.angularVelocity * damping;
+
+  this.angularVelocity += torque;
+}
+
 
   draw(ctx) {
     this.updateVertices();
