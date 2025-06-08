@@ -22,7 +22,23 @@ Lets make a small game using javascript and html5 canvas and a minimal physics e
     Physics Loop to update positions and resolve overlaps
     Rendering Loop to draw the scene
 
+Please add rotation physics and  triangle-triangle SAT for realistic collisions.
 
+    Replacing AABB collision detection with triangle-triangle SAT.
+    Adding rotation physics, including:
+        Angular velocity
+        Torque from collisions
+        Moment of inertia (approximated)
+ 
+ Add gravity and physics constraints so that squares do not overlap
+
+    Apply gravity: A vertical acceleration pulling each square down.
+    Add position constraints to keep squares:
+        Within canvas bounds.
+        From overlapping using triangle-triangle SAT.
+    Improve collision response:
+        Basic impulse when overlapping.
+        Positional correction to prevent sticking.
 */
 
 const canvas = document.getElementById('gameCanvas');
@@ -52,6 +68,9 @@ class Square {
     this.pos = new Vec2(x, y);
     this.size = size;
     this.angle = angle;
+    this.angularVelocity = (Math.random() - 0.5) * 0.01;
+    this.mass = 1;
+    this.inertia = (1 / 6) * this.mass * size * size; // Approx for square
     this.vertices = this.getVertices();
   }
 
@@ -66,12 +85,24 @@ class Square {
     return points.map(p => p.rotate(this.angle).add(this.pos));
   }
 
+  getTriangles() {
+    this.updateVertices();
+    return [
+      [this.vertices[0], this.vertices[1], this.vertices[2]],
+      [this.vertices[2], this.vertices[3], this.vertices[0]]
+    ];
+  }
+
   updateVertices() {
     this.vertices = this.getVertices();
   }
 
+  applyRotation() {
+    this.angle += this.angularVelocity;
+    this.updateVertices();
+  }
+
   draw(ctx) {
-    // Split into two triangles (0-1-2) and (2-3-0)
     this.updateVertices();
     ctx.fillStyle = '#0f0';
     ctx.beginPath();
@@ -126,17 +157,78 @@ function isColliding(a, b) {
            aBox.maxY < bBox.minY || aBox.minY > bBox.maxY);
 }
 
+// ---------- SAT Collision Detection ----------
+function projectPolygon(axis, vertices) {
+  let min = Vec2.dot(axis, vertices[0]);
+  let max = min;
+  for (let i = 1; i < vertices.length; i++) {
+    const p = Vec2.dot(axis, vertices[i]);
+    if (p < min) min = p;
+    if (p > max) max = p;
+  }
+  return { min, max };
+}
+
+function overlapOnAxis(axis, vertsA, vertsB) {
+  const projA = projectPolygon(axis, vertsA);
+  const projB = projectPolygon(axis, vertsB);
+  return projA.max >= projB.min && projB.max >= projA.min;
+}
+
+function getAxes(triangle) {
+  const axes = [];
+  for (let i = 0; i < triangle.length; i++) {
+    const p1 = triangle[i];
+    const p2 = triangle[(i + 1) % triangle.length];
+    const edge = p2.sub(p1);
+    const normal = new Vec2(-edge.y, edge.x); // Perpendicular
+    const len = Math.hypot(normal.x, normal.y);
+    axes.push(new Vec2(normal.x / len, normal.y / len));
+  }
+  return axes;
+}
+
+function triangleSATCollision(triA, triB) {
+  const axes = [getAxes(triA), getAxes(triB)];
+  for (const axis of axes) {
+    if (!overlapOnAxis(axis, triA, triB)) return false;
+  }
+  return true;
+}
+
 function resolveCollisions() {
   for (let i = 0; i < squares.length; i++) {
     for (let j = i + 1; j < squares.length; j++) {
       const a = squares[i];
       const b = squares[j];
-      if (isColliding(a, b)) {
-        const pushDir = a.pos.sub(b.pos);
-        const push = pushDir;
-        const factor = 0.5;
-        a.pos = a.pos.add(pushDir);
-        b.pos = b.pos.sub(pushDir);
+      const trisA = a.getTriangles();
+      const trisB = b.getTriangles();
+
+      let collided = false;
+
+      for (const triA of trisA) {
+        for (const triB of trisB) {
+          if (triangleSATCollision(triA, triB)) {
+            collided = true;
+            break;
+          }
+        }
+        if (collided) break;
+      }
+
+      if (collided) {
+        // Push apart based on position vector
+        const pushVec = a.pos.sub(b.pos);
+        const length = Math.max(pushVec.x * pushVec.x + pushVec.y * pushVec.y, 0.001);
+        const displacement = new Vec2(pushVec.x / length, pushVec.y / length);
+
+        a.pos = a.pos.add(displacement);
+        b.pos = b.pos.sub(displacement);
+
+        // Apply angular impulse
+        a.angularVelocity += 0.001 * (Math.random() - 0.5);
+        b.angularVelocity += 0.001 * (Math.random() - 0.5);
+
         a.updateVertices();
         b.updateVertices();
       }
@@ -146,10 +238,17 @@ function resolveCollisions() {
 
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (const square of squares) {
+    square.applyRotation();
+  }
+
   resolveCollisions();
+
   for (const square of squares) {
     square.draw(ctx);
   }
+
   requestAnimationFrame(gameLoop);
 }
 
