@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pinball Simulator</title>
+  <style>
+    canvas {
+      background: #111;
+      display: block;
+      margin: auto;
+      border: 2px solid #fff;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="600" height="800"></canvas>
+<script>
+
+/*
+
+https://chatgpt.com/g/g-WOATA9rAK-code-companion/c/684b257d-2918-8002-8471-1390e285d673
+
+Help me make a pinball machine simulator using javascript and html5 canvas. The balls should be represented using circles and the flippers using circles and triangles. The playfield should be made from line segments. The ball should not be able to move outside the limits of the playfield.
+
+Canvas Setup
+Draw the Playfield
+Create a Ball
+Create Flippers (Triangles/Circles)
+Collision Detection
+Ball Physics & Boundaries
+Game Loop
+
+*/
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const width = canvas.width;
+const height = canvas.height;
+
+// Gravity and friction
+const gravity = 0.3;
+const friction = 0.99;
+
+// Playfield boundaries (array of line segments)
+const boundaries = [
+  { x1: 50, y1: 50, x2: 550, y2: 50 },
+  { x1: 50, y1: 50, x2: 50, y2: 750 },
+  { x1: 550, y1: 50, x2: 550, y2: 750 },
+  { x1: 50, y1: 750, x2: 550, y2: 750 }
+];
+
+// Ball object
+let ball = {
+  x: 300,
+  y: 100,
+  radius: 10,
+  vx: 2,
+  vy: 0,
+  update() {
+    this.vy += gravity;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= friction;
+    this.vy *= friction;
+
+    // Collision with walls
+    for (let b of boundaries) {
+      handleLineCollision(this, b);
+    }
+  },
+  draw() {
+    ctx.beginPath();
+    ctx.fillStyle = 'yellow';
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+};
+
+// Simple flipper (left)
+let flipperLeft = {
+  pivot: { x: 200, y: 700 },
+  length: 80,
+  angle: -Math.PI / 4,
+  draw() {
+    ctx.save();
+    ctx.translate(this.pivot.x, this.pivot.y);
+    ctx.rotate(this.angle);
+    ctx.beginPath();
+    ctx.fillStyle = '#0ff';
+    ctx.moveTo(0, 0);
+    ctx.lineTo(this.length, -10);
+    ctx.lineTo(this.length, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+};
+
+// Draw all boundaries
+function drawBoundaries() {
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  for (let b of boundaries) {
+    ctx.beginPath();
+    ctx.moveTo(b.x1, b.y1);
+    ctx.lineTo(b.x2, b.y2);
+    ctx.stroke();
+  }
+}
+
+// Ball-Line Segment Collision Handling
+function handleLineCollision(ball, line) {
+  const { x1, y1, x2, y2 } = line;
+
+  const A = { x: x1, y: y1 };
+  const B = { x: x2, y: y2 };
+  const AB = { x: B.x - A.x, y: B.y - A.y };
+  const AP = { x: ball.x - A.x, y: ball.y - A.y };
+  const ab2 = AB.x ** 2 + AB.y ** 2;
+  const ap_ab = AP.x * AB.x + AP.y * AB.y;
+  let t = ap_ab / ab2;
+
+  t = Math.max(0, Math.min(1, t)); // Clamp t to segment
+  const closest = { x: A.x + AB.x * t, y: A.y + AB.y * t };
+
+  const distX = ball.x - closest.x;
+  const distY = ball.y - closest.y;
+  const dist = Math.hypot(distX, distY);
+
+  if (dist < ball.radius) {
+    // Reflect ball
+    const nx = distX / dist;
+    const ny = distY / dist;
+
+    // Push ball out
+    ball.x = closest.x + nx * ball.radius;
+    ball.y = closest.y + ny * ball.radius;
+
+    // Reflect velocity
+    const dot = ball.vx * nx + ball.vy * ny;
+    ball.vx -= 2 * dot * nx;
+    ball.vy -= 2 * dot * ny;
+  }
+}
+
+// Main Loop
+function loop() {
+  ctx.clearRect(0, 0, width, height);
+
+  drawBoundaries();
+  ball.update();
+  ball.draw();
+  flipperLeft.draw();
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
