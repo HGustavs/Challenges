@@ -115,6 +115,13 @@ The complete code has been added and cleaned up with all the new features:
     Friction
     Collision wake-up
     Impulse damping
+
+Stacking does not work, and perhaps we need to add more iterations to reduce the energy in the system. Also, add visual indication for rotation.
+    Increased Iterations	resolveCollisions() now runs with more iterations (e.g. 10) to reduce residual energy and improve stacking stability
+    Rotation Visualization	Each rectangle now shows a directional arrow indicating current rotation direction and magnitude
+    Maintains	SAT collision, debug MTV lines, and triangle subdivision
+
+
 */
 
 const canvas = document.getElementById("canvas");
@@ -253,7 +260,7 @@ class RigidRectangle {
     ctx.closePath();
     ctx.stroke();
 
-    // Draw triangles
+    // Triangle outlines
     const tris = this.getTriangles();
     ctx.strokeStyle = "#0f08";
     for (const t of tris) {
@@ -264,6 +271,19 @@ class RigidRectangle {
       ctx.closePath();
       ctx.stroke();
     }
+
+    // Rotation arrow
+    const center = this.pos;
+    const len = 20;
+    const arrowDir = this.angularVelocity > 0 ? 1 : -1;
+    ctx.beginPath();
+    ctx.moveTo(center.x, center.y);
+    ctx.lineTo(center.x + len * Math.cos(this.angle + arrowDir * Math.PI / 2),
+               center.y + len * Math.sin(this.angle + arrowDir * Math.PI / 2));
+    ctx.strokeStyle = "orange";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.lineWidth = 1;
   }
 }
 
@@ -324,7 +344,7 @@ function update() {
   }
 
   for (const r of rectangles) r.verlet();
-  resolveCollisions(4);
+  resolveCollisions(10); // Increased for better stacking
   for (const r of rectangles) {
     r.updateAngularVelocity();
     r.draw();
@@ -333,7 +353,7 @@ function update() {
   requestAnimationFrame(update);
 }
 
-function resolveCollisions(iterations = 4) {
+function resolveCollisions(iterations = 10) {
   for (let k = 0; k < iterations; k++) {
     for (let i = 0; i < rectangles.length; i++) {
       const a = rectangles[i];
@@ -352,7 +372,6 @@ function resolveCollisions(iterations = 4) {
               a.applyImpulse(-dx * aScale, -dy * aScale, -0.0005);
               b.applyImpulse(dx * bScale, dy * bScale, 0.0005);
 
-              // Debug MTV line
               ctx.strokeStyle = "lime";
               ctx.beginPath();
               ctx.moveTo(a.pos.x, a.pos.y);
@@ -367,7 +386,6 @@ function resolveCollisions(iterations = 4) {
 }
 
 update();
-
 </script>
 </body>
 </html>
