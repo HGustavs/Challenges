@@ -136,7 +136,20 @@ The penetrations now work but when the falling recangles hit the stationary reca
     Applying friction at contact point — so objects don't slide or bounce off easily.
     Introduce a positional damping factor (even for shallow contacts).
 
+Add point based friction,  torque distribution and moment of inertia simulation. Also improve handling of polygon penetration which still results in considerable penetration between rectangles.
+    Point-based friction: Tangential damping at contact points.
+    Torque distribution: Angular velocity updates using torque and moment of inertia.
+    Moment of inertia: Realistic angular response based on rectangle size.
+    Improved polygon penetration handling: More stable with less jitter and overcorrection.
 
+Integrate vertical sorting and suggestions above for increased stacking stability.
+    Vertical sorting before resolving collisions.
+    Scaled MTV: only apply a portion of the MTV to reduce overcorrection.
+    Increased solver iterations: from 8 → 15.
+    Correction bias: resting rectangles move less.
+    Angular/linear velocity clamping to prevent explosions.
+    Improved friction: tangential friction with basic static friction threshold.
+    Upward bias in MTV correction to reduce compounding jitter in stacked objects.
 
 */
 
@@ -146,42 +159,64 @@ canvas.width = innerWidth / 2;
 canvas.height = innerHeight / 2;
 
 const GRAVITY = 0.25;
-const LINEAR_FRICTION = 0.95;
-const ANGULAR_FRICTION = 0.9;
-const GLOBAL_MTV_DECAY = 0.2;
+const LINEAR_FRICTION = 0.98;
+const ANGULAR_FRICTION = 0.95;
 const REST_THRESHOLD = 0.05;
 const REST_FRAMES_REQUIRED = 10;
+const MTV_DAMPING = 0.25;
+const FRICTION_COEFF = 0.2;
+const MAX_LINEAR_VELOCITY = 10;
+const MAX_ANGULAR_VELOCITY = 0.5;
 
 class RigidRectangle {
   constructor(x, y, w, h, angle = 0) {
     this.pos = { x, y };
     this.oldPos = { x, y };
-    this.w = w;
-    this.h = h;
     this.angle = angle;
     this.oldAngle = angle;
+    this.w = w;
+    this.h = h;
     this.angularVelocity = 0;
-    this.restFrames = 0;
     this.asleep = false;
+    this.restFrames = 0;
+    this.mass = 1;
+    this.inertia = (1 / 12) * this.mass * (w * w + h * h);
   }
 
   getVelocity() {
     return {
       x: (this.pos.x - this.oldPos.x) * LINEAR_FRICTION,
-      y: (this.pos.y - this.oldPos.y) * LINEAR_FRICTION,
+      y: (this.pos.y - this.oldPos.y) * LINEAR_FRICTION
     };
   }
 
   verlet() {
     if (this.asleep) return;
+
     const v = this.getVelocity();
     this.oldPos = { ...this.pos };
     this.oldAngle = this.angle;
+
     this.pos.x += v.x;
     this.pos.y += v.y + GRAVITY;
     this.angle += this.angularVelocity;
-    this.enforceBoundaryConstraints();
+
+    this.enforceBoundary();
     this.detectRest();
+
+    // Apply friction
+    this.angularVelocity *= ANGULAR_FRICTION;
+
+    // Clamp velocities
+    const newV = this.getVelocity();
+    const vMag = Math.hypot(newV.x, newV.y);
+    if (vMag > MAX_LINEAR_VELOCITY) {
+      const scale = MAX_LINEAR_VELOCITY / vMag;
+      this.pos.x = this.oldPos.x + newV.x * scale;
+      this.pos.y = this.oldPos.y + newV.y * scale;
+    }
+
+    this.angularVelocity = Math.max(-MAX_ANGULAR_VELOCITY, Math.min(MAX_ANGULAR_VELOCITY, this.angularVelocity));
   }
 
   detectRest() {
@@ -192,45 +227,26 @@ class RigidRectangle {
       if (this.restFrames > REST_FRAMES_REQUIRED) this.asleep = true;
     } else {
       this.restFrames = 0;
+      this.asleep = false;
     }
   }
 
-  enforceBoundaryConstraints() {
+  enforceBoundary() {
     const pts = this.getPoints();
     for (const p of pts) {
       let dx = 0, dy = 0;
       if (p.x < 0) dx = -p.x;
-      else if (p.x > canvas.width) dx = canvas.width - p.x;
+      if (p.x > canvas.width) dx = canvas.width - p.x;
       if (p.y < 0) dy = -p.y;
-      else if (p.y > canvas.height) dy = canvas.height - p.y;
-
-      if (dx !== 0 || dy !== 0) {
-        const forceX = dx * 0.25;
-        const forceY = dy * 0.25;
-        const cx = p.x - this.pos.x;
-        const cy = p.y - this.pos.y;
-
-        this.pos.x += forceX * 0.25;
-        this.pos.y += forceY * 0.25;
-
-        const torque = (cx * forceY - cy * forceX) * 0.001;
-        this.angularVelocity += torque;
+      if (p.y > canvas.height) dy = canvas.height - p.y;
+      if (dx || dy) {
+        const offset = { x: p.x - this.pos.x, y: p.y - this.pos.y };
+        this.pos.x += dx * 0.5;
+        this.pos.y += dy * 0.5;
+        const torque = (offset.x * dy - offset.y * dx);
+        this.angularVelocity += (torque / this.inertia) * 0.2;
       }
     }
-  }
-
-  updateAngularVelocity() {
-    const newAngle = this.computeCurrentAngle();
-    this.angularVelocity = (newAngle - this.oldAngle) * ANGULAR_FRICTION;
-    this.oldAngle = this.angle;
-    this.angle = newAngle;
-  }
-
-  computeCurrentAngle() {
-    const pts = this.getPoints();
-    const dx = pts[1].x - pts[0].x;
-    const dy = pts[1].y - pts[0].y;
-    return Math.atan2(dy, dx);
   }
 
   getPoints() {
@@ -258,6 +274,13 @@ class RigidRectangle {
     ];
   }
 
+  applyImpulseAt(offset, impulse) {
+    this.pos.x += impulse.x / this.mass;
+    this.pos.y += impulse.y / this.mass;
+    const torque = (offset.x * impulse.y - offset.y * impulse.x);
+    this.angularVelocity += (torque / this.inertia);
+  }
+
   draw() {
     const pts = this.getPoints();
     ctx.strokeStyle = this.asleep ? "#888" : "white";
@@ -266,32 +289,17 @@ class RigidRectangle {
     ctx.closePath();
     ctx.stroke();
 
-    const tris = this.getTriangles();
-    ctx.strokeStyle = "#0f08";
-    for (const t of tris) {
-      ctx.beginPath();
-      ctx.moveTo(t[0].x, t[0].y);
-      ctx.lineTo(t[1].x, t[1].y);
-      ctx.lineTo(t[2].x, t[2].y);
-      ctx.closePath();
-      ctx.stroke();
-    }
-
     const center = this.pos;
-    const len = 20;
-    const arrowDir = this.angularVelocity > 0 ? 1 : -1;
     ctx.beginPath();
     ctx.moveTo(center.x, center.y);
-    ctx.lineTo(center.x + len * Math.cos(this.angle + arrowDir * Math.PI / 2),
-               center.y + len * Math.sin(this.angle + arrowDir * Math.PI / 2));
+    ctx.lineTo(center.x + 20 * Math.cos(this.angle + Math.PI / 2),
+               center.y + 20 * Math.sin(this.angle + Math.PI / 2));
     ctx.strokeStyle = "orange";
-    ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.lineWidth = 1;
   }
 }
 
-// --- SAT TRIANGLE COLLISION ---
+// SAT
 function getAxes(tri) {
   const axes = [];
   for (let i = 0; i < 3; i++) {
@@ -312,90 +320,78 @@ function project(tri, axis) {
 
 function triangleMTV(t1, t2) {
   const axes = [...getAxes(t1), ...getAxes(t2)];
-  let smallest = Infinity;
-  let smallestAxis = null;
+  let smallest = Infinity, axis = null;
 
-  for (const axis of axes) {
-    const [minA, maxA] = project(t1, axis);
-    const [minB, maxB] = project(t2, axis);
+  for (const ax of axes) {
+    const [minA, maxA] = project(t1, ax);
+    const [minB, maxB] = project(t2, ax);
     const overlap = Math.min(maxA, maxB) - Math.max(minA, minB);
     if (overlap <= 0) return null;
     if (overlap < smallest) {
       smallest = overlap;
-      smallestAxis = axis;
+      axis = ax;
     }
   }
 
   return {
-    x: smallestAxis.x * smallest,
-    y: smallestAxis.y * smallest,
+    x: axis.x * smallest,
+    y: axis.y * smallest,
     depth: smallest
   };
 }
 
-// --- MAIN LOOP ---
-const rectangles = [];
-let frame = 0;
+function resolveCollisions(rects, iterations = 15) {
+  // Sort by vertical position
+  rects.sort((a, b) => a.pos.y - b.pos.y);
 
-function update() {
-  frame++;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (frame % 30 === 0 && rectangles.length < 10) {
-    rectangles.push(new RigidRectangle(
-      100 + Math.random() * (canvas.width - 200),
-      20,
-      60, 30,
-      Math.random() * Math.PI / 6
-    ));
-  }
-
-  for (const r of rectangles) r.verlet();
-  resolveCollisions(10);
-  for (const r of rectangles) {
-    r.updateAngularVelocity();
-    r.draw();
-  }
-
-  requestAnimationFrame(update);
-}
-
-function resolveCollisions(iterations = 10) {
-  const maxPenetration = 8;
-
-  for (let k = 0; k < iterations; k++) {
-    for (let i = 0; i < rectangles.length; i++) {
-      const a = rectangles[i];
-      for (let j = i + 1; j < rectangles.length; j++) {
-        const b = rectangles[j];
+  for (let it = 0; it < iterations; it++) {
+    for (let i = 0; i < rects.length; i++) {
+      for (let j = i + 1; j < rects.length; j++) {
+        const a = rects[i], b = rects[j];
         for (const ta of a.getTriangles()) {
           for (const tb of b.getTriangles()) {
             const mtv = triangleMTV(ta, tb);
             if (mtv) {
-              const relVx = (b.pos.x - b.oldPos.x) - (a.pos.x - a.oldPos.x);
-              const relVy = (b.pos.y - b.oldPos.y) - (a.pos.y - a.oldPos.y);
-              const relMag = Math.hypot(relVx, relVy);
-              const damping = 0.2 + 0.3 * Math.min(1, relMag / 5);
-              const scale = Math.min(1, mtv.depth / maxPenetration) * damping;
+              const contact = {
+                x: (ta[0].x + ta[1].x + ta[2].x) / 3,
+                y: (ta[0].y + ta[1].y + ta[2].y) / 3
+              };
+              const normal = { x: mtv.x, y: mtv.y };
+              const strength = Math.min(1, mtv.depth / 5) * MTV_DAMPING;
 
-              const dx = mtv.x * scale * GLOBAL_MTV_DECAY;
-              const dy = mtv.y * scale * GLOBAL_MTV_DECAY;
+              // Upward bias
+              if (normal.y > 0) normal.y *= 1.1;
 
-              if (!a.asleep) {
-                a.pos.x -= dx * 0.5;
-                a.pos.y -= dy * 0.5;
+              const impulse = {
+                x: normal.x * strength,
+                y: normal.y * strength
+              };
+
+              const ra = { x: contact.x - a.pos.x, y: contact.y - a.pos.y };
+              const rb = { x: contact.x - b.pos.x, y: contact.y - b.pos.y };
+
+              const aWeight = a.asleep ? 0.2 : 0.5;
+              const bWeight = b.asleep ? 0.2 : 0.5;
+
+              a.applyImpulseAt(ra, { x: -impulse.x * aWeight, y: -impulse.y * aWeight });
+              b.applyImpulseAt(rb, { x: impulse.x * bWeight, y: impulse.y * bWeight });
+
+              // Friction
+              const tangent = { x: -normal.y, y: normal.x };
+              const relVel = {
+                x: b.pos.x - b.oldPos.x - (a.pos.x - a.oldPos.x),
+                y: b.pos.y - b.oldPos.y - (a.pos.y - a.oldPos.y)
+              };
+              const slip = relVel.x * tangent.x + relVel.y * tangent.y;
+              if (Math.abs(slip) > 0.01) {
+                const frictionImpulse = slip * FRICTION_COEFF;
+                const friction = {
+                  x: tangent.x * frictionImpulse,
+                  y: tangent.y * frictionImpulse
+                };
+                a.applyImpulseAt(ra, { x: friction.x * aWeight, y: friction.y * aWeight });
+                b.applyImpulseAt(rb, { x: -friction.x * bWeight, y: -friction.y * bWeight });
               }
-              if (!b.asleep) {
-                b.pos.x += dx * 0.5;
-                b.pos.y += dy * 0.5;
-              }
-
-              // Optional debug vector
-              ctx.strokeStyle = "lime";
-              ctx.beginPath();
-              ctx.moveTo(a.pos.x, a.pos.y);
-              ctx.lineTo(a.pos.x + dx * 10, a.pos.y + dy * 10);
-              ctx.stroke();
             }
           }
         }
@@ -404,8 +400,30 @@ function resolveCollisions(iterations = 10) {
   }
 }
 
-update();
+// Simulation
+const rectangles = [];
+let frame = 0;
 
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  frame++;
+  if (frame % 30 === 0 && rectangles.length < 10) {
+    rectangles.push(new RigidRectangle(
+      100 + Math.random() * (canvas.width - 200),
+      20,
+      60, 30,
+      Math.random() * 0.5
+    ));
+  }
+
+  rectangles.forEach(r => r.verlet());
+  resolveCollisions(rectangles, 15);
+  rectangles.forEach(r => r.draw());
+
+  requestAnimationFrame(loop);
+}
+
+loop();
 </script>
 </body>
 </html>
