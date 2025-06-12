@@ -121,6 +121,15 @@ Stacking does not work, and perhaps we need to add more iterations to reduce the
     Rotation Visualization	Each rectangle now shows a directional arrow indicating current rotation direction and magnitude
     Maintains	SAT collision, debug MTV lines, and triangle subdivision
 
+Stacking injects too much energy. When two rectangles penetrate even at a very shallow depth, the energy added makes the rectangle jump very far. We need it to just be pushed out and not add to the velocity of the rectangle.
+    Apply Position Corrections Without Velocity Changes
+    Position-only corrections should not influence the rectangle's velocity or angular velocity directly.
+    Separate Collision Response and Velocity Update
+    Resolve collisions purely via positional separation, and let the next velocity step reflect any movement naturally.
+    Limit MTV (Minimum Translation Vector) Magnitude
+    Cap the MTV length to prevent large corrections due to deep or sudden overlaps.
+    Scale MTV Based on Penetration Depth (Non-linear decay)
+    Use a smoother falloff for MTV adjustment like scale = min(1, penetration / maxDepth), to avoid overcompensation.
 
 */
 
@@ -132,10 +141,9 @@ canvas.height = innerHeight / 2;
 const GRAVITY = 0.25;
 const LINEAR_FRICTION = 0.95;
 const ANGULAR_FRICTION = 0.9;
+const GLOBAL_MTV_DECAY = 0.2;
 const REST_THRESHOLD = 0.05;
 const REST_FRAMES_REQUIRED = 10;
-const GLOBAL_MTV_DECAY = 0.2;
-const REST_IMPULSE_SCALE = 0.1;
 
 class RigidRectangle {
   constructor(x, y, w, h, angle = 0) {
@@ -180,18 +188,9 @@ class RigidRectangle {
     }
   }
 
-  applyImpulse(dx, dy, da) {
-    if (this.asleep) return;
-    this.pos.x += dx;
-    this.pos.y += dy;
-    this.angle += da;
-    this.asleep = false;
-  }
-
   enforceBoundaryConstraints() {
     const pts = this.getPoints();
     const center = this.pos;
-    let totalDX = 0, totalDY = 0, totalDA = 0;
     for (const p of pts) {
       let dx = 0, dy = 0;
       if (p.x < 0) dx = -p.x;
@@ -199,18 +198,9 @@ class RigidRectangle {
       if (p.y < 0) dy = -p.y;
       else if (p.y > canvas.height) dy = canvas.height - p.y;
 
-      if (dx !== 0 || dy !== 0) {
-        totalDX += dx;
-        totalDY += dy;
-
-        const rx = p.x - center.x;
-        const ry = p.y - center.y;
-        const perp = (dx * -ry + dy * rx) / (rx * rx + ry * ry + 0.0001);
-        totalDA += perp * 0.1;
-      }
+      this.pos.x += dx * 0.25;
+      this.pos.y += dy * 0.25;
     }
-
-    this.applyImpulse(totalDX * 0.25, totalDY * 0.25, totalDA);
   }
 
   updateAngularVelocity() {
@@ -260,7 +250,7 @@ class RigidRectangle {
     ctx.closePath();
     ctx.stroke();
 
-    // Triangle outlines
+    // Draw triangles
     const tris = this.getTriangles();
     ctx.strokeStyle = "#0f08";
     for (const t of tris) {
@@ -272,7 +262,7 @@ class RigidRectangle {
       ctx.stroke();
     }
 
-    // Rotation arrow
+    // Rotation direction arrow
     const center = this.pos;
     const len = 20;
     const arrowDir = this.angularVelocity > 0 ? 1 : -1;
@@ -313,17 +303,18 @@ function triangleMTV(t1, t2) {
   for (const axis of axes) {
     const [minA, maxA] = project(t1, axis);
     const [minB, maxB] = project(t2, axis);
-    const o = Math.min(maxA, maxB) - Math.max(minA, minB);
-    if (o <= 0) return null;
-    if (o < smallest) {
-      smallest = o;
+    const overlap = Math.min(maxA, maxB) - Math.max(minA, minB);
+    if (overlap <= 0) return null;
+    if (overlap < smallest) {
+      smallest = overlap;
       smallestAxis = axis;
     }
   }
 
   return {
     x: smallestAxis.x * smallest,
-    y: smallestAxis.y * smallest
+    y: smallestAxis.y * smallest,
+    depth: smallest
   };
 }
 
@@ -344,7 +335,7 @@ function update() {
   }
 
   for (const r of rectangles) r.verlet();
-  resolveCollisions(10); // Increased for better stacking
+  resolveCollisions(10);
   for (const r of rectangles) {
     r.updateAngularVelocity();
     r.draw();
@@ -354,6 +345,8 @@ function update() {
 }
 
 function resolveCollisions(iterations = 10) {
+  const maxPenetration = 8;
+
   for (let k = 0; k < iterations; k++) {
     for (let i = 0; i < rectangles.length; i++) {
       const a = rectangles[i];
@@ -363,15 +356,20 @@ function resolveCollisions(iterations = 10) {
           for (const tb of b.getTriangles()) {
             const mtv = triangleMTV(ta, tb);
             if (mtv) {
-              let dx = mtv.x * GLOBAL_MTV_DECAY;
-              let dy = mtv.y * GLOBAL_MTV_DECAY;
+              const scale = Math.min(1, mtv.depth / maxPenetration);
+              const dx = mtv.x * scale * GLOBAL_MTV_DECAY;
+              const dy = mtv.y * scale * GLOBAL_MTV_DECAY;
 
-              const aScale = a.asleep ? REST_IMPULSE_SCALE : 0.5;
-              const bScale = b.asleep ? REST_IMPULSE_SCALE : 0.5;
+              if (!a.asleep) {
+                a.pos.x -= dx * 0.5;
+                a.pos.y -= dy * 0.5;
+              }
+              if (!b.asleep) {
+                b.pos.x += dx * 0.5;
+                b.pos.y += dy * 0.5;
+              }
 
-              a.applyImpulse(-dx * aScale, -dy * aScale, -0.0005);
-              b.applyImpulse(dx * bScale, dy * bScale, 0.0005);
-
+              // Debug MTV vector
               ctx.strokeStyle = "lime";
               ctx.beginPath();
               ctx.moveTo(a.pos.x, a.pos.y);
@@ -386,6 +384,7 @@ function resolveCollisions(iterations = 10) {
 }
 
 update();
+
 </script>
 </body>
 </html>
