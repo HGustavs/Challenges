@@ -49,6 +49,13 @@ Make a left wall for the launch channel and make the ball launch much faster
     Add a left wall to the launch channel at x = 550 to fully enclose the channel.
     Increase launch velocity so the ball shoots into the playfield more quickly.
 
+We need to make the flipper better. We need two flippers, one on the left side facing right and one on the right side facing left. Make a function that draws a flipper and use that function to create the two flippers. The flipper consists of two circles, one larger circle at the rotational center of the flipper and one circle at the point of the flipper which is half the size of the larger circle. The circles are joined using two lines that go from points on either circle. Each line starts and ends on points perpendicular to a line from the center of each circle.
+    Each flipper will now be composed of:
+    A large circle at the pivot (the base)
+    A small circle at the tip (opposite end)
+    Two side lines connecting the two circles
+    The lines connect to points that are perpendicular to the axis between the centers
+
 */
 
 const canvas = document.getElementById('gameCanvas');
@@ -70,24 +77,23 @@ const openingWidth = width * 0.1;
 const openingLeft = (width - openingWidth) / 2;
 const openingRight = (width + openingWidth) / 2;
 
-// Boundaries and special flags
+// Boundaries
 const boundaries = [
   // Playfield walls
   { x1: 50, y1: playfieldTop, x2: 550, y2: playfieldTop }, // Top wall
   { x1: 50, y1: playfieldTop, x2: 50, y2: 600 },            // Left wall
   { x1: 550, y1: playfieldTop, x2: 550, y2: 600 },          // Right playfield wall
 
-  // V-shaped bottom
+  // V-shaped drain
   { x1: 50, y1: 600, x2: openingLeft, y2: playfieldBottom },
   { x1: 550, y1: 600, x2: openingRight, y2: playfieldBottom },
 
-  // Launch channel walls
-  { x1: 600, y1: playfieldBottom, x2: 600, y2: playfieldTop }, // Right outer wall
-  { x1: 600, y1: playfieldBottom, x2: 550, y2: playfieldBottom }, // Channel bottom
-  { x1: 600, y1: 100, x2: 550, y2: 50 }, // 45° deflector
-
-  // One-way wall (channel exit)
-  { x1: 550, y1: 100, x2: 550, y2: 50, oneWay: true }
+  // Launch channel
+  { x1: 600, y1: playfieldBottom, x2: 600, y2: playfieldTop },       // Right outer wall
+  { x1: 600, y1: playfieldBottom, x2: 550, y2: playfieldBottom },    // Bottom
+  { x1: 550, y1: playfieldBottom, x2: 550, y2: 100 },                // Left channel wall
+  { x1: 600, y1: 100, x2: 550, y2: 50 },                             // 45° deflector
+  { x1: 550, y1: 100, x2: 550, y2: 50, oneWay: true }                // One-way gate
 ];
 
 // Ball object
@@ -96,7 +102,7 @@ let ball = {
   y: 740,
   radius: 10,
   vx: 0,
-  vy: -5,
+  vy: -12,
 
   update() {
     this.vy += gravity;
@@ -109,7 +115,7 @@ let ball = {
       handleLineCollision(this, b);
     }
 
-    // Check for drain
+    // Drain reset
     if (
       this.y > playfieldBottom + this.radius &&
       this.x > openingLeft &&
@@ -120,10 +126,10 @@ let ball = {
   },
 
   reset() {
-    this.x = 575; // Centered in channel
+    this.x = 575; // Launch channel center
     this.y = 740;
     this.vx = 0;
-    this.vy = -5;
+    this.vy = -12; // Fast launch
   },
 
   draw() {
@@ -134,28 +140,63 @@ let ball = {
   }
 };
 
-// Simple left flipper placeholder
-let flipperLeft = {
-  pivot: { x: 200, y: 700 },
-  length: 80,
-  angle: -Math.PI / 4,
-  draw() {
-    ctx.save();
-    ctx.translate(this.pivot.x, this.pivot.y);
-    ctx.rotate(this.angle);
-    ctx.beginPath();
-    ctx.fillStyle = '#0ff';
-    ctx.moveTo(0, 0);
-    ctx.lineTo(this.length, -10);
-    ctx.lineTo(this.length, 10);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-};
+// 🧩 Flipper drawing function
+function drawFlipper(pivot, angle, length, baseRadius, facingLeft) {
+  const tipRadius = baseRadius / 2;
+  const direction = facingLeft ? -1 : 1;
 
-// Draw walls
+  const dx = Math.cos(angle) * length * direction;
+  const dy = Math.sin(angle) * length;
+  const tip = { x: pivot.x + dx, y: pivot.y + dy };
+
+  // Perpendicular offsets for side lines
+  const offsetX = Math.sin(angle) * baseRadius;
+  const offsetY = -Math.cos(angle) * baseRadius;
+  const pivotA = { x: pivot.x + offsetX, y: pivot.y + offsetY };
+  const pivotB = { x: pivot.x - offsetX, y: pivot.y - offsetY };
+
+  const tipOffsetX = Math.sin(angle) * tipRadius;
+  const tipOffsetY = -Math.cos(angle) * tipRadius;
+  const tipA = { x: tip.x + tipOffsetX, y: tip.y + tipOffsetY };
+  const tipB = { x: tip.x - tipOffsetX, y: tip.y - tipOffsetY };
+
+  // Flipper body
+  ctx.beginPath();
+  ctx.moveTo(pivotA.x, pivotA.y);
+  ctx.lineTo(tipA.x, tipA.y);
+  ctx.lineTo(tipB.x, tipB.y);
+  ctx.lineTo(pivotB.x, pivotB.y);
+  ctx.closePath();
+  ctx.fillStyle = '#0ff';
+  ctx.fill();
+
+  // Circles
+  ctx.beginPath();
+  ctx.arc(pivot.x, pivot.y, baseRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(tip.x, tip.y, tipRadius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// 🧩 Draw both flippers
+function drawFlippers() {
+  const flipperLength = 80;
+  const baseRadius = 14;
+
+  // Left flipper (rotated up/right)
+  drawFlipper({ x: 150, y: 700 }, -Math.PI / 4, flipperLength, baseRadius, false);
+
+  // Right flipper (rotated up/left)
+  drawFlipper({ x: 450, y: 700 }, -3 * Math.PI / 4, flipperLength, baseRadius, true);
+}
+
+// Draw walls and boundaries
 function drawBoundaries() {
+  ctx.fillStyle = 'rgba(0,255,255,0.1)';
+  ctx.fillRect(550, playfieldTop, 50, playfieldBottom - playfieldTop);
+
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 2;
   for (let b of boundaries) {
@@ -165,7 +206,7 @@ function drawBoundaries() {
     ctx.stroke();
   }
 
-  // Red line for drain opening
+  // Red drain opening
   ctx.strokeStyle = '#f00';
   ctx.beginPath();
   ctx.moveTo(openingLeft, playfieldBottom);
@@ -173,7 +214,7 @@ function drawBoundaries() {
   ctx.stroke();
 }
 
-// Handle ball-line collisions
+// Collision handling
 function handleLineCollision(ball, line) {
   const { x1, y1, x2, y2, oneWay } = line;
 
@@ -203,7 +244,7 @@ function handleLineCollision(ball, line) {
       if (ball.vx >= 0 && ball.x < 550) return;
     }
 
-    // Push out and reflect
+    // Push and reflect
     ball.x = closest.x + nx * ball.radius;
     ball.y = closest.y + ny * ball.radius;
 
@@ -213,19 +254,20 @@ function handleLineCollision(ball, line) {
   }
 }
 
-// Game loop
+// 🎮 Game loop
 function loop() {
   ctx.clearRect(0, 0, width, height);
 
   drawBoundaries();
   ball.update();
   ball.draw();
-  flipperLeft.draw();
+  drawFlippers(); // ✅ New flippers
 
   requestAnimationFrame(loop);
 }
 
 loop();
+
 
 </script>
 </body>
