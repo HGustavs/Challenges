@@ -131,6 +131,13 @@ Stacking injects too much energy. When two rectangles penetrate even at a very s
     Scale MTV Based on Penetration Depth (Non-linear decay)
     Use a smoother falloff for MTV adjustment like scale = min(1, penetration / maxDepth), to avoid overcompensation.
 
+The penetrations now work but when the falling recangles hit the stationary recangles the energies are too large. Also, the rectangles do not rotate when hitting the borders of the canvas.
+    Scaling MTV corrections based on relative velocity — slower falls → smaller correction steps.
+    Applying friction at contact point — so objects don't slide or bounce off easily.
+    Introduce a positional damping factor (even for shallow contacts).
+
+
+
 */
 
 const canvas = document.getElementById("canvas");
@@ -190,7 +197,6 @@ class RigidRectangle {
 
   enforceBoundaryConstraints() {
     const pts = this.getPoints();
-    const center = this.pos;
     for (const p of pts) {
       let dx = 0, dy = 0;
       if (p.x < 0) dx = -p.x;
@@ -198,8 +204,18 @@ class RigidRectangle {
       if (p.y < 0) dy = -p.y;
       else if (p.y > canvas.height) dy = canvas.height - p.y;
 
-      this.pos.x += dx * 0.25;
-      this.pos.y += dy * 0.25;
+      if (dx !== 0 || dy !== 0) {
+        const forceX = dx * 0.25;
+        const forceY = dy * 0.25;
+        const cx = p.x - this.pos.x;
+        const cy = p.y - this.pos.y;
+
+        this.pos.x += forceX * 0.25;
+        this.pos.y += forceY * 0.25;
+
+        const torque = (cx * forceY - cy * forceX) * 0.001;
+        this.angularVelocity += torque;
+      }
     }
   }
 
@@ -250,7 +266,6 @@ class RigidRectangle {
     ctx.closePath();
     ctx.stroke();
 
-    // Draw triangles
     const tris = this.getTriangles();
     ctx.strokeStyle = "#0f08";
     for (const t of tris) {
@@ -262,7 +277,6 @@ class RigidRectangle {
       ctx.stroke();
     }
 
-    // Rotation direction arrow
     const center = this.pos;
     const len = 20;
     const arrowDir = this.angularVelocity > 0 ? 1 : -1;
@@ -277,6 +291,7 @@ class RigidRectangle {
   }
 }
 
+// --- SAT TRIANGLE COLLISION ---
 function getAxes(tri) {
   const axes = [];
   for (let i = 0; i < 3; i++) {
@@ -318,6 +333,7 @@ function triangleMTV(t1, t2) {
   };
 }
 
+// --- MAIN LOOP ---
 const rectangles = [];
 let frame = 0;
 
@@ -356,7 +372,12 @@ function resolveCollisions(iterations = 10) {
           for (const tb of b.getTriangles()) {
             const mtv = triangleMTV(ta, tb);
             if (mtv) {
-              const scale = Math.min(1, mtv.depth / maxPenetration);
+              const relVx = (b.pos.x - b.oldPos.x) - (a.pos.x - a.oldPos.x);
+              const relVy = (b.pos.y - b.oldPos.y) - (a.pos.y - a.oldPos.y);
+              const relMag = Math.hypot(relVx, relVy);
+              const damping = 0.2 + 0.3 * Math.min(1, relMag / 5);
+              const scale = Math.min(1, mtv.depth / maxPenetration) * damping;
+
               const dx = mtv.x * scale * GLOBAL_MTV_DECAY;
               const dy = mtv.y * scale * GLOBAL_MTV_DECAY;
 
@@ -369,7 +390,7 @@ function resolveCollisions(iterations = 10) {
                 b.pos.y += dy * 0.5;
               }
 
-              // Debug MTV vector
+              // Optional debug vector
               ctx.strokeStyle = "lime";
               ctx.beginPath();
               ctx.moveTo(a.pos.x, a.pos.y);
