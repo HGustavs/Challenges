@@ -27,11 +27,18 @@ Each box:
   *  Checks if its bottom particles are just above another box or the ground.
   *  If so, it snaps them into place by setting y equal to the surface below.
 
+This technique can improve realism and stacking:
+  *  Ray = line from old position to new position.
+  *  You check where this ray first hits the collision surface (ground, other box, etc).
+  *  Compute penetration depth as the overshoot past that surface.
+  *  Then push the particle back along the ray direction to eliminate the overlap — possibly stopping it at the contact point.
+This is called Continuous Collision Detection (CCD), and is especially useful in discrete solvers like Verlet.
 
 */
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+
 const GRAVITY = 0.5;
 const FRICTION = 0.98;
 const SUBSTEPS = 5;
@@ -43,20 +50,43 @@ class Particle {
   }
 
   update() {
-    let vx = (this.x - this.oldx) * FRICTION;
-    let vy = (this.y - this.oldy) * FRICTION + GRAVITY;
+    const vx = (this.x - this.oldx) * FRICTION;
+    const vy = (this.y - this.oldy) * FRICTION + GRAVITY;
 
     this.oldx = this.x;
     this.oldy = this.y;
+
     this.x += vx;
     this.y += vy;
   }
 
   constrain() {
-    const r = 1;
-    if (this.x < r) this.x = r;
-    if (this.x > canvas.width - r) this.x = canvas.width - r;
-    if (this.y > canvas.height - r) this.y = canvas.height - r;
+    const radius = 0.5;
+
+    // Left/right walls
+    if (this.x < radius) {
+      this.x = radius;
+      this.oldx = this.x;
+    }
+    if (this.x > canvas.width - radius) {
+      this.x = canvas.width - radius;
+      this.oldx = this.x;
+    }
+
+    // Floor with ray-based CCD correction
+    if (this.y > canvas.height - radius) {
+      const dy = this.y - this.oldy;
+      const overshoot = this.y - (canvas.height - radius);
+      const t = overshoot / dy;
+      this.y = canvas.height - radius;
+      this.oldy = this.y - dy * (1 - t);
+    }
+
+    // Optional: ceiling
+    if (this.y < radius) {
+      this.y = radius;
+      this.oldy = this.y;
+    }
   }
 }
 
@@ -98,73 +128,34 @@ class Constraint {
 
 class Box {
   constructor(x, y, w, h) {
-    this.w = w;
-    this.h = h;
+    const hw = w / 2;
+    const hh = h / 2;
 
-    const hw = w / 2, hh = h / 2;
     this.particles = [
       new Particle(x - hw, y - hh), // top-left
       new Particle(x + hw, y - hh), // top-right
       new Particle(x + hw, y + hh), // bottom-right
       new Particle(x - hw, y + hh), // bottom-left
     ];
+
     const [a, b, c, d] = this.particles;
+
     this.constraints = [
       new Constraint(a, b),
       new Constraint(b, c),
       new Constraint(c, d),
       new Constraint(d, a),
-      new Constraint(a, c),
+      new Constraint(a, c), // diagonals
       new Constraint(b, d),
     ];
   }
 
-  getBottomY() {
-    return Math.max(this.particles[2].y, this.particles[3].y);
-  }
-
-  getTopY() {
-    return Math.min(this.particles[0].y, this.particles[1].y);
-  }
-
-  getAABB() {
-    const xs = this.particles.map(p => p.x);
-    const ys = this.particles.map(p => p.y);
-    return {
-      minX: Math.min(...xs),
-      maxX: Math.max(...xs),
-      minY: Math.min(...ys),
-      maxY: Math.max(...ys),
-    };
-  }
-
   update() {
     for (const p of this.particles) p.update();
+
     for (let i = 0; i < SUBSTEPS; i++) {
       for (const c of this.constraints) c.resolve();
       for (const p of this.particles) p.constrain();
-    }
-  }
-
-  snapToGroundOrStack(others) {
-    const epsilon = 2;
-    for (const p of this.particles.slice(2, 4)) { // only bottom two
-      if (Math.abs(p.y - canvas.height) < epsilon) {
-        p.y = canvas.height;
-        p.oldy = p.y;
-      } else {
-        for (const other of others) {
-          if (other === this) continue;
-          const aabb = other.getAABB();
-          if (
-            p.x > aabb.minX && p.x < aabb.maxX &&
-            p.y < aabb.minY && Math.abs(p.y - aabb.minY) < epsilon
-          ) {
-            p.y = aabb.minY;
-            p.oldy = p.y;
-          }
-        }
-      }
     }
   }
 
@@ -176,18 +167,27 @@ class Box {
 
 const boxes = [];
 
-setInterval(() => {
-  boxes.push(new Box(200, 20, 40, 40));
-}, 1000);
+function spawnBox() {
+  const x = 200;
+  const y = 30;
+  const w = 40;
+  const h = 40;
+  boxes.push(new Box(x, y, w, h));
+}
+
+setInterval(spawnBox, 1000);
 
 function update() {
-  for (const box of boxes) box.update();
-  for (const box of boxes) box.snapToGroundOrStack(boxes);
+  for (const box of boxes) {
+    box.update();
+  }
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const box of boxes) box.draw(ctx);
+  for (const box of boxes) {
+    box.draw(ctx);
+  }
 }
 
 function loop() {
