@@ -10,50 +10,53 @@
 <body>
 <canvas id="canvas" width="400" height="600"></canvas>
 <script>
+
+/* 
+
+I want to make a minimal physics engine in javascript that supports stacking of boxes that are falling from the top of the screen towards the bottom. The boxes should not fall through the bottom and sides of the screen. I suggest using particles and basing the engine on verlet physics.
+
+* Particles + constraints to form rectangles (boxes)
+* Gravity
+* Ground and wall collisions
+* Stacking support using constraint resolution
+* Verlet integration
+
+The boxes are not stacking and are intersection other boxes. Could sorting the boxes vertically help with the stacking behavior? 
+
+Each box:
+  *  Checks if its bottom particles are just above another box or the ground.
+  *  If so, it snaps them into place by setting y equal to the surface below.
+
+
+*/
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const GRAVITY = 0.5;
-const FRICTION = 0.99;
-const BOUNCE = 0.0;
+const FRICTION = 0.98;
 const SUBSTEPS = 5;
 
 class Particle {
   constructor(x, y) {
     this.x = this.oldx = x;
     this.y = this.oldy = y;
-    this.pinned = false;
   }
 
   update() {
-    if (this.pinned) return;
-    const vx = (this.x - this.oldx) * FRICTION;
-    const vy = (this.y - this.oldy) * FRICTION;
+    let vx = (this.x - this.oldx) * FRICTION;
+    let vy = (this.y - this.oldy) * FRICTION + GRAVITY;
 
     this.oldx = this.x;
     this.oldy = this.y;
     this.x += vx;
-    this.y += vy + GRAVITY;
+    this.y += vy;
   }
 
   constrain() {
-    // Walls
-    const radius = 2;
-    if (this.x > canvas.width - radius) {
-      this.x = canvas.width - radius;
-      this.oldx = this.x + (this.oldx - this.x) * BOUNCE;
-    }
-    if (this.x < radius) {
-      this.x = radius;
-      this.oldx = this.x + (this.oldx - this.x) * BOUNCE;
-    }
-    if (this.y > canvas.height - radius) {
-      this.y = canvas.height - radius;
-      this.oldy = this.y + (this.oldy - this.y) * BOUNCE;
-    }
-    if (this.y < radius) {
-      this.y = radius;
-      this.oldy = this.y + (this.oldy - this.y) * BOUNCE;
-    }
+    const r = 1;
+    if (this.x < r) this.x = r;
+    if (this.x > canvas.width - r) this.x = canvas.width - r;
+    if (this.y > canvas.height - r) this.y = canvas.height - r;
   }
 }
 
@@ -61,11 +64,13 @@ class Constraint {
   constructor(p1, p2, length = null) {
     this.p1 = p1;
     this.p2 = p2;
-    this.length = length ?? this.distance();
+    this.length = length ?? this.getLength();
   }
 
-  distance() {
-    return Math.hypot(this.p1.x - this.p2.x, this.p1.y - this.p2.y);
+  getLength() {
+    const dx = this.p2.x - this.p1.x;
+    const dy = this.p2.y - this.p1.y;
+    return Math.hypot(dx, dy);
   }
 
   resolve() {
@@ -73,17 +78,14 @@ class Constraint {
     const dy = this.p2.y - this.p1.y;
     const dist = Math.hypot(dx, dy);
     const diff = (this.length - dist) / dist;
+
     const offsetX = dx * 0.5 * diff;
     const offsetY = dy * 0.5 * diff;
 
-    if (!this.p1.pinned) {
-      this.p1.x -= offsetX;
-      this.p1.y -= offsetY;
-    }
-    if (!this.p2.pinned) {
-      this.p2.x += offsetX;
-      this.p2.y += offsetY;
-    }
+    this.p1.x -= offsetX;
+    this.p1.y -= offsetY;
+    this.p2.x += offsetX;
+    this.p2.y += offsetY;
   }
 
   draw(ctx) {
@@ -96,6 +98,9 @@ class Constraint {
 
 class Box {
   constructor(x, y, w, h) {
+    this.w = w;
+    this.h = h;
+
     const hw = w / 2, hh = h / 2;
     this.particles = [
       new Particle(x - hw, y - hh), // top-left
@@ -109,9 +114,28 @@ class Box {
       new Constraint(b, c),
       new Constraint(c, d),
       new Constraint(d, a),
-      new Constraint(a, c), // diagonals
+      new Constraint(a, c),
       new Constraint(b, d),
     ];
+  }
+
+  getBottomY() {
+    return Math.max(this.particles[2].y, this.particles[3].y);
+  }
+
+  getTopY() {
+    return Math.min(this.particles[0].y, this.particles[1].y);
+  }
+
+  getAABB() {
+    const xs = this.particles.map(p => p.x);
+    const ys = this.particles.map(p => p.y);
+    return {
+      minX: Math.min(...xs),
+      maxX: Math.max(...xs),
+      minY: Math.min(...ys),
+      maxY: Math.max(...ys),
+    };
   }
 
   update() {
@@ -122,6 +146,28 @@ class Box {
     }
   }
 
+  snapToGroundOrStack(others) {
+    const epsilon = 2;
+    for (const p of this.particles.slice(2, 4)) { // only bottom two
+      if (Math.abs(p.y - canvas.height) < epsilon) {
+        p.y = canvas.height;
+        p.oldy = p.y;
+      } else {
+        for (const other of others) {
+          if (other === this) continue;
+          const aabb = other.getAABB();
+          if (
+            p.x > aabb.minX && p.x < aabb.maxX &&
+            p.y < aabb.minY && Math.abs(p.y - aabb.minY) < epsilon
+          ) {
+            p.y = aabb.minY;
+            p.oldy = p.y;
+          }
+        }
+      }
+    }
+  }
+
   draw(ctx) {
     ctx.strokeStyle = "#fff";
     for (const c of this.constraints) c.draw(ctx);
@@ -129,22 +175,28 @@ class Box {
 }
 
 const boxes = [];
+
 setInterval(() => {
-  boxes.push(new Box(200, 10, 40, 40));
-}, 800);
+  boxes.push(new Box(200, 20, 40, 40));
+}, 1000);
 
-function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (const box of boxes) {
-    box.update();
-    box.draw(ctx);
-  }
-
-  requestAnimationFrame(animate);
+function update() {
+  for (const box of boxes) box.update();
+  for (const box of boxes) box.snapToGroundOrStack(boxes);
 }
 
-animate();
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const box of boxes) box.draw(ctx);
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
 </script>
 </body>
 </html>
