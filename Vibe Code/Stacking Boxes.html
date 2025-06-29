@@ -49,7 +49,28 @@ Implement stacking using Raycast between each particle against the polygons of t
  * Max 10 boxes to maintain performance and simplicity
 
 Stacking does not work. Boxes are not pushed apart when intersecting. Can we randomize the x positions slightly so that the spawning boxes are not exactly covering each other.
+ * Particle-based boxes with Verlet integration and constraints
+ * Ground and wall collisions using continuous collision detection (CCD)
+ * Box-on-box stacking using raycasting
+ * Randomized X spawn position to allow proper edge contact and stacking
+ * Max 10 boxes
 
+Using polygon collision intersection depth using the rays, add penetration pushback between the boxes when particles from one box enters the volume of some other box.
+
+* Verlet physics engine
+* Each box is a polygon (4 particles, 6 constraints)
+* Penetration pushback is applied when a particle from one box is inside another box
+* Uses ray from old to current position to find entry point
+* Computes penetration vector and pushes particle out of the polygon volume
+* Works even when boxes are stacked and intersect slightly
+
+* Algorithm Overview
+  * For each particle in each box:
+      *  Check if it's inside another box (polygon test).
+      *  If so, cast a ray from old to new position.
+      *  Find intersection point and normal.
+      *  Compute penetration vector and push particle out.
+  * Repeat bottom-up so stacked boxes resolve more cleanly.
 
 */
 
@@ -79,23 +100,17 @@ class Particle {
   }
 
   constrain() {
-    const radius = 0.5;
-
-    // Walls
-    if (this.x < radius) this.x = this.oldx = radius;
-    if (this.x > canvas.width - radius) this.x = this.oldx = canvas.width - radius;
-
-    // Floor with ray-based CCD
-    if (this.y > canvas.height - radius) {
+    const r = 0.5;
+    if (this.x < r) this.x = this.oldx = r;
+    if (this.x > canvas.width - r) this.x = this.oldx = canvas.width - r;
+    if (this.y > canvas.height - r) {
       const dy = this.y - this.oldy;
-      const overshoot = this.y - (canvas.height - radius);
+      const overshoot = this.y - (canvas.height - r);
       const t = overshoot / dy;
-      this.y = canvas.height - radius;
+      this.y = canvas.height - r;
       this.oldy = this.y - dy * (1 - t);
     }
-
-    // Ceiling
-    if (this.y < radius) this.y = this.oldy = radius;
+    if (this.y < r) this.y = this.oldy = r;
   }
 }
 
@@ -139,16 +154,13 @@ class Box {
   constructor(x, y, w, h) {
     const hw = w / 2;
     const hh = h / 2;
-
     this.particles = [
-      new Particle(x - hw, y - hh), // top-left
-      new Particle(x + hw, y - hh), // top-right
-      new Particle(x + hw, y + hh), // bottom-right
-      new Particle(x - hw, y + hh), // bottom-left
+      new Particle(x - hw, y - hh),
+      new Particle(x + hw, y - hh),
+      new Particle(x + hw, y + hh),
+      new Particle(x - hw, y + hh),
     ];
-
     const [a, b, c, d] = this.particles;
-
     this.constraints = [
       new Constraint(a, b),
       new Constraint(b, c),
@@ -161,7 +173,6 @@ class Box {
 
   update() {
     for (const p of this.particles) p.update();
-
     for (let i = 0; i < SUBSTEPS; i++) {
       for (const c of this.constraints) c.resolve();
       for (const p of this.particles) p.constrain();
@@ -183,67 +194,87 @@ class Box {
     ];
   }
 
+  containsPoint(px, py) {
+    // Winding number polygon point-in-polygon test
+    let wn = 0;
+    const ps = this.particles;
+    for (let i = 0; i < ps.length; i++) {
+      const a = ps[i];
+      const b = ps[(i + 1) % ps.length];
+      if (a.y <= py) {
+        if (b.y > py && isLeft(a, b, px, py) > 0) wn++;
+      } else {
+        if (b.y <= py && isLeft(a, b, px, py) < 0) wn--;
+      }
+    }
+    return wn !== 0;
+  }
+
   getBottomY() {
-    return Math.max(this.particles[2].y, this.particles[3].y);
+    return Math.max(...this.particles.map(p => p.y));
   }
 }
 
-// Ray-segment intersection test (returns t if hit, otherwise null)
-function raySegmentIntersect(px, py, dx, dy, x1, y1, x2, y2) {
-  const rx = x2 - x1;
-  const ry = y2 - y1;
-  const det = dx * ry - dy * rx;
-
-  if (Math.abs(det) < 1e-8) return null;
-
-  const t = ((x1 - px) * ry - (y1 - py) * rx) / det;
-  const u = ((x1 - px) * dy - (y1 - py) * dx) / det;
-
-  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return t;
-  return null;
+function isLeft(a, b, px, py) {
+  return (b.x - a.x) * (py - a.y) - (px - a.x) * (b.y - a.y);
 }
 
-// Fix deep penetration of particles using raycasting against box edges
-function resolveBoxPenetration(boxes) {
+function resolvePenetrations(boxes) {
   boxes.sort((a, b) => a.getBottomY() - b.getBottomY());
 
   for (let i = 0; i < boxes.length; i++) {
     const box = boxes[i];
-    const bottomParticles = [box.particles[2], box.particles[3]];
-
-    for (const p of bottomParticles) {
+    for (const p of box.particles) {
       const dx = p.x - p.oldx;
       const dy = p.y - p.oldy;
-
-      if (dy <= 0) continue; // only test downward motion
-
-      let nearestT = 1;
-      let hitY = null;
-
-      for (let j = 0; j < i; j++) {
+      for (let j = 0; j < boxes.length; j++) {
+        if (i === j) continue;
         const other = boxes[j];
-        for (const [a, b] of other.getEdges()) {
-          const t = raySegmentIntersect(p.oldx, p.oldy, dx, dy, a.x, a.y, b.x, b.y);
-          if (t !== null && t < nearestT) {
-            nearestT = t;
-            hitY = p.oldy + dy * t;
+        if (other.containsPoint(p.x, p.y)) {
+          // Try to find penetration point along ray
+          let nearestT = 1;
+          let normal = null;
+          for (const [a, b] of other.getEdges()) {
+            const t = raySegmentIntersect(p.oldx, p.oldy, dx, dy, a.x, a.y, b.x, b.y);
+            if (t !== null && t < nearestT) {
+              nearestT = t;
+              // Compute edge normal
+              const ex = b.x - a.x;
+              const ey = b.y - a.y;
+              const len = Math.hypot(ex, ey);
+              normal = { x: -ey / len, y: ex / len }; // outward normal
+            }
+          }
+
+          if (normal) {
+            const depth = (1 - nearestT) * Math.hypot(dx, dy);
+            p.x += normal.x * depth;
+            p.y += normal.y * depth;
+            p.oldx = p.x;
+            p.oldy = p.y;
           }
         }
       }
-
-      if (nearestT < 1) {
-        p.y = hitY;
-        p.oldy = hitY;
-      }
     }
   }
+}
+
+function raySegmentIntersect(px, py, dx, dy, x1, y1, x2, y2) {
+  const rx = x2 - x1;
+  const ry = y2 - y1;
+  const det = dx * ry - dy * rx;
+  if (Math.abs(det) < 1e-8) return null;
+  const t = ((x1 - px) * ry - (y1 - py) * rx) / det;
+  const u = ((x1 - px) * dy - (y1 - py) * dx) / det;
+  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return t;
+  return null;
 }
 
 const boxes = [];
 
 function spawnBox() {
   if (boxes.length >= MAX_BOXES) return;
-  const x = 200 + (Math.random() - 0.5) * 60; // random horizontal jitter
+  const x = 200 + (Math.random() - 0.5) * 60;
   boxes.push(new Box(x, 30, 40, 40));
 }
 
@@ -251,7 +282,7 @@ setInterval(spawnBox, 1000);
 
 function update() {
   for (const box of boxes) box.update();
-  resolveBoxPenetration(boxes);
+  resolvePenetrations(boxes);
 }
 
 function draw() {
