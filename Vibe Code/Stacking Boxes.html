@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Verlet Physics Boxes</title>
+  <style>
+    canvas { background: #111; display: block; margin: auto; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="400" height="600"></canvas>
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const GRAVITY = 0.5;
+const FRICTION = 0.99;
+const BOUNCE = 0.0;
+const SUBSTEPS = 5;
+
+class Particle {
+  constructor(x, y) {
+    this.x = this.oldx = x;
+    this.y = this.oldy = y;
+    this.pinned = false;
+  }
+
+  update() {
+    if (this.pinned) return;
+    const vx = (this.x - this.oldx) * FRICTION;
+    const vy = (this.y - this.oldy) * FRICTION;
+
+    this.oldx = this.x;
+    this.oldy = this.y;
+    this.x += vx;
+    this.y += vy + GRAVITY;
+  }
+
+  constrain() {
+    // Walls
+    const radius = 2;
+    if (this.x > canvas.width - radius) {
+      this.x = canvas.width - radius;
+      this.oldx = this.x + (this.oldx - this.x) * BOUNCE;
+    }
+    if (this.x < radius) {
+      this.x = radius;
+      this.oldx = this.x + (this.oldx - this.x) * BOUNCE;
+    }
+    if (this.y > canvas.height - radius) {
+      this.y = canvas.height - radius;
+      this.oldy = this.y + (this.oldy - this.y) * BOUNCE;
+    }
+    if (this.y < radius) {
+      this.y = radius;
+      this.oldy = this.y + (this.oldy - this.y) * BOUNCE;
+    }
+  }
+}
+
+class Constraint {
+  constructor(p1, p2, length = null) {
+    this.p1 = p1;
+    this.p2 = p2;
+    this.length = length ?? this.distance();
+  }
+
+  distance() {
+    return Math.hypot(this.p1.x - this.p2.x, this.p1.y - this.p2.y);
+  }
+
+  resolve() {
+    const dx = this.p2.x - this.p1.x;
+    const dy = this.p2.y - this.p1.y;
+    const dist = Math.hypot(dx, dy);
+    const diff = (this.length - dist) / dist;
+    const offsetX = dx * 0.5 * diff;
+    const offsetY = dy * 0.5 * diff;
+
+    if (!this.p1.pinned) {
+      this.p1.x -= offsetX;
+      this.p1.y -= offsetY;
+    }
+    if (!this.p2.pinned) {
+      this.p2.x += offsetX;
+      this.p2.y += offsetY;
+    }
+  }
+
+  draw(ctx) {
+    ctx.beginPath();
+    ctx.moveTo(this.p1.x, this.p1.y);
+    ctx.lineTo(this.p2.x, this.p2.y);
+    ctx.stroke();
+  }
+}
+
+class Box {
+  constructor(x, y, w, h) {
+    const hw = w / 2, hh = h / 2;
+    this.particles = [
+      new Particle(x - hw, y - hh), // top-left
+      new Particle(x + hw, y - hh), // top-right
+      new Particle(x + hw, y + hh), // bottom-right
+      new Particle(x - hw, y + hh), // bottom-left
+    ];
+    const [a, b, c, d] = this.particles;
+    this.constraints = [
+      new Constraint(a, b),
+      new Constraint(b, c),
+      new Constraint(c, d),
+      new Constraint(d, a),
+      new Constraint(a, c), // diagonals
+      new Constraint(b, d),
+    ];
+  }
+
+  update() {
+    for (const p of this.particles) p.update();
+    for (let i = 0; i < SUBSTEPS; i++) {
+      for (const c of this.constraints) c.resolve();
+      for (const p of this.particles) p.constrain();
+    }
+  }
+
+  draw(ctx) {
+    ctx.strokeStyle = "#fff";
+    for (const c of this.constraints) c.draw(ctx);
+  }
+}
+
+const boxes = [];
+setInterval(() => {
+  boxes.push(new Box(200, 10, 40, 40));
+}, 800);
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (const box of boxes) {
+    box.update();
+    box.draw(ctx);
+  }
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
