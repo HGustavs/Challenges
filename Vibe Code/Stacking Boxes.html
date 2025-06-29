@@ -13,6 +13,8 @@
 
 /* 
 
+https://chatgpt.com/c/68619974-6c48-8002-99b1-3bb1a6407d2e
+
 I want to make a minimal physics engine in javascript that supports stacking of boxes that are falling from the top of the screen towards the bottom. The boxes should not fall through the bottom and sides of the screen. I suggest using particles and basing the engine on verlet physics.
 
 * Particles + constraints to form rectangles (boxes)
@@ -45,6 +47,9 @@ Implement stacking using Raycast between each particle against the polygons of t
  * Particles are pushed up when penetrating other boxes
  * Sorting bottom-up to improve stacking stability
  * Max 10 boxes to maintain performance and simplicity
+
+Stacking does not work. Boxes are not pushed apart when intersecting. Can we randomize the x positions slightly so that the spawning boxes are not exactly covering each other.
+
 
 */
 
@@ -89,7 +94,7 @@ class Particle {
       this.oldy = this.y - dy * (1 - t);
     }
 
-    // Optional: ceiling
+    // Ceiling
     if (this.y < radius) this.y = this.oldy = radius;
   }
 }
@@ -183,7 +188,7 @@ class Box {
   }
 }
 
-// Ray-segment intersection test (returns t of ray if hit, else null)
+// Ray-segment intersection test (returns t if hit, otherwise null)
 function raySegmentIntersect(px, py, dx, dy, x1, y1, x2, y2) {
   const rx = x2 - x1;
   const ry = y2 - y1;
@@ -200,7 +205,6 @@ function raySegmentIntersect(px, py, dx, dy, x1, y1, x2, y2) {
 
 // Fix deep penetration of particles using raycasting against box edges
 function resolveBoxPenetration(boxes) {
-  // Sort from bottom to top (lowest first)
   boxes.sort((a, b) => a.getBottomY() - b.getBottomY());
 
   for (let i = 0; i < boxes.length; i++) {
@@ -239,7 +243,8 @@ const boxes = [];
 
 function spawnBox() {
   if (boxes.length >= MAX_BOXES) return;
-  boxes.push(new Box(200, 30, 40, 40));
+  const x = 200 + (Math.random() - 0.5) * 60; // random horizontal jitter
+  boxes.push(new Box(x, 30, 40, 40));
 }
 
 setInterval(spawnBox, 1000);
