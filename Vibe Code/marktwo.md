@@ -29,3 +29,5 @@ The buttons should have icons from google fonts material design icons. The expor
 The buttons with icons should only have the icons and the text should be moved to the alt attribute. 
 
 The "top" button should have the "subheader" icon and the "right" button should have the "position top right" icon. The "front" button should have the "position bottom left" icon and the "rear" button should have the "position bottom right" icon. All text in the buttons should be moved to the alt tag. 
+
+In order for the coordinate systems to match up we need a way to pan the backgrounds after uploading the images. Add a button with the "drag pan" icon that starts a panning mode. In each of the four views in editing mode, the top left corner of the background image can be panned using the mouse. The panning button should be near the image upload buttons. The panning values for each of the four views should be stored in local storage.

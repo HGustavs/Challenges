@@ -157,12 +157,14 @@
             text-transform: uppercase;
         }
 
-        /* Mode visibility rules */
+        /* Mode visibility and cursor rules */
         body.mode-preview #editor-grid { display: none; }
         body.mode-preview #preview-panel { display: block; }
         body.edit-mode-addpoint svg { cursor: crosshair; }
         body.edit-mode-line line { cursor: pointer; }
         body.edit-mode-curve path { cursor: pointer; }
+        body.edit-mode-panbg .view-panel { cursor: grab; }
+        body.edit-mode-panbg .view-panel:active { cursor: grabbing; }
     </style>
 </head>
 <body class="edit-mode-point">
@@ -221,6 +223,9 @@
         </div>
 
         <div class="btn-group" id="bg-tools">
+            <button id="btn-tool-panbg" title="Pan Backgrounds" aria-label="Pan Backgrounds">
+                <span class="material-symbols-outlined" alt="Pan Backgrounds">drag_pan</span>
+            </button>
             <label class="file-input-label" title="Top View Background" aria-label="Top View Background">
                 <span class="material-symbols-outlined" alt="Top View Background">subheader</span>
                 <input type="file" accept="image/*" data-view="top">
@@ -245,25 +250,25 @@
         
         <!-- 4-View Editor Grid -->
         <div id="editor-grid">
-            <div class="view-panel" id="panel-top">
+            <div class="view-panel" id="panel-top" data-view="top">
                 <div class="view-title">Top View (X / Z)</div>
                 <img class="bg-img" id="bg-top" alt="">
                 <svg class="viewport" id="svg-top"></svg>
             </div>
 
-            <div class="view-panel" id="panel-left">
+            <div class="view-panel" id="panel-left" data-view="left">
                 <div class="view-title">Left Side View (Z / Y)</div>
                 <img class="bg-img" id="bg-left" alt="">
                 <svg class="viewport" id="svg-left"></svg>
             </div>
 
-            <div class="view-panel" id="panel-front">
+            <div class="view-panel" id="panel-front" data-view="front">
                 <div class="view-title">Front View (X / Y)</div>
                 <img class="bg-img" id="bg-front" alt="">
                 <svg class="viewport" id="svg-front"></svg>
             </div>
 
-            <div class="view-panel" id="panel-rear">
+            <div class="view-panel" id="panel-rear" data-view="rear">
                 <div class="view-title">Rear View (X / Y)</div>
                 <img class="bg-img" id="bg-rear" alt="">
                 <svg class="viewport" id="svg-rear"></svg>
@@ -345,13 +350,27 @@
         // Store quadratic curves: array of triplet vertex IDs [startId, controlId, endId]
         let curves = [];
 
+        // Background Image Pan Offsets
+        let bgPanOffsets = {
+            top: { x: 0, y: 0 },
+            left: { x: 0, y: 0 },
+            front: { x: 0, y: 0 },
+            rear: { x: 0, y: 0 }
+        };
+
         // System Variables
         let currentMode = 'edit';
-        let currentTool = 'point'; // 'point', 'addpoint', 'line', or 'curve'
+        let currentTool = 'point'; // 'point', 'addpoint', 'line', 'curve', or 'panbg'
         let isMouseRotationEnabled = true; // State for toggling mouse rotation in isometric mode
         
         // Track Viewport Hover State
         let currentActiveHoverView = null;
+
+        // Background Panning Drag State
+        let isPanningBg = false;
+        let panBgViewType = null;
+        let panBgStartMousePos = { x: 0, y: 0 };
+        let panBgStartOffset = { x: 0, y: 0 };
 
         // Multi-Point Selection Set (Set of Vertex IDs)
         let selectedPointIds = new Set();
@@ -410,13 +429,27 @@
             }
         }
 
+        // Apply visual panning transformation to a background image DOM element
+        function applyBgPan(viewType) {
+            const img = document.getElementById(`bg-${viewType}`);
+            if (img) {
+                const offset = bgPanOffsets[viewType] || { x: 0, y: 0 };
+                img.style.transform = `translate(${offset.x}px, ${offset.y}px)`;
+            }
+        }
+
+        function applyAllBgPans() {
+            ['top', 'left', 'front', 'rear'].forEach(applyBgPan);
+        }
+
         // --- LOCAL STORAGE PERSISTENCE ---
         function saveToLocalStorage() {
             const dataPayload = {
                 nextVertexId,
                 vertices,
                 edges,
-                curves
+                curves,
+                bgPanOffsets
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dataPayload));
         }
@@ -431,6 +464,10 @@
                     edges = parsed.edges;
                     curves = parsed.curves || [];
                     nextVertexId = parsed.nextVertexId || (vertices.reduce((max, v) => Math.max(max, v.id), 0) + 1);
+                    if (parsed.bgPanOffsets) {
+                        bgPanOffsets = Object.assign(bgPanOffsets, parsed.bgPanOffsets);
+                    }
+                    applyAllBgPans();
                     return true;
                 }
             } catch (err) {
@@ -445,7 +482,8 @@
                 nextVertexId,
                 vertices,
                 edges,
-                curves
+                curves,
+                bgPanOffsets
             }, null, 2);
         }
 
@@ -459,7 +497,11 @@
                 edges = parsed.edges;
                 curves = parsed.curves || [];
                 nextVertexId = parsed.nextVertexId || (vertices.reduce((max, v) => Math.max(max, v.id), -1) + 1);
-                
+                if (parsed.bgPanOffsets) {
+                    bgPanOffsets = Object.assign({ top: {x:0,y:0}, left: {x:0,y:0}, front: {x:0,y:0}, rear: {x:0,y:0} }, parsed.bgPanOffsets);
+                }
+                applyAllBgPans();
+
                 resetLineChain();
                 resetCurveChain();
                 clearSelection();
@@ -598,8 +640,25 @@
             }
         });
 
+        // Setup background panning listeners for a view panel
+        function setupPanBgPanel(viewType) {
+            const panel = document.getElementById(`panel-${viewType}`);
+            if (!panel) return;
+
+            panel.addEventListener('mousedown', (e) => {
+                if (currentMode === 'edit' && currentTool === 'panbg') {
+                    isPanningBg = true;
+                    panBgViewType = viewType;
+                    panBgStartMousePos = { x: e.clientX, y: e.clientY };
+                    panBgStartOffset = { ...bgPanOffsets[viewType] };
+                }
+            });
+        }
+
         // --- RENDER & BUILD EDITING VIEWS ---
         function initViewDOM(viewType) {
+            setupPanBgPanel(viewType);
+
             const svg = views[viewType].svg;
             svg.innerHTML = '';
 
@@ -865,7 +924,7 @@
                 handleGroup.appendChild(rect);
 
                 handleGroup.addEventListener('mouseenter', () => {
-                    if (!isDraggingPoints && !isBoxSelecting && currentTool !== 'addpoint') {
+                    if (!isDraggingPoints && !isBoxSelecting && currentTool !== 'addpoint' && currentTool !== 'panbg') {
                         hoverPointId = v.id;
                         updateAllViews();
                     }
@@ -879,6 +938,7 @@
                 });
 
                 handleGroup.addEventListener('click', (e) => {
+                    if (currentTool === 'panbg') return;
                     e.stopPropagation();
 
                     // Curve Creation Mode
@@ -1022,7 +1082,25 @@
             initIsoDOM();
         }
 
+        window.addEventListener('mousemove', (e) => {
+            if (isPanningBg && panBgViewType) {
+                const dx = e.clientX - panBgStartMousePos.x;
+                const dy = e.clientY - panBgStartMousePos.y;
+                bgPanOffsets[panBgViewType] = {
+                    x: panBgStartOffset.x + dx,
+                    y: panBgStartOffset.y + dy
+                };
+                applyBgPan(panBgViewType);
+            }
+        });
+
         window.addEventListener('mouseup', () => {
+            if (isPanningBg) {
+                isPanningBg = false;
+                panBgViewType = null;
+                saveToLocalStorage();
+            }
+
             isDraggingPoints = false;
             dragViewType = null;
             dragInitialVerticesState.clear();
@@ -1452,6 +1530,7 @@
         const btnToolAddPoint = document.getElementById('btn-tool-addpoint');
         const btnToolLine = document.getElementById('btn-tool-line');
         const btnToolCurve = document.getElementById('btn-tool-curve');
+        const btnToolPanBg = document.getElementById('btn-tool-panbg');
 
         btnEditMode.addEventListener('click', () => {
             currentMode = 'edit';
@@ -1474,8 +1553,8 @@
             resetLineChain();
             resetCurveChain();
             document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' ' + bodyClass;
-            [btnToolPoint, btnToolAddPoint, btnToolLine, btnToolCurve].forEach(b => b.classList.remove('active'));
-            activeBtn.classList.add('active');
+            [btnToolPoint, btnToolAddPoint, btnToolLine, btnToolCurve, btnToolPanBg].forEach(b => b.classList.remove('active'));
+            if (activeBtn) activeBtn.classList.add('active');
             updateAllViews();
         }
 
@@ -1483,6 +1562,7 @@
         btnToolAddPoint.addEventListener('click', () => setActiveTool('addpoint', 'edit-mode-addpoint', btnToolAddPoint));
         btnToolLine.addEventListener('click', () => setActiveTool('line', 'edit-mode-line', btnToolLine));
         btnToolCurve.addEventListener('click', () => setActiveTool('curve', 'edit-mode-curve', btnToolCurve));
+        btnToolPanBg.addEventListener('click', () => setActiveTool('panbg', 'edit-mode-panbg', btnToolPanBg));
 
         // --- JSON EXPORT / IMPORT EVENT LISTENERS ---
         document.getElementById('btn-export-json').addEventListener('click', () => {
@@ -1515,7 +1595,9 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = function(event) {
-                        document.getElementById(`bg-${viewType}`).src = event.target.result;
+                        const img = document.getElementById(`bg-${viewType}`);
+                        img.src = event.target.result;
+                        applyBgPan(viewType);
                     };
                     reader.readAsDataURL(file);
                 }
@@ -1525,7 +1607,7 @@
         window.addEventListener('resize', updateAllViews);
 
         // INITIALIZE
-        loadFromLocalStorage(); // Automatically load cached drawing if present
+        loadFromLocalStorage(); // Automatically load cached drawing and pan settings if present
         ['top', 'left', 'front', 'rear'].forEach(initViewDOM);
         initIsoDOM();
         updateAllViews();
