@@ -165,28 +165,24 @@
         
         <!-- 4-View Editor Grid -->
         <div id="editor-grid">
-            <!-- Top View (X-Z plane) -->
             <div class="view-panel" id="panel-top">
                 <div class="view-title">Top View (X / Z)</div>
                 <img class="bg-img" id="bg-top" alt="">
                 <svg class="viewport" id="svg-top"></svg>
             </div>
 
-            <!-- Left Side View (Z-Y plane) -->
             <div class="view-panel" id="panel-left">
                 <div class="view-title">Left Side View (Z / Y)</div>
                 <img class="bg-img" id="bg-left" alt="">
                 <svg class="viewport" id="svg-left"></svg>
             </div>
 
-            <!-- Front View (X-Y plane) -->
             <div class="view-panel" id="panel-front">
                 <div class="view-title">Front View (X / Y)</div>
                 <img class="bg-img" id="bg-front" alt="">
                 <svg class="viewport" id="svg-front"></svg>
             </div>
 
-            <!-- Rear View (X-Y plane) -->
             <div class="view-panel" id="panel-rear">
                 <div class="view-title">Rear View (X / Y)</div>
                 <img class="bg-img" id="bg-rear" alt="">
@@ -262,17 +258,18 @@
         ];
 
         // System Variables
-        let currentMode = 'edit'; // 'edit' or 'preview'
-        let currentTool = 'point'; // 'point', 'addpoint', or 'line'
+        let currentMode = 'edit';
+        let currentTool = 'point';
         let selectedPointId = null;
         let hoverPointId = null;
         let selectedEdgeIndex = null;
         let isDragging = false;
         let dragViewType = null;
 
-        // Line Creation Tool Variables
+        // Line Chain Creation Variables
         let lineStartPointId = null;
-        let linePreviewMousePos = null; // { x, y } in view plane
+        let lineSequence = []; // Tracks visited points in current drawing chain
+        let linePreviewMousePos = null;
 
         // View Configurations and Axis Mapping
         const views = {
@@ -284,14 +281,11 @@
 
         const isoSvg = document.getElementById('svg-iso');
 
-        // Animation State for 3D Isometric View
         let isoAngleY = 0;
         let isoTargetAngleY = 0;
 
-        // Dynamic Elements Map
         const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
 
-        // Helper Projection Functions
         function projectToView(v, viewType, width, height) {
             const scale = 2.2;
             const cx = width / 2;
@@ -318,6 +312,22 @@
             return el;
         }
 
+        function resetLineChain() {
+            lineStartPointId = null;
+            lineSequence = [];
+            linePreviewMousePos = null;
+        }
+
+        // --- KEYBOARD LISTENERS ---
+        window.addEventListener('keydown', (e) => {
+            // Cancel drawing continuous line chain on ESC key
+            if (e.key === 'Escape') {
+                resetLineChain();
+                selectedPointId = null;
+                updateAllViews();
+            }
+        });
+
         // --- RENDER & BUILD EDITING VIEWS ---
         function initViewDOM(viewType) {
             const svg = views[viewType].svg;
@@ -340,45 +350,38 @@
 
             viewRenderCache[viewType].previewLine = previewLine;
 
-            // Handle Clicks on Empty Canvas for Creation/Deselection
             svg.addEventListener('click', (e) => {
                 const rect = svg.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
 
-                // 1. Create Point Mode
+                // Create Point Tool
                 if (currentTool === 'addpoint') {
                     const planeCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
                     const newPoint = { id: nextVertexId++, x: 0, y: 0, z: 0 };
                     Object.assign(newPoint, planeCoords);
                     vertices.push(newPoint);
                     
-                    // Auto select the created point
                     selectedPointId = newPoint.id;
                     rebuildDOM();
                     updateAllViews();
                     return;
                 }
 
-                // 2. Deselect when clicking empty space
+                // Click on empty SVG space terminates line chain / selection
                 if (e.target.tagName === 'svg') {
-                    if (currentTool === 'line') {
-                        lineStartPointId = null;
-                        linePreviewMousePos = null;
-                    }
+                    resetLineChain();
                     selectedPointId = null;
                     selectedEdgeIndex = null;
                     updateAllViews();
                 }
             });
 
-            // Tracking Mouse Movement for Real-Time Line Creation Preview
             svg.addEventListener('mousemove', (e) => {
                 const rect = svg.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
 
-                // Handle Point Dragging
                 if (isDragging && selectedPointId !== null && dragViewType === viewType) {
                     const updatedPlaneCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
                     const vertex = vertices.find(v => v.id === selectedPointId);
@@ -388,7 +391,6 @@
                     }
                 }
 
-                // Handle Line Drawing Preview Movement
                 if (currentTool === 'line' && lineStartPointId !== null) {
                     linePreviewMousePos = { viewType, x: mouseX, y: mouseY };
                     updateAllViews();
@@ -398,7 +400,6 @@
             buildDOMForView(viewType);
         }
 
-        // Build individual dynamic line/point SVG elements
         function buildDOMForView(viewType) {
             const svg = views[viewType].svg;
             const lineGroup = svg.querySelector(`#${viewType}-lines`);
@@ -407,7 +408,7 @@
             lineGroup.innerHTML = '';
             pointGroup.innerHTML = '';
 
-            // Lines
+            // Render Edges
             viewRenderCache[viewType].lines = edges.map((edge, idx) => {
                 const line = createSvgEl('line', {
                     'stroke': '#00ffcc',
@@ -426,7 +427,7 @@
                 return line;
             });
 
-            // Points
+            // Render Points
             viewRenderCache[viewType].points = vertices.map((v) => {
                 const handleGroup = createSvgEl('g', { 'data-id': v.id });
                 
@@ -457,32 +458,45 @@
                 handleGroup.addEventListener('click', (e) => {
                     e.stopPropagation();
 
-                    // LINE EDITING MODE: Two-step click line creation
+                    // --- CONTINUOUS LINE DRAWING CHAIN LOGIC ---
                     if (currentTool === 'line') {
                         if (lineStartPointId === null) {
-                            // First Point Click
+                            // Initial node of line chain
                             lineStartPointId = v.id;
+                            lineSequence = [v.id];
                             selectedPointId = v.id;
                             selectedEdgeIndex = null;
                         } else if (lineStartPointId !== v.id) {
-                            // Second Point Click -> Add Edge Connection!
+                            // Add segment
                             const edgeExists = edges.some(e => 
                                 (e[0] === lineStartPointId && e[1] === v.id) || 
                                 (e[0] === v.id && e[1] === lineStartPointId)
                             );
+
                             if (!edgeExists) {
                                 edges.push([lineStartPointId, v.id]);
                             }
-                            lineStartPointId = null;
-                            linePreviewMousePos = null;
-                            selectedPointId = v.id;
+
+                            // Check if a loop is created
+                            const isLoopCreated = lineSequence.includes(v.id);
+
+                            if (isLoopCreated) {
+                                // Close loop & stop line segment chain
+                                resetLineChain();
+                                selectedPointId = v.id;
+                            } else {
+                                // Continue polyline chain: Target point becomes next start point!
+                                lineStartPointId = v.id;
+                                lineSequence.push(v.id);
+                                selectedPointId = v.id;
+                            }
                             rebuildDOM();
                         }
                         updateAllViews();
                         return;
                     }
 
-                    // POINT SELECTION MODE
+                    // Point Mode
                     if (currentTool === 'point') {
                         selectedPointId = v.id;
                         selectedEdgeIndex = null;
@@ -516,13 +530,12 @@
             dragViewType = null;
         });
 
-        // Update Rendering Across Views
         function updateView(viewType) {
             const svg = views[viewType].svg;
             const rect = svg.getBoundingClientRect();
             if (rect.width === 0 || rect.height === 0) return;
 
-            // 1. Update Existing Edges / Lines
+            // 1. Lines
             edges.forEach((edge, idx) => {
                 const v1 = vertices.find(v => v.id === edge[0]);
                 const v2 = vertices.find(v => v.id === edge[1]);
@@ -548,7 +561,7 @@
                 }
             });
 
-            // 2. Render Interactive Line Creation Preview (Dashed Yellow Line)
+            // 2. Real-time Segment Preview
             const previewLineEl = viewRenderCache[viewType].previewLine;
             if (currentTool === 'line' && lineStartPointId !== null) {
                 const startV = vertices.find(v => v.id === lineStartPointId);
@@ -558,13 +571,11 @@
                     let targetY = pStart.y;
 
                     if (hoverPointId !== null && hoverPointId !== lineStartPointId) {
-                        // Snap to hover target point
                         const hoverV = vertices.find(v => v.id === hoverPointId);
                         const pTarget = projectToView(hoverV, viewType, rect.width, rect.height);
                         targetX = pTarget.x;
                         targetY = pTarget.y;
                     } else if (linePreviewMousePos && linePreviewMousePos.viewType === viewType) {
-                        // Follow active mouse pointer
                         targetX = linePreviewMousePos.x;
                         targetY = linePreviewMousePos.y;
                     }
@@ -579,7 +590,7 @@
                 previewLineEl.style.display = 'none';
             }
 
-            // 3. Update Points / Handles
+            // 3. Points
             vertices.forEach((v, idx) => {
                 const p = projectToView(v, viewType, rect.width, rect.height);
                 const item = viewRenderCache[viewType].points[idx];
@@ -688,14 +699,13 @@
             }
         });
 
-        // --- GLOBAL REFRESH ---
         function updateAllViews() {
             if (currentMode === 'edit') {
                 ['top', 'left', 'front', 'rear'].forEach(updateView);
             }
         }
 
-        // --- UI TOOLBAR NAVIGATION & BUTTONS ---
+        // --- UI BUTTON HANDLERS ---
         const btnEditMode = document.getElementById('btn-mode-edit');
         const btnPreviewMode = document.getElementById('btn-mode-preview');
         const btnToolPoint = document.getElementById('btn-tool-point');
@@ -720,8 +730,7 @@
 
         function setActiveTool(toolName, bodyClass, activeBtn) {
             currentTool = toolName;
-            lineStartPointId = null;
-            linePreviewMousePos = null;
+            resetLineChain();
             document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' ' + bodyClass;
             [btnToolPoint, btnToolAddPoint, btnToolLine].forEach(b => b.classList.remove('active'));
             activeBtn.classList.add('active');
@@ -732,7 +741,7 @@
         btnToolAddPoint.addEventListener('click', () => setActiveTool('addpoint', 'edit-mode-addpoint', btnToolAddPoint));
         btnToolLine.addEventListener('click', () => setActiveTool('line', 'edit-mode-line', btnToolLine));
 
-        // Background Image Loader Handlers
+        // Background Image Loaders
         document.querySelectorAll('input[type="file"]').forEach(input => {
             input.addEventListener('change', (e) => {
                 const viewType = e.target.getAttribute('data-view');
