@@ -43,6 +43,8 @@
         button.active { background-color: #007acc; color: #fff; border-color: #0098ff; }
         button.btn-accent { background-color: #2e6930; color: #fff; border-color: #3e8e41; }
         button.btn-accent:hover { background-color: #388e3c; }
+        button.btn-svg { background-color: #8e24aa; color: #fff; border-color: #ab47bc; }
+        button.btn-svg:hover { background-color: #ab47bc; }
         
         .file-input-label {
             background-color: #252526;
@@ -55,6 +57,22 @@
         }
         .file-input-label:hover { color: #fff; border-color: #666; }
         input[type="file"] { display: none; }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #aaa;
+            background: #252526;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        .slider-container input[type="range"] {
+            width: 100px;
+            cursor: pointer;
+        }
 
         /* Main Workspace */
         #workspace {
@@ -147,6 +165,13 @@
             <button id="btn-mode-preview">Isometric Preview</button>
         </div>
 
+        <!-- Preview Angle Slider -->
+        <div class="slider-container">
+            <label for="input-iso-angle">Angle:</label>
+            <input type="range" id="input-iso-angle" min="-180" max="180" value="0">
+            <span id="label-iso-angle">0°</span>
+        </div>
+
         <div class="btn-group" id="edit-subtools">
             <span style="font-size: 12px; color: #888; margin-right: 4px;">Tool:</span>
             <button id="btn-tool-point" class="active">Point Mode</button>
@@ -156,6 +181,7 @@
         </div>
 
         <div class="btn-group" id="io-tools">
+            <button id="btn-export-svg" class="btn-svg">Export SVGs</button>
             <button id="btn-export-json" class="btn-accent">Download JSON</button>
             <label class="file-input-label" style="border-style: solid; color: #ccc;">
                 Upload JSON
@@ -1170,15 +1196,10 @@
             };
         }
 
-        function updateIsoView() {
-            if (currentMode !== 'preview') return;
-            const rect = isoSvg.getBoundingClientRect();
+        function renderIsoAtAngle(angleRad, width, height) {
+            const projectedPoints = vertices.map(v => projectIso(v, angleRad, width, height));
 
-            isoAngleY += (isoTargetAngleY - isoAngleY) * 0.08;
-
-            const projectedPoints = vertices.map(v => projectIso(v, isoAngleY, rect.width, rect.height));
-
-            // Render 3D Edges
+            // Render Edges
             edges.forEach((edge, idx) => {
                 const v1Idx = vertices.findIndex(v => v.id === edge[0]);
                 const v2Idx = vertices.findIndex(v => v.id === edge[1]);
@@ -1204,7 +1225,7 @@
                 }
             });
 
-            // Render 3D Quadratic Curves (Yellow)
+            // Render Curves
             curves.forEach((crv, idx) => {
                 const v1Idx = vertices.findIndex(v => v.id === crv[0]);
                 const v2Idx = vertices.findIndex(v => v.id === crv[1]);
@@ -1228,9 +1249,39 @@
                     }
                 }
             });
+        }
+
+        const inputIsoAngle = document.getElementById('input-iso-angle');
+        const labelIsoAngle = document.getElementById('label-iso-angle');
+
+        function updateIsoView() {
+            if (currentMode !== 'preview') return;
+            const rect = isoSvg.getBoundingClientRect();
+
+            isoAngleY += (isoTargetAngleY - isoAngleY) * 0.08;
+
+            // Sync Slider with Mouse Rotation Angle
+            const currentDeg = Math.round((isoAngleY * 180) / Math.PI);
+            inputIsoAngle.value = currentDeg;
+            labelIsoAngle.textContent = `${currentDeg}°`;
+
+            renderIsoAtAngle(isoAngleY, rect.width, rect.height);
 
             requestAnimationFrame(updateIsoView);
         }
+
+        // Manual Angle Adjustment via Range Input
+        inputIsoAngle.addEventListener('input', (e) => {
+            const deg = parseInt(e.target.value, 10);
+            isoAngleY = (deg * Math.PI) / 180;
+            isoTargetAngleY = isoAngleY;
+            labelIsoAngle.textContent = `${deg}°`;
+
+            const rect = isoSvg.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                renderIsoAtAngle(isoAngleY, rect.width, rect.height);
+            }
+        });
 
         window.addEventListener('mousemove', (e) => {
             if (currentMode === 'preview') {
@@ -1244,6 +1295,59 @@
                 ['top', 'left', 'front', 'rear'].forEach(updateView);
             }
         }
+
+        // --- SVG EXPORT ALL VIEWS FUNCTION ---
+        function exportAllViewsAsSVG() {
+            // Guarantee up-to-date rendering of all views before export
+            ['top', 'left', 'front', 'rear'].forEach(updateView);
+
+            const isoRect = isoSvg.getBoundingClientRect();
+            const width = isoRect.width || 800;
+            const height = isoRect.height || 600;
+
+            // Enforce explicit render using the current angle input
+            const inputDeg = parseInt(inputIsoAngle.value, 10);
+            const exportIsoAngleRad = (inputDeg * Math.PI) / 180;
+            renderIsoAtAngle(exportIsoAngleRad, width, height);
+
+            const exportTargets = [
+                { id: 'svg-top', name: 'top-view.svg' },
+                { id: 'svg-left', name: 'left-view.svg' },
+                { id: 'svg-front', name: 'front-view.svg' },
+                { id: 'svg-rear', name: 'rear-view.svg' },
+                { id: 'svg-iso', name: 'isometric-preview.svg' }
+            ];
+
+            exportTargets.forEach((target, index) => {
+                setTimeout(() => {
+                    const svgElem = document.getElementById(target.id);
+                    if (!svgElem) return;
+
+                    const clone = svgElem.cloneNode(true);
+                    const rect = svgElem.getBoundingClientRect();
+
+                    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    clone.setAttribute('width', rect.width || 800);
+                    clone.setAttribute('height', rect.height || 600);
+                    clone.setAttribute('viewBox', `0 0 ${rect.width || 800} ${rect.height || 600}`);
+                    clone.style.backgroundColor = '#181818';
+
+                    const svgData = new XMLSerializer().serializeToString(clone);
+                    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(svgBlob);
+
+                    const anchor = document.createElement('a');
+                    anchor.href = url;
+                    anchor.download = target.name;
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    document.body.removeChild(anchor);
+                    URL.revokeObjectURL(url);
+                }, index * 150); // Stagger downloads slightly to prevent browser blocking
+            });
+        }
+
+        document.getElementById('btn-export-svg').addEventListener('click', exportAllViewsAsSVG);
 
         // --- UI BUTTON HANDLERS ---
         const btnEditMode = document.getElementById('btn-mode-edit');

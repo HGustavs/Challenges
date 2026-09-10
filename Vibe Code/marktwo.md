@@ -16,4 +16,7 @@ Add a button for downloading the data in json format file and for uploading data
 
 In point editing mode add box selection functionality that allows the user to select multiple points and move all selected points together. Also add functionality for adding or removing points from the selected point set using the control button as a modifier to select additional points. If an already selected point is control clicked it will be deselected. 
 
+When shift key is held movement in point editing mode should be restricted to the most significant axis. If for example the points have moved 10 pixels left and 5 pixels down, the movement should be restricted to only the axis represented with left in the current view. Furthermore the arrow keys should move the selected points one pixel in the direction of the arrow key in relation to the view that the mouse is positioned currently. If the down arrow key is pressed 10 times the selected points should move 10 pixels down in that view. The number of pixels moved per key press should be represented as a constant in the code. 
+
+Add a button for exporting all five views as svg. All five views including the isometric preview should be saved as an individual svg file exactly corresponding to the svg contents in each of the five views. There should also be a range input that contains the rotation angle for the preview. This input should be updated to correspond to the angle given by the mouse rotation in the preview mode. The angle in the angle input should be the angle used for the svg export of the preview svg file. 
 
