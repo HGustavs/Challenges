@@ -52,7 +52,6 @@
         let currentAngleY = 0;
 
         // Define Volkswagen Golf Mk2 3D Model Wireframe Coordinates (x, y, z)
-        // Center is at bottom-middle of the vehicle
         const vertices = [
             // Lower Body Base / Bumpers
             { id: 'f_l_bump', x: -35, y: 0, z: 75 },
@@ -74,22 +73,12 @@
             { id: 'roof_r_l', x: -30, y: -55, z: -55 },
             { id: 'roof_r_r', x: 30, y: -55, z: -55 },
 
-            // Round Headlights (Mk2 signature)
-            { id: 'hl_l_c', x: -22, y: -14, z: 76 },
-            { id: 'hl_r_c', x: 22, y: -14, z: 76 },
-
             // Front Grille Center Line
             { id: 'grille_top', x: 0, y: -23, z: 75 },
-            { id: 'grille_bot', x: 0, y: -3, z: 75 },
-
-            // Wheel Centers (Front Left, Front Right, Rear Left, Rear Right)
-            { id: 'w_fl', x: -36, y: 5, z: 45 },
-            { id: 'w_fr', x: 36, y: 5, z: 45 },
-            { id: 'w_rl', x: -36, y: 5, z: -45 },
-            { id: 'w_rr', x: 36, y: 5, z: -45 },
+            { id: 'grille_bot', x: 0, y: -3, z: 75 }
         ];
 
-        // Define wheel octagons (3D detail)
+        // Helper: Create wheels (flat circles in the YZ side-plane)
         function createWheel(centerX, centerY, centerZ, radius = 10) {
             const points = [];
             const segments = 8;
@@ -104,15 +93,39 @@
             return points;
         }
 
+        // Helper: Create headlights (flat circles in the XY front-plane)
+        function createHeadlight(centerX, centerY, centerZ, radius = 5.5) {
+            const points = [];
+            const segments = 8;
+            for (let i = 0; i < segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                points.push({
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius,
+                    z: centerZ
+                });
+            }
+            return points;
+        }
+
+        // Generate Wheels
         const wheelFL = createWheel(-36, 5, 45);
         const wheelFR = createWheel(36, 5, 45);
         const wheelRL = createWheel(-36, 5, -45);
         const wheelRR = createWheel(36, 5, -45);
 
-        // Add wheel points to total vertices array
-        const allVertices = [...vertices, ...wheelFL, ...wheelFR, ...wheelRL, ...wheelRR];
+        // Generate Twin Headlights (flat onto the front grille face at z = 75.5)
+        const headlightL = createHeadlight(-22, -14, 75.5);
+        const headlightR = createHeadlight(22, -14, 75.5);
 
-        // Define Wireframe Connections (Edges between vertex indices)
+        // Combine all 3D vertices into a single list
+        const allVertices = [
+            ...vertices, 
+            ...wheelFL, ...wheelFR, ...wheelRL, ...wheelRR,
+            ...headlightL, ...headlightR
+        ];
+
+        // Define Primary Wireframe Connections (Edges between body vertex indices)
         const edges = [
             // Lower Body Frame
             [0, 1], [1, 3], [3, 2], [2, 0],
@@ -123,31 +136,37 @@
             [6, 7], // Base of windshield
 
             // Roof pillars (A & C pillars)
-            [6, 10], [7, 11], // Windshield A-pillars
-            [10, 11],         // Roof Front edge
+            [6, 10], [7, 11],   // Windshield A-pillars
+            [10, 11],           // Roof Front edge
             [10, 12], [11, 13], // Roof Side edges
-            [12, 13],         // Roof Rear edge
+            [12, 13],           // Roof Rear edge
             [12, 8], [13, 9],   // C-pillars (Thick Mk2 characteristic)
 
-            // Front Grille & Details
-            [16, 17]
+            // Front Grille Center Division
+            [14, 15]
         ];
 
-        // Add edges to close wheel octagons
-        function addWheelEdges(startIndex) {
+        // Helper: Add loop edges for circular structures (Wheels & Headlights)
+        function addLoopEdges(startIndex) {
             for (let i = 0; i < 8; i++) {
                 const next = (i === 7) ? startIndex : startIndex + i + 1;
                 edges.push([startIndex + i, next]);
             }
         }
 
-        const baseVCount = vertices.length;
-        addWheelEdges(baseVCount);      // FL Wheel
-        addWheelEdges(baseVCount + 8);  // FR Wheel
-        addWheelEdges(baseVCount + 16); // RL Wheel
-        addWheelEdges(baseVCount + 24); // RR Wheel
+        // Connect 8-point rings for each wheel
+        const bodyVCount = vertices.length;
+        addLoopEdges(bodyVCount);       // FL Wheel
+        addLoopEdges(bodyVCount + 8);   // FR Wheel
+        addLoopEdges(bodyVCount + 16);  // RL Wheel
+        addLoopEdges(bodyVCount + 24);  // RR Wheel
 
-        // Helper: Generate SVG element
+        // Connect 8-point rings for flat front headlights
+        const wheelsVCount = bodyVCount + 32;
+        addLoopEdges(wheelsVCount);     // Left Headlight
+        addLoopEdges(wheelsVCount + 8); // Right Headlight
+
+        // Helper: Generate SVG elements dynamically
         function createSvgElement(tag, attrs) {
             const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
             for (let key in attrs) {
@@ -156,11 +175,13 @@
             return el;
         }
 
-        // Initialize SVG elements for lines and headlights
+        // Initialize SVG line elements
         const lineElements = [];
-        edges.forEach(() => {
+        edges.forEach((edge, index) => {
+            // Give headlights a distinct highlight color
+            const isHeadlight = index >= (edges.length - 16);
             const line = createSvgElement('line', {
-                'stroke': '#00ffcc',
+                'stroke': isHeadlight ? '#ffff00' : '#00ffcc',
                 'stroke-width': '2',
                 'stroke-linecap': 'round',
                 'stroke-linejoin': 'round'
@@ -169,20 +190,13 @@
             lineElements.push(line);
         });
 
-        // Add Headlight SVG Circles
-        const hlLeft = createSvgElement('circle', { 'r': '6', 'fill': 'none', 'stroke': '#ffff00', 'stroke-width': '2' });
-        const hlRight = createSvgElement('circle', { 'r': '6', 'fill': 'none', 'stroke': '#ffff00', 'stroke-width': '2' });
-        svg.appendChild(hlLeft);
-        svg.appendChild(hlRight);
-
         // Track Mouse position for rotation
         window.addEventListener('mousemove', (e) => {
             const mouseX = e.clientX / window.innerWidth;
-            // Map mouse position to Y-axis rotation (-PI to +PI)
             targetAngleY = (mouseX - 0.5) * Math.PI * 2;
         });
 
-        // 3D Matrix Rotation & Isometric Projection Function
+        // 3D Matrix Rotation & Isometric Projection
         function project(point, angleY) {
             // 1. Rotate around Y-axis (Yaw)
             const cosY = Math.cos(angleY);
@@ -208,7 +222,7 @@
             return { x: screenX, y: screenY, z: z2 };
         }
 
-        // Main Animation Loop
+        // Render Loop
         function animate() {
             // Smoothly interpolate rotation toward target
             currentAngleY += (targetAngleY - currentAngleY) * 0.08;
@@ -216,7 +230,7 @@
             // Transform all 3D points to 2D screen positions
             const projectedPoints = allVertices.map(v => project(v, currentAngleY));
 
-            // Render Edges/Lines
+            // Render Edges
             edges.forEach((edge, index) => {
                 const p1 = projectedPoints[edge[0]];
                 const p2 = projectedPoints[edge[1]];
@@ -226,15 +240,6 @@
                 lineElements[index].setAttribute('x2', p2.x);
                 lineElements[index].setAttribute('y2', p2.y);
             });
-
-            // Render Round Headlights
-            const pHeadlightL = projectedPoints[14];
-            const pHeadlightR = projectedPoints[15];
-
-            hlLeft.setAttribute('cx', pHeadlightL.x);
-            hlLeft.setAttribute('cy', pHeadlightL.y);
-            hlRight.setAttribute('cx', pHeadlightR.x);
-            hlRight.setAttribute('cy', pHeadlightR.y);
 
             requestAnimationFrame(animate);
         }
