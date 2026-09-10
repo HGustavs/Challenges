@@ -214,6 +214,9 @@
     <script>
         const STORAGE_KEY = '3d_vector_editor_data';
 
+        // --- PIXEL STEP CONSTANT FOR ARROW KEY MOVEMENT ---
+        const KEY_MOVE_STEP_PIXELS = 1;
+
         // --- INITIAL DEFAULT MODEL STATE ---
         let nextVertexId = 24;
         let vertices = [
@@ -278,6 +281,9 @@
         let currentMode = 'edit';
         let currentTool = 'point'; // 'point', 'addpoint', 'line', or 'curve'
         
+        // Track Viewport Hover State
+        let currentActiveHoverView = null;
+
         // Multi-Point Selection Set (Set of Vertex IDs)
         let selectedPointIds = new Set();
         let hoverPointId = null;
@@ -439,12 +445,53 @@
             curvePreviewMousePos = null;
         }
 
-        // --- KEYBOARD LISTENERS ---
+        // --- KEYBOARD LISTENERS (ARROW KEYS + ESCAPE) ---
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 resetLineChain();
                 resetCurveChain();
                 clearSelection();
+                updateAllViews();
+                return;
+            }
+
+            // Handle Arrow Key Nudging for Selected Points
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                if (currentMode !== 'edit' || selectedPointIds.size === 0 || !currentActiveHoverView) return;
+
+                e.preventDefault(); // Prevent default browser scrolling
+
+                const viewType = currentActiveHoverView;
+                const scale = 2.2; // Match viewport projection scale
+                const deltaWorld = KEY_MOVE_STEP_PIXELS / scale;
+
+                let dx = 0, dy = 0;
+                if (e.key === 'ArrowLeft') dx = -deltaWorld;
+                if (e.key === 'ArrowRight') dx = deltaWorld;
+                if (e.key === 'ArrowUp') dy = -deltaWorld;
+                if (e.key === 'ArrowDown') dy = deltaWorld;
+
+                // Transform 2D screen deltas into view's corresponding 3D axis modifications
+                selectedPointIds.forEach(id => {
+                    const v = vertices.find(pt => pt.id === id);
+                    if (v) {
+                        if (viewType === 'top') {
+                            v.x += dx;
+                            v.z += dy;
+                        } else if (viewType === 'left') {
+                            v.z -= dx;
+                            v.y += dy;
+                        } else if (viewType === 'front') {
+                            v.x += dx;
+                            v.y += dy;
+                        } else if (viewType === 'rear') {
+                            v.x -= dx;
+                            v.y += dy;
+                        }
+                    }
+                });
+
+                saveToLocalStorage();
                 updateAllViews();
             }
         });
@@ -512,6 +559,10 @@
             viewRenderCache[viewType].previewCurveGuide = previewCurveGuide;
             viewRenderCache[viewType].selectionBox = selectionBox;
 
+            // Track current active viewport on mouse enter/leave
+            svg.addEventListener('mouseenter', () => { currentActiveHoverView = viewType; });
+            svg.addEventListener('mouseleave', () => { if (currentActiveHoverView === viewType) currentActiveHoverView = null; });
+
             // Start Box Selection or Cancel Selection on SVG Background Mousedown
             svg.addEventListener('mousedown', (e) => {
                 if (e.target.tagName !== 'svg') return;
@@ -564,9 +615,24 @@
                 // 1. Handle Multi-Point Dragging
                 if (isDraggingPoints && dragViewType === viewType) {
                     const currentPlaneCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
-                    const dx = currentPlaneCoords.x !== undefined ? (currentPlaneCoords.x - dragInitialMousePlane.x) : 0;
-                    const dy = currentPlaneCoords.y !== undefined ? (currentPlaneCoords.y - dragInitialMousePlane.y) : 0;
-                    const dz = currentPlaneCoords.z !== undefined ? (currentPlaneCoords.z - dragInitialMousePlane.z) : 0;
+                    let dx = currentPlaneCoords.x !== undefined ? (currentPlaneCoords.x - dragInitialMousePlane.x) : 0;
+                    let dy = currentPlaneCoords.y !== undefined ? (currentPlaneCoords.y - dragInitialMousePlane.y) : 0;
+                    let dz = currentPlaneCoords.z !== undefined ? (currentPlaneCoords.z - dragInitialMousePlane.z) : 0;
+
+                    // If Shift Key is held down, constrain movement to the dominant screen axis
+                    if (e.shiftKey) {
+                        const absDx = Math.abs(dx);
+                        const absDy = Math.abs(dy);
+                        const absDz = Math.abs(dz);
+
+                        if (viewType === 'top') {
+                            if (absDx >= absDz) dz = 0; else dx = 0;
+                        } else if (viewType === 'left') {
+                            if (absDz >= absDy) dy = 0; else dz = 0;
+                        } else if (viewType === 'front' || viewType === 'rear') {
+                            if (absDx >= absDy) dy = 0; else dx = 0;
+                        }
+                    }
 
                     selectedPointIds.forEach(id => {
                         const v = vertices.find(pt => pt.id === id);
