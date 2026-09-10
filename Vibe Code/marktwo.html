@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Isometric VW Golf Mk2 Wireframe</title>
+    <title>3D Isometric VW Golf Mk2 Detailed Blueprint</title>
     <style>
         body {
             margin: 0;
@@ -43,47 +43,90 @@
         const width = 800;
         const height = 600;
         const originX = width / 2;
-        const originY = height / 2 + 50;
+        const originY = height / 2 + 30;
 
-        // Isometric projection angles (in radians)
         const isoAngleX = Math.PI / 6; // 30 degrees tilt down
         
         let targetAngleY = 0;
         let currentAngleY = 0;
 
-        // Define Volkswagen Golf Mk2 3D Model Wireframe Coordinates (x, y, z)
-        const vertices = [
-            // Lower Body Base / Bumpers
-            { id: 'f_l_bump', x: -35, y: 0, z: 75 },
-            { id: 'f_r_bump', x: 35, y: 0, z: 75 },
-            { id: 'r_l_bump', x: -35, y: 0, z: -75 },
-            { id: 'r_r_bump', x: 35, y: 0, z: -75 },
+        // Base Vertices array for body, bumpers, windows, and details
+        const baseVertices = [
+            // --- FRONT BUMPER (Protruding) ---
+            { id: 'fb_top_l', x: -33, y: -4, z: 80 },
+            { id: 'fb_top_r', x: 33, y: -4, z: 80 },
+            { id: 'fb_bot_l', x: -33, y: 3, z: 80 },
+            { id: 'fb_bot_r', x: 33, y: 3, z: 80 },
+            { id: 'fb_back_l', x: -35, y: -4, z: 74 },
+            { id: 'fb_back_r', x: 35, y: -4, z: 74 },
 
-            // Hood / Beltline Level
-            { id: 'f_l_hood', x: -35, y: -25, z: 75 },
-            { id: 'f_r_hood', x: 35, y: -25, z: 75 },
-            { id: 'wind_l_bot', x: -35, y: -28, z: 25 },
-            { id: 'wind_r_bot', x: 35, y: -28, z: 25 },
-            { id: 'r_l_belt', x: -35, y: -28, z: -75 },
-            { id: 'r_r_belt', x: 35, y: -28, z: -75 },
+            // --- REAR BUMPER (Protruding) ---
+            { id: 'rb_top_l', x: -35, y: -4, z: -80 },
+            { id: 'rb_top_r', x: 35, y: -4, z: -80 },
+            { id: 'rb_bot_l', x: -35, y: 3, z: -80 },
+            { id: 'rb_bot_r', x: 35, y: 3, z: -80 },
+            { id: 'rb_front_l', x: -35, y: -4, z: -74 },
+            { id: 'rb_front_r', x: 35, y: -4, z: -74 },
 
-            // Roof Line (Boxy Mk2 Profile)
-            { id: 'roof_f_l', x: -30, y: -55, z: 10 },
-            { id: 'roof_f_r', x: 30, y: -55, z: 10 },
-            { id: 'roof_r_l', x: -30, y: -55, z: -55 },
-            { id: 'roof_r_r', x: 30, y: -55, z: -55 },
+            // --- MAIN BODY BASE (Narrower Front, Wider Mid) ---
+            { id: 'body_f_l', x: -32, y: -20, z: 74 },
+            { id: 'body_f_r', x: 32, y: -20, z: 74 },
+            { id: 'body_m_l', x: -35, y: -20, z: 0 },
+            { id: 'body_m_r', x: 35, y: -20, z: 0 },
+            { id: 'body_r_l', x: -34, y: -20, z: -74 },
+            { id: 'body_r_r', x: 34, y: -20, z: -74 },
 
-            // Front Grille Center Line
-            { id: 'grille_top', x: 0, y: -23, z: 75 },
-            { id: 'grille_bot', x: 0, y: -3, z: 75 }
+            // --- SIDE MOLDINGS / RUBBING STRIPS ---
+            { id: 'strip_f_l', x: -33, y: -12, z: 70 },
+            { id: 'strip_f_r', x: 33, y: -12, z: 70 },
+            { id: 'strip_r_l', x: -35, y: -12, z: -70 },
+            { id: 'strip_r_r', x: 35, y: -12, z: -70 },
+
+            // --- WINDSHIELD & CABIN BASE ---
+            { id: 'wind_bot_l', x: -32, y: -25, z: 25 },
+            { id: 'wind_bot_r', x: 32, y: -25, z: 25 },
+            { id: 'wind_top_l', x: -28, y: -52, z: 12 },
+            { id: 'wind_top_r', x: 28, y: -52, z: 12 },
+
+            // --- ROOF STRUCTURE ---
+            { id: 'roof_r_l', x: -28, y: -52, z: -50 },
+            { id: 'roof_r_r', x: 28, y: -52, z: -50 },
+
+            // --- REAR HATCH & C-PILLAR ---
+            { id: 'hatch_mid_l', x: -33, y: -24, z: -74 },
+            { id: 'hatch_mid_r', x: 33, y: -24, z: -74 },
+
+            // --- SIDE WINDOWS (B-Pillar division) ---
+            { id: 'bpillar_top_l', x: -28, y: -52, z: -18 },
+            { id: 'bpillar_top_r', x: 28, y: -52, z: -18 },
+            { id: 'bpillar_bot_l', x: -35, y: -22, z: -18 },
+            { id: 'bpillar_bot_r', x: 35, y: -22, z: -18 },
+
+            // --- DOOR HANDLES ---
+            { id: 'dh_f_l_1', x: -35.5, y: -16, z: 10 },
+            { id: 'dh_f_l_2', x: -35.5, y: -16, z: 2 },
+            { id: 'dh_r_l_1', x: -35.5, y: -16, z: -25 },
+            { id: 'dh_r_l_2', x: -35.5, y: -16, z: -33 },
+
+            { id: 'dh_f_r_1', x: 35.5, y: -16, z: 10 },
+            { id: 'dh_f_r_2', x: 35.5, y: -16, z: 2 },
+            { id: 'dh_r_r_1', x: 35.5, y: -16, z: -25 },
+            { id: 'dh_r_r_2', x: 35.5, y: -16, z: -33 },
+
+            // --- FRONT GRILLE SLATS (Horizontal line endpoints) ---
+            { id: 'grill_s1_l', x: -31, y: -16, z: 74.2 },
+            { id: 'grill_s1_r', x: 31, y: -16, z: 74.2 },
+            { id: 'grill_s2_l', x: -31, y: -11, z: 74.2 },
+            { id: 'grill_s2_r', x: 31, y: -11, z: 74.2 },
+            { id: 'grill_s3_l', x: -31, y: -6, z: 74.2 },
+            { id: 'grill_s3_r', x: 31, y: -6, z: 74.2 },
         ];
 
-        // Helper: Create wheels (flat circles in the YZ side-plane)
-        function createWheel(centerX, centerY, centerZ, radius = 10) {
+        // Generator helpers
+        function createWheel(centerX, centerY, centerZ, radius = 9.5) {
             const points = [];
-            const segments = 8;
-            for (let i = 0; i < segments; i++) {
-                const angle = (i / segments) * Math.PI * 2;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
                 points.push({
                     x: centerX,
                     y: centerY + Math.sin(angle) * radius,
@@ -93,12 +136,10 @@
             return points;
         }
 
-        // Helper: Create headlights (flat circles in the XY front-plane)
         function createHeadlight(centerX, centerY, centerZ, radius = 5.5) {
             const points = [];
-            const segments = 8;
-            for (let i = 0; i < segments; i++) {
-                const angle = (i / segments) * Math.PI * 2;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
                 points.push({
                     x: centerX + Math.cos(angle) * radius,
                     y: centerY + Math.sin(angle) * radius,
@@ -108,45 +149,58 @@
             return points;
         }
 
-        // Generate Wheels
-        const wheelFL = createWheel(-36, 5, 45);
-        const wheelFR = createWheel(36, 5, 45);
-        const wheelRL = createWheel(-36, 5, -45);
-        const wheelRR = createWheel(36, 5, -45);
+        // Generate wheels & headlights
+        const wheelFL = createWheel(-33, 5, 42);
+        const wheelFR = createWheel(33, 5, 42);
+        const wheelRL = createWheel(-34, 5, -42);
+        const wheelRR = createWheel(34, 5, -42);
 
-        // Generate Twin Headlights (flat onto the front grille face at z = 75.5)
-        const headlightL = createHeadlight(-22, -14, 75.5);
-        const headlightR = createHeadlight(22, -14, 75.5);
+        const headlightL = createHeadlight(-20, -11, 74.5);
+        const headlightR = createHeadlight(20, -11, 74.5);
 
-        // Combine all 3D vertices into a single list
+        // Combine all 3D vertices
         const allVertices = [
-            ...vertices, 
+            ...baseVertices,
             ...wheelFL, ...wheelFR, ...wheelRL, ...wheelRR,
             ...headlightL, ...headlightR
         ];
 
-        // Define Primary Wireframe Connections (Edges between body vertex indices)
+        // Define Wireframe Edges
         const edges = [
-            // Lower Body Frame
-            [0, 1], [1, 3], [3, 2], [2, 0],
+            // --- FRONT BUMPER ---
+            [0, 1], [2, 3], [0, 2], [1, 3],
+            [0, 4], [2, 4], [1, 5], [3, 5],
 
-            // Beltline & Hood
-            [4, 5], [5, 7], [7, 9], [9, 8], [8, 6], [6, 4],
-            [4, 0], [5, 1], [8, 2], [9, 3],
-            [6, 7], // Base of windshield
+            // --- REAR BUMPER ---
+            [6, 7], [8, 9], [6, 8], [7, 9],
+            [6, 10], [8, 10], [7, 11], [9, 11],
 
-            // Roof pillars (A & C pillars)
-            [6, 10], [7, 11],   // Windshield A-pillars
-            [10, 11],           // Roof Front edge
-            [10, 12], [11, 13], // Roof Side edges
-            [12, 13],           // Roof Rear edge
-            [12, 8], [13, 9],   // C-pillars (Thick Mk2 characteristic)
+            // --- HOOD & LOWER BODY ---
+            [12, 13], [12, 18], [13, 19], // Hood profile
+            [18, 22], [19, 23], // Windshield lower boundary
+            [12, 14], [13, 15], [14, 16], [15, 17], // Beltline
 
-            // Front Grille Center Division
-            [14, 15]
+            // --- SIDE RUBBING STRIPS ---
+            [20, 21],
+
+            // --- WINDSHIELD & ROOF ---
+            [22, 23], [24, 25], [22, 24], [23, 25], // Windshield glass frame
+            [24, 26], [25, 27], [26, 27],           // Roof perimeter
+
+            // --- HATCHBACK / REAR WINDOW ---
+            [26, 28], [27, 29], [28, 29], [28, 16], [29, 17],
+
+            // --- SIDE WINDOWS & B-PILLAR ---
+            [30, 31], [30, 32], [31, 33],
+
+            // --- DOOR HANDLES ---
+            [34, 35], [36, 37], [38, 39], [40, 41],
+
+            // --- FRONT GRILLE SLATS ---
+            [42, 43], [44, 45], [46, 47]
         ];
 
-        // Helper: Add loop edges for circular structures (Wheels & Headlights)
+        // Helper to loop index rings
         function addLoopEdges(startIndex) {
             for (let i = 0; i < 8; i++) {
                 const next = (i === 7) ? startIndex : startIndex + i + 1;
@@ -154,19 +208,17 @@
             }
         }
 
-        // Connect 8-point rings for each wheel
-        const bodyVCount = vertices.length;
-        addLoopEdges(bodyVCount);       // FL Wheel
-        addLoopEdges(bodyVCount + 8);   // FR Wheel
-        addLoopEdges(bodyVCount + 16);  // RL Wheel
-        addLoopEdges(bodyVCount + 24);  // RR Wheel
+        const baseVCount = baseVertices.length;
+        addLoopEdges(baseVCount);      // FL Wheel
+        addLoopEdges(baseVCount + 8);  // FR Wheel
+        addLoopEdges(baseVCount + 16); // RL Wheel
+        addLoopEdges(baseVCount + 24); // RR Wheel
 
-        // Connect 8-point rings for flat front headlights
-        const wheelsVCount = bodyVCount + 32;
+        const wheelsVCount = baseVCount + 32;
         addLoopEdges(wheelsVCount);     // Left Headlight
         addLoopEdges(wheelsVCount + 8); // Right Headlight
 
-        // Helper: Generate SVG elements dynamically
+        // Build SVG elements
         function createSvgElement(tag, attrs) {
             const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
             for (let key in attrs) {
@@ -175,14 +227,12 @@
             return el;
         }
 
-        // Initialize SVG line elements
         const lineElements = [];
         edges.forEach((edge, index) => {
-            // Give headlights a distinct highlight color
             const isHeadlight = index >= (edges.length - 16);
             const line = createSvgElement('line', {
                 'stroke': isHeadlight ? '#ffff00' : '#00ffcc',
-                'stroke-width': '2',
+                'stroke-width': isHeadlight ? '1.8' : '1.5',
                 'stroke-linecap': 'round',
                 'stroke-linejoin': 'round'
             });
@@ -190,15 +240,15 @@
             lineElements.push(line);
         });
 
-        // Track Mouse position for rotation
+        // Track mouse rotation
         window.addEventListener('mousemove', (e) => {
             const mouseX = e.clientX / window.innerWidth;
             targetAngleY = (mouseX - 0.5) * Math.PI * 2;
         });
 
-        // 3D Matrix Rotation & Isometric Projection
+        // 3D Matrix Projection
         function project(point, angleY) {
-            // 1. Rotate around Y-axis (Yaw)
+            // Y-axis Yaw rotation
             const cosY = Math.cos(angleY);
             const sinY = Math.sin(angleY);
 
@@ -206,7 +256,7 @@
             const y1 = point.y;
             const z1 = -point.x * sinY + point.z * cosY;
 
-            // 2. Apply fixed Isometric X-axis Tilt (Pitch)
+            // X-axis Pitch tilt
             const cosX = Math.cos(isoAngleX);
             const sinX = Math.sin(isoAngleX);
 
@@ -214,23 +264,20 @@
             const y2 = y1 * cosX - z1 * sinX;
             const z2 = y1 * sinX + z1 * cosX;
 
-            // 3. Scale and Project to 2D Canvas space
-            const scale = 2.2;
+            // Scale to screen
+            const scale = 2.3;
             const screenX = originX + x2 * scale;
             const screenY = originY + y2 * scale;
 
             return { x: screenX, y: screenY, z: z2 };
         }
 
-        // Render Loop
+        // Animation Loop
         function animate() {
-            // Smoothly interpolate rotation toward target
             currentAngleY += (targetAngleY - currentAngleY) * 0.08;
 
-            // Transform all 3D points to 2D screen positions
             const projectedPoints = allVertices.map(v => project(v, currentAngleY));
 
-            // Render Edges
             edges.forEach((edge, index) => {
                 const p1 = projectedPoints[edge[0]];
                 const p2 = projectedPoints[edge[1]];
@@ -244,7 +291,6 @@
             requestAnimationFrame(animate);
         }
 
-        // Start animation
         animate();
     </script>
 </body>
