@@ -41,6 +41,8 @@
         }
         button:hover { background-color: #3d3d3d; color: #fff; border-color: #555; }
         button.active { background-color: #007acc; color: #fff; border-color: #0098ff; }
+        button.btn-accent { background-color: #2e6930; color: #fff; border-color: #3e8e41; }
+        button.btn-accent:hover { background-color: #388e3c; }
         
         .file-input-label {
             background-color: #252526;
@@ -133,6 +135,7 @@
         body.mode-preview #preview-panel { display: block; }
         body.edit-mode-addpoint svg { cursor: crosshair; }
         body.edit-mode-line line { cursor: pointer; }
+        body.edit-mode-curve path { cursor: pointer; }
     </style>
 </head>
 <body class="edit-mode-point">
@@ -149,6 +152,15 @@
             <button id="btn-tool-point" class="active">Point Mode</button>
             <button id="btn-tool-addpoint">Create Point Mode</button>
             <button id="btn-tool-line">Line Mode</button>
+            <button id="btn-tool-curve">Curve Mode</button>
+        </div>
+
+        <div class="btn-group" id="io-tools">
+            <button id="btn-export-json" class="btn-accent">Download JSON</button>
+            <label class="file-input-label" style="border-style: solid; color: #ccc;">
+                Upload JSON
+                <input type="file" id="input-import-json" accept=".json">
+            </label>
         </div>
 
         <div class="btn-group" id="bg-tools">
@@ -200,9 +212,11 @@
     </div>
 
     <script>
-        // --- INITIAL MODEL STATE ---
+        const STORAGE_KEY = '3d_vector_editor_data';
+
+        // --- INITIAL DEFAULT MODEL STATE ---
         let nextVertexId = 24;
-        const vertices = [
+        let vertices = [
             // Base / Bumpers
             { id: 0, x: -33, y: -4, z: 80 },   // FB Top L
             { id: 1, x: 33, y: -4, z: 80 },    // FB Top R
@@ -238,7 +252,7 @@
             { id: 23, x: 20, y: -11, z: 74.5 },  // HL Right Center
         ];
 
-        const edges = [
+        let edges = [
             // Front Bumper Frame
             [0, 1], [2, 3], [0, 2], [1, 3],
             // Rear Bumper Frame
@@ -257,19 +271,29 @@
             [0, 22], [1, 23], [8, 22], [9, 23]
         ];
 
+        // Store quadratic curves: array of triplet vertex IDs [startId, controlId, endId]
+        let curves = [];
+
         // System Variables
         let currentMode = 'edit';
-        let currentTool = 'point';
+        let currentTool = 'point'; // 'point', 'addpoint', 'line', or 'curve'
         let selectedPointId = null;
         let hoverPointId = null;
         let selectedEdgeIndex = null;
+        let selectedCurveIndex = null;
         let isDragging = false;
         let dragViewType = null;
 
-        // Line Chain Creation Variables
+        // Line Creation Variables
         let lineStartPointId = null;
-        let lineSequence = []; // Tracks visited points in current drawing chain
+        let lineSequence = [];
         let linePreviewMousePos = null;
+
+        // Curve Creation Variables
+        let curveStartPointId = null;
+        let curveControlPointId = null;
+        let curveSequence = [];
+        let curvePreviewMousePos = null;
 
         // View Configurations and Axis Mapping
         const views = {
@@ -285,6 +309,72 @@
         let isoTargetAngleY = 0;
 
         const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
+
+        // --- LOCAL STORAGE PERSISTENCE ---
+        function saveToLocalStorage() {
+            const dataPayload = {
+                nextVertexId,
+                vertices,
+                edges,
+                curves
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataPayload));
+        }
+
+        function loadFromLocalStorage() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return false;
+            try {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed.vertices) && Array.isArray(parsed.edges)) {
+                    vertices = parsed.vertices;
+                    edges = parsed.edges;
+                    curves = parsed.curves || [];
+                    nextVertexId = parsed.nextVertexId || (vertices.reduce((max, v) => Math.max(max, v.id), 0) + 1);
+                    return true;
+                }
+            } catch (err) {
+                console.error('Failed to load drawing data from LocalStorage:', err);
+            }
+            return false;
+        }
+
+        function getExportJSON() {
+            return JSON.stringify({
+                version: 1,
+                nextVertexId,
+                vertices,
+                edges,
+                curves
+            }, null, 2);
+        }
+
+        function importJSONData(jsonString) {
+            try {
+                const parsed = JSON.parse(jsonString);
+                if (!Array.isArray(parsed.vertices) || !Array.isArray(parsed.edges)) {
+                    throw new Error('Invalid schema: vertices and edges must be arrays.');
+                }
+                vertices = parsed.vertices;
+                edges = parsed.edges;
+                curves = parsed.curves || [];
+                nextVertexId = parsed.nextVertexId || (vertices.reduce((max, v) => Math.max(max, v.id), -1) + 1);
+                
+                resetLineChain();
+                resetCurveChain();
+                selectedPointId = null;
+                selectedEdgeIndex = null;
+                selectedCurveIndex = null;
+
+                rebuildDOM();
+                saveToLocalStorage();
+                updateAllViews();
+                return true;
+            } catch (e) {
+                alert('Failed to import JSON: ' + e.message);
+                return false;
+            }
+        }
 
         function projectToView(v, viewType, width, height) {
             const scale = 2.2;
@@ -318,11 +408,18 @@
             linePreviewMousePos = null;
         }
 
+        function resetCurveChain() {
+            curveStartPointId = null;
+            curveControlPointId = null;
+            curveSequence = [];
+            curvePreviewMousePos = null;
+        }
+
         // --- KEYBOARD LISTENERS ---
         window.addEventListener('keydown', (e) => {
-            // Cancel drawing continuous line chain on ESC key
             if (e.key === 'Escape') {
                 resetLineChain();
+                resetCurveChain();
                 selectedPointId = null;
                 updateAllViews();
             }
@@ -334,21 +431,49 @@
             svg.innerHTML = '';
 
             const lineGroup = createSvgEl('g', { id: `${viewType}-lines` });
+            const curveGroup = createSvgEl('g', { id: `${viewType}-curves` });
+            
+            // Preview elements
             const previewLine = createSvgEl('line', {
                 'id': `${viewType}-preview-line`,
-                'stroke': '#ffff00',
+                'stroke': '#00ffcc',
                 'stroke-width': '2',
                 'stroke-dasharray': '4 4',
                 'display': 'none',
                 'pointer-events': 'none'
             });
+
+            const previewCurve = createSvgEl('path', {
+                'id': `${viewType}-preview-curve`,
+                'stroke': '#ffff00',
+                'stroke-width': '2',
+                'stroke-dasharray': '4 4',
+                'fill': 'none',
+                'display': 'none',
+                'pointer-events': 'none'
+            });
+
+            const previewCurveGuide = createSvgEl('line', {
+                'id': `${viewType}-preview-curve-guide`,
+                'stroke': '#666',
+                'stroke-width': '1',
+                'stroke-dasharray': '2 2',
+                'display': 'none',
+                'pointer-events': 'none'
+            });
+
             const pointGroup = createSvgEl('g', { id: `${viewType}-points` });
             
             svg.appendChild(lineGroup);
+            svg.appendChild(curveGroup);
             svg.appendChild(previewLine);
+            svg.appendChild(previewCurveGuide);
+            svg.appendChild(previewCurve);
             svg.appendChild(pointGroup);
 
             viewRenderCache[viewType].previewLine = previewLine;
+            viewRenderCache[viewType].previewCurve = previewCurve;
+            viewRenderCache[viewType].previewCurveGuide = previewCurveGuide;
 
             svg.addEventListener('click', (e) => {
                 const rect = svg.getBoundingClientRect();
@@ -364,15 +489,18 @@
                     
                     selectedPointId = newPoint.id;
                     rebuildDOM();
+                    saveToLocalStorage();
                     updateAllViews();
                     return;
                 }
 
-                // Click on empty SVG space terminates line chain / selection
+                // Click on empty space cancels drawing chains
                 if (e.target.tagName === 'svg') {
                     resetLineChain();
+                    resetCurveChain();
                     selectedPointId = null;
                     selectedEdgeIndex = null;
+                    selectedCurveIndex = null;
                     updateAllViews();
                 }
             });
@@ -387,12 +515,18 @@
                     const vertex = vertices.find(v => v.id === selectedPointId);
                     if (vertex) {
                         Object.assign(vertex, updatedPlaneCoords);
+                        saveToLocalStorage();
                         updateAllViews();
                     }
                 }
 
                 if (currentTool === 'line' && lineStartPointId !== null) {
                     linePreviewMousePos = { viewType, x: mouseX, y: mouseY };
+                    updateAllViews();
+                }
+
+                if (currentTool === 'curve' && curveStartPointId !== null) {
+                    curvePreviewMousePos = { viewType, x: mouseX, y: mouseY };
                     updateAllViews();
                 }
             });
@@ -403,12 +537,14 @@
         function buildDOMForView(viewType) {
             const svg = views[viewType].svg;
             const lineGroup = svg.querySelector(`#${viewType}-lines`);
+            const curveGroup = svg.querySelector(`#${viewType}-curves`);
             const pointGroup = svg.querySelector(`#${viewType}-points`);
 
             lineGroup.innerHTML = '';
+            curveGroup.innerHTML = '';
             pointGroup.innerHTML = '';
 
-            // Render Edges
+            // Render Edges (Cyan)
             viewRenderCache[viewType].lines = edges.map((edge, idx) => {
                 const line = createSvgEl('line', {
                     'stroke': '#00ffcc',
@@ -419,12 +555,34 @@
                     if (currentTool === 'line' && lineStartPointId === null) {
                         e.stopPropagation();
                         selectedEdgeIndex = idx;
+                        selectedCurveIndex = null;
                         selectedPointId = null;
                         updateAllViews();
                     }
                 });
                 lineGroup.appendChild(line);
                 return line;
+            });
+
+            // Render Curves (Distinct Yellow)
+            viewRenderCache[viewType].curves = curves.map((crv, idx) => {
+                const path = createSvgEl('path', {
+                    'stroke': '#ffff00',
+                    'stroke-width': '2.5',
+                    'fill': 'none',
+                    'data-idx': idx
+                });
+                path.addEventListener('click', (e) => {
+                    if (currentTool === 'curve' && curveStartPointId === null) {
+                        e.stopPropagation();
+                        selectedCurveIndex = idx;
+                        selectedEdgeIndex = null;
+                        selectedPointId = null;
+                        updateAllViews();
+                    }
+                });
+                curveGroup.appendChild(path);
+                return path;
             });
 
             // Render Points
@@ -458,16 +616,52 @@
                 handleGroup.addEventListener('click', (e) => {
                     e.stopPropagation();
 
-                    // --- CONTINUOUS LINE DRAWING CHAIN LOGIC ---
+                    // Curve Creation Mode
+                    if (currentTool === 'curve') {
+                        if (curveStartPointId === null) {
+                            curveStartPointId = v.id;
+                            curveSequence = [v.id];
+                            selectedPointId = v.id;
+                            selectedEdgeIndex = null;
+                            selectedCurveIndex = null;
+                        } else if (curveControlPointId === null) {
+                            if (v.id !== curveStartPointId) {
+                                curveControlPointId = v.id;
+                                curveSequence.push(v.id);
+                                selectedPointId = v.id;
+                            }
+                        } else {
+                            if (v.id !== curveControlPointId) {
+                                curves.push([curveStartPointId, curveControlPointId, v.id]);
+
+                                const isLoopCreated = curveSequence.includes(v.id);
+
+                                if (isLoopCreated) {
+                                    resetCurveChain();
+                                    selectedPointId = v.id;
+                                } else {
+                                    curveStartPointId = v.id;
+                                    curveControlPointId = null;
+                                    curveSequence.push(v.id);
+                                    selectedPointId = v.id;
+                                }
+                                saveToLocalStorage();
+                                rebuildDOM();
+                            }
+                        }
+                        updateAllViews();
+                        return;
+                    }
+
+                    // Line Creation Mode
                     if (currentTool === 'line') {
                         if (lineStartPointId === null) {
-                            // Initial node of line chain
                             lineStartPointId = v.id;
                             lineSequence = [v.id];
                             selectedPointId = v.id;
                             selectedEdgeIndex = null;
+                            selectedCurveIndex = null;
                         } else if (lineStartPointId !== v.id) {
-                            // Add segment
                             const edgeExists = edges.some(e => 
                                 (e[0] === lineStartPointId && e[1] === v.id) || 
                                 (e[0] === v.id && e[1] === lineStartPointId)
@@ -477,19 +671,17 @@
                                 edges.push([lineStartPointId, v.id]);
                             }
 
-                            // Check if a loop is created
                             const isLoopCreated = lineSequence.includes(v.id);
 
                             if (isLoopCreated) {
-                                // Close loop & stop line segment chain
                                 resetLineChain();
                                 selectedPointId = v.id;
                             } else {
-                                // Continue polyline chain: Target point becomes next start point!
                                 lineStartPointId = v.id;
                                 lineSequence.push(v.id);
                                 selectedPointId = v.id;
                             }
+                            saveToLocalStorage();
                             rebuildDOM();
                         }
                         updateAllViews();
@@ -500,6 +692,7 @@
                     if (currentTool === 'point') {
                         selectedPointId = v.id;
                         selectedEdgeIndex = null;
+                        selectedCurveIndex = null;
                         updateAllViews();
                     }
                 });
@@ -509,6 +702,7 @@
                         e.stopPropagation();
                         selectedPointId = v.id;
                         selectedEdgeIndex = null;
+                        selectedCurveIndex = null;
                         isDragging = true;
                         dragViewType = viewType;
                         updateAllViews();
@@ -535,7 +729,7 @@
             const rect = svg.getBoundingClientRect();
             if (rect.width === 0 || rect.height === 0) return;
 
-            // 1. Lines
+            // 1. Lines (Cyan)
             edges.forEach((edge, idx) => {
                 const v1 = vertices.find(v => v.id === edge[0]);
                 const v2 = vertices.find(v => v.id === edge[1]);
@@ -552,8 +746,8 @@
                     lineEl.setAttribute('y2', p2.y);
 
                     if (idx === selectedEdgeIndex) {
-                        lineEl.setAttribute('stroke', '#ffff00');
-                        lineEl.setAttribute('stroke-width', '3.5');
+                        lineEl.setAttribute('stroke', '#00ffff');
+                        lineEl.setAttribute('stroke-width', '4');
                     } else {
                         lineEl.setAttribute('stroke', '#00ffcc');
                         lineEl.setAttribute('stroke-width', '2');
@@ -561,7 +755,32 @@
                 }
             });
 
-            // 2. Real-time Segment Preview
+            // 2. Quadratic Curves (Yellow)
+            curves.forEach((crv, idx) => {
+                const vStart = vertices.find(v => v.id === crv[0]);
+                const vControl = vertices.find(v => v.id === crv[1]);
+                const vEnd = vertices.find(v => v.id === crv[2]);
+                if (!vStart || !vControl || !vEnd) return;
+
+                const pStart = projectToView(vStart, viewType, rect.width, rect.height);
+                const pControl = projectToView(vControl, viewType, rect.width, rect.height);
+                const pEnd = projectToView(vEnd, viewType, rect.width, rect.height);
+
+                const pathEl = viewRenderCache[viewType].curves[idx];
+                if (pathEl) {
+                    pathEl.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
+
+                    if (idx === selectedCurveIndex) {
+                        pathEl.setAttribute('stroke', '#ffffff');
+                        pathEl.setAttribute('stroke-width', '4');
+                    } else {
+                        pathEl.setAttribute('stroke', '#ffff00');
+                        pathEl.setAttribute('stroke-width', '2.5');
+                    }
+                }
+            });
+
+            // 3. Line Preview
             const previewLineEl = viewRenderCache[viewType].previewLine;
             if (currentTool === 'line' && lineStartPointId !== null) {
                 const startV = vertices.find(v => v.id === lineStartPointId);
@@ -590,7 +809,73 @@
                 previewLineEl.style.display = 'none';
             }
 
-            // 3. Points
+            // 4. Curve Preview
+            const previewCurveEl = viewRenderCache[viewType].previewCurve;
+            const previewCurveGuideEl = viewRenderCache[viewType].previewCurveGuide;
+
+            if (currentTool === 'curve' && curveStartPointId !== null) {
+                const startV = vertices.find(v => v.id === curveStartPointId);
+                
+                if (curveControlPointId === null) {
+                    if (startV) {
+                        const pStart = projectToView(startV, viewType, rect.width, rect.height);
+                        let targetX = pStart.x;
+                        let targetY = pStart.y;
+
+                        if (hoverPointId !== null && hoverPointId !== curveStartPointId) {
+                            const hoverV = vertices.find(v => v.id === hoverPointId);
+                            const pTarget = projectToView(hoverV, viewType, rect.width, rect.height);
+                            targetX = pTarget.x;
+                            targetY = pTarget.y;
+                        } else if (curvePreviewMousePos && curvePreviewMousePos.viewType === viewType) {
+                            targetX = curvePreviewMousePos.x;
+                            targetY = curvePreviewMousePos.y;
+                        }
+
+                        previewLineEl.setAttribute('x1', pStart.x);
+                        previewLineEl.setAttribute('y1', pStart.y);
+                        previewLineEl.setAttribute('x2', targetX);
+                        previewLineEl.setAttribute('y2', targetY);
+                        previewLineEl.style.display = 'block';
+                        previewCurveEl.style.display = 'none';
+                        previewCurveGuideEl.style.display = 'none';
+                    }
+                } else {
+                    const controlV = vertices.find(v => v.id === curveControlPointId);
+                    if (startV && controlV) {
+                        const pStart = projectToView(startV, viewType, rect.width, rect.height);
+                        const pControl = projectToView(controlV, viewType, rect.width, rect.height);
+                        let targetX = pControl.x;
+                        let targetY = pControl.y;
+
+                        if (hoverPointId !== null && hoverPointId !== curveControlPointId) {
+                            const hoverV = vertices.find(v => v.id === hoverPointId);
+                            const pTarget = projectToView(hoverV, viewType, rect.width, rect.height);
+                            targetX = pTarget.x;
+                            targetY = pTarget.y;
+                        } else if (curvePreviewMousePos && curvePreviewMousePos.viewType === viewType) {
+                            targetX = curvePreviewMousePos.x;
+                            targetY = curvePreviewMousePos.y;
+                        }
+
+                        previewLineEl.style.display = 'none';
+                        
+                        previewCurveGuideEl.setAttribute('x1', pStart.x);
+                        previewCurveGuideEl.setAttribute('y1', pStart.y);
+                        previewCurveGuideEl.setAttribute('x2', pControl.x);
+                        previewCurveGuideEl.setAttribute('y2', pControl.y);
+                        previewCurveGuideEl.style.display = 'block';
+
+                        previewCurveEl.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${targetX} ${targetY}`);
+                        previewCurveEl.style.display = 'block';
+                    }
+                }
+            } else if (currentTool !== 'line') {
+                previewCurveEl.style.display = 'none';
+                previewCurveGuideEl.style.display = 'none';
+            }
+
+            // 5. Points
             vertices.forEach((v, idx) => {
                 const p = projectToView(v, viewType, rect.width, rect.height);
                 const item = viewRenderCache[viewType].points[idx];
@@ -601,7 +886,7 @@
                 item.rect.setAttribute('x', p.x - 7);
                 item.rect.setAttribute('y', p.y - 7);
 
-                if (v.id === selectedPointId || v.id === lineStartPointId) {
+                if (v.id === selectedPointId || v.id === lineStartPointId || v.id === curveStartPointId || v.id === curveControlPointId) {
                     item.circle.setAttribute('fill', '#ffff00');
                     item.circle.setAttribute('r', '5');
                     item.rect.style.display = 'block';
@@ -621,7 +906,10 @@
         function initIsoDOM() {
             isoSvg.innerHTML = '';
             const lineGroup = createSvgEl('g', { id: 'iso-lines' });
+            const curveGroup = createSvgEl('g', { id: 'iso-curves' });
+            
             isoSvg.appendChild(lineGroup);
+            isoSvg.appendChild(curveGroup);
 
             viewRenderCache.iso.lines = edges.map(() => {
                 const line = createSvgEl('line', {
@@ -631,6 +919,16 @@
                 });
                 lineGroup.appendChild(line);
                 return line;
+            });
+
+            viewRenderCache.iso.curves = curves.map(() => {
+                const path = createSvgEl('path', {
+                    'stroke': '#ffff00',
+                    'stroke-width': '2.5',
+                    'fill': 'none'
+                });
+                curveGroup.appendChild(path);
+                return path;
             });
         }
 
@@ -664,6 +962,7 @@
 
             const projectedPoints = vertices.map(v => projectIso(v, isoAngleY, rect.width, rect.height));
 
+            // Render 3D Edges
             edges.forEach((edge, idx) => {
                 const v1Idx = vertices.findIndex(v => v.id === edge[0]);
                 const v2Idx = vertices.findIndex(v => v.id === edge[1]);
@@ -680,11 +979,36 @@
                     line.setAttribute('y2', p2.y);
 
                     if (idx === selectedEdgeIndex) {
-                        line.setAttribute('stroke', '#ffff00');
+                        line.setAttribute('stroke', '#00ffff');
                         line.setAttribute('stroke-width', '3.5');
                     } else {
                         line.setAttribute('stroke', '#00ffcc');
                         line.setAttribute('stroke-width', '2');
+                    }
+                }
+            });
+
+            // Render 3D Quadratic Curves (Yellow)
+            curves.forEach((crv, idx) => {
+                const v1Idx = vertices.findIndex(v => v.id === crv[0]);
+                const v2Idx = vertices.findIndex(v => v.id === crv[1]);
+                const v3Idx = vertices.findIndex(v => v.id === crv[2]);
+                if (v1Idx === -1 || v2Idx === -1 || v3Idx === -1) return;
+
+                const pStart = projectedPoints[v1Idx];
+                const pControl = projectedPoints[v2Idx];
+                const pEnd = projectedPoints[v3Idx];
+
+                const path = viewRenderCache.iso.curves[idx];
+                if (path) {
+                    path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
+
+                    if (idx === selectedCurveIndex) {
+                        path.setAttribute('stroke', '#ffffff');
+                        path.setAttribute('stroke-width', '4');
+                    } else {
+                        path.setAttribute('stroke', '#ffff00');
+                        path.setAttribute('stroke-width', '2.5');
                     }
                 }
             });
@@ -711,6 +1035,7 @@
         const btnToolPoint = document.getElementById('btn-tool-point');
         const btnToolAddPoint = document.getElementById('btn-tool-addpoint');
         const btnToolLine = document.getElementById('btn-tool-line');
+        const btnToolCurve = document.getElementById('btn-tool-curve');
 
         btnEditMode.addEventListener('click', () => {
             currentMode = 'edit';
@@ -731,8 +1056,9 @@
         function setActiveTool(toolName, bodyClass, activeBtn) {
             currentTool = toolName;
             resetLineChain();
+            resetCurveChain();
             document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' ' + bodyClass;
-            [btnToolPoint, btnToolAddPoint, btnToolLine].forEach(b => b.classList.remove('active'));
+            [btnToolPoint, btnToolAddPoint, btnToolLine, btnToolCurve].forEach(b => b.classList.remove('active'));
             activeBtn.classList.add('active');
             updateAllViews();
         }
@@ -740,9 +1066,33 @@
         btnToolPoint.addEventListener('click', () => setActiveTool('point', 'edit-mode-point', btnToolPoint));
         btnToolAddPoint.addEventListener('click', () => setActiveTool('addpoint', 'edit-mode-addpoint', btnToolAddPoint));
         btnToolLine.addEventListener('click', () => setActiveTool('line', 'edit-mode-line', btnToolLine));
+        btnToolCurve.addEventListener('click', () => setActiveTool('curve', 'edit-mode-curve', btnToolCurve));
+
+        // --- JSON EXPORT / IMPORT EVENT LISTENERS ---
+        document.getElementById('btn-export-json').addEventListener('click', () => {
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(getExportJSON());
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute('href', dataStr);
+            downloadAnchor.setAttribute('download', 'model_data.json');
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        document.getElementById('input-import-json').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    importJSONData(event.target.result);
+                    e.target.value = ''; // Reset input
+                };
+                reader.readAsText(file);
+            }
+        });
 
         // Background Image Loaders
-        document.querySelectorAll('input[type="file"]').forEach(input => {
+        document.querySelectorAll('input[type="file"][data-view]').forEach(input => {
             input.addEventListener('change', (e) => {
                 const viewType = e.target.getAttribute('data-view');
                 const file = e.target.files[0];
@@ -759,6 +1109,7 @@
         window.addEventListener('resize', updateAllViews);
 
         // INITIALIZE
+        loadFromLocalStorage(); // Automatically load cached drawing if present
         ['top', 'left', 'front', 'rear'].forEach(initViewDOM);
         initIsoDOM();
         updateAllViews();
