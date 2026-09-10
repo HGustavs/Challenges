@@ -277,12 +277,23 @@
         // System Variables
         let currentMode = 'edit';
         let currentTool = 'point'; // 'point', 'addpoint', 'line', or 'curve'
-        let selectedPointId = null;
+        
+        // Multi-Point Selection Set (Set of Vertex IDs)
+        let selectedPointIds = new Set();
         let hoverPointId = null;
         let selectedEdgeIndex = null;
         let selectedCurveIndex = null;
-        let isDragging = false;
+        
+        // Multi-Point Drag State
+        let isDraggingPoints = false;
         let dragViewType = null;
+        let dragInitialMousePlane = null;
+        let dragInitialVerticesState = new Map(); // Map<id, {x, y, z}>
+
+        // Box Selection State
+        let isBoxSelecting = false;
+        let boxSelectStartPos = null; // { x, y } in SVG coordinates
+        let boxSelectViewType = null;
 
         // Line Creation Variables
         let lineStartPointId = null;
@@ -309,6 +320,19 @@
         let isoTargetAngleY = 0;
 
         const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
+
+        // Helper selection utilities
+        function clearSelection() {
+            selectedPointIds.clear();
+        }
+
+        function togglePointSelection(id) {
+            if (selectedPointIds.has(id)) {
+                selectedPointIds.delete(id);
+            } else {
+                selectedPointIds.add(id);
+            }
+        }
 
         // --- LOCAL STORAGE PERSISTENCE ---
         function saveToLocalStorage() {
@@ -362,7 +386,7 @@
                 
                 resetLineChain();
                 resetCurveChain();
-                selectedPointId = null;
+                clearSelection();
                 selectedEdgeIndex = null;
                 selectedCurveIndex = null;
 
@@ -420,7 +444,7 @@
             if (e.key === 'Escape') {
                 resetLineChain();
                 resetCurveChain();
-                selectedPointId = null;
+                clearSelection();
                 updateAllViews();
             }
         });
@@ -433,6 +457,17 @@
             const lineGroup = createSvgEl('g', { id: `${viewType}-lines` });
             const curveGroup = createSvgEl('g', { id: `${viewType}-curves` });
             
+            // Selection Box Element
+            const selectionBox = createSvgEl('rect', {
+                'id': `${viewType}-select-box`,
+                'fill': 'rgba(0, 204, 255, 0.15)',
+                'stroke': '#00ccff',
+                'stroke-width': '1',
+                'stroke-dasharray': '3 3',
+                'display': 'none',
+                'pointer-events': 'none'
+            });
+
             // Preview elements
             const previewLine = createSvgEl('line', {
                 'id': `${viewType}-preview-line`,
@@ -469,11 +504,36 @@
             svg.appendChild(previewLine);
             svg.appendChild(previewCurveGuide);
             svg.appendChild(previewCurve);
+            svg.appendChild(selectionBox);
             svg.appendChild(pointGroup);
 
             viewRenderCache[viewType].previewLine = previewLine;
             viewRenderCache[viewType].previewCurve = previewCurve;
             viewRenderCache[viewType].previewCurveGuide = previewCurveGuide;
+            viewRenderCache[viewType].selectionBox = selectionBox;
+
+            // Start Box Selection or Cancel Selection on SVG Background Mousedown
+            svg.addEventListener('mousedown', (e) => {
+                if (e.target.tagName !== 'svg') return;
+                const rect = svg.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                if (currentTool === 'point') {
+                    isBoxSelecting = true;
+                    boxSelectViewType = viewType;
+                    boxSelectStartPos = { x: mouseX, y: mouseY, isCtrl: e.ctrlKey || e.metaKey };
+
+                    // If Control isn't held down, reset selection
+                    if (!boxSelectStartPos.isCtrl) {
+                        clearSelection();
+                    }
+
+                    selectedEdgeIndex = null;
+                    selectedCurveIndex = null;
+                    updateAllViews();
+                }
+            });
 
             svg.addEventListener('click', (e) => {
                 const rect = svg.getBoundingClientRect();
@@ -487,21 +547,12 @@
                     Object.assign(newPoint, planeCoords);
                     vertices.push(newPoint);
                     
-                    selectedPointId = newPoint.id;
+                    clearSelection();
+                    selectedPointIds.add(newPoint.id);
                     rebuildDOM();
                     saveToLocalStorage();
                     updateAllViews();
                     return;
-                }
-
-                // Click on empty space cancels drawing chains
-                if (e.target.tagName === 'svg') {
-                    resetLineChain();
-                    resetCurveChain();
-                    selectedPointId = null;
-                    selectedEdgeIndex = null;
-                    selectedCurveIndex = null;
-                    updateAllViews();
                 }
             });
 
@@ -510,16 +561,62 @@
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
 
-                if (isDragging && selectedPointId !== null && dragViewType === viewType) {
-                    const updatedPlaneCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
-                    const vertex = vertices.find(v => v.id === selectedPointId);
-                    if (vertex) {
-                        Object.assign(vertex, updatedPlaneCoords);
-                        saveToLocalStorage();
-                        updateAllViews();
-                    }
+                // 1. Handle Multi-Point Dragging
+                if (isDraggingPoints && dragViewType === viewType) {
+                    const currentPlaneCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
+                    const dx = currentPlaneCoords.x !== undefined ? (currentPlaneCoords.x - dragInitialMousePlane.x) : 0;
+                    const dy = currentPlaneCoords.y !== undefined ? (currentPlaneCoords.y - dragInitialMousePlane.y) : 0;
+                    const dz = currentPlaneCoords.z !== undefined ? (currentPlaneCoords.z - dragInitialMousePlane.z) : 0;
+
+                    selectedPointIds.forEach(id => {
+                        const v = vertices.find(pt => pt.id === id);
+                        const initial = dragInitialVerticesState.get(id);
+                        if (v && initial) {
+                            if (initial.x !== undefined && currentPlaneCoords.x !== undefined) v.x = initial.x + dx;
+                            if (initial.y !== undefined && currentPlaneCoords.y !== undefined) v.y = initial.y + dy;
+                            if (initial.z !== undefined && currentPlaneCoords.z !== undefined) v.z = initial.z + dz;
+                        }
+                    });
+
+                    saveToLocalStorage();
+                    updateAllViews();
+                    return;
                 }
 
+                // 2. Handle Box Selection Drag
+                if (isBoxSelecting && boxSelectViewType === viewType) {
+                    const left = Math.min(boxSelectStartPos.x, mouseX);
+                    const top = Math.min(boxSelectStartPos.y, mouseY);
+                    const width = Math.abs(mouseX - boxSelectStartPos.x);
+                    const height = Math.abs(mouseY - boxSelectStartPos.y);
+
+                    const boxEl = viewRenderCache[viewType].selectionBox;
+                    boxEl.setAttribute('x', left);
+                    boxEl.setAttribute('y', top);
+                    boxEl.setAttribute('width', width);
+                    boxEl.setAttribute('height', height);
+                    boxEl.style.display = 'block';
+
+                    // Update dynamic enclosed points selection
+                    const newlyEnclosed = new Set();
+                    vertices.forEach(v => {
+                        const pt = projectToView(v, viewType, rect.width, rect.height);
+                        if (pt.x >= left && pt.x <= left + width && pt.y >= top && pt.y <= top + height) {
+                            newlyEnclosed.add(v.id);
+                        }
+                    });
+
+                    if (!boxSelectStartPos.isCtrl) {
+                        selectedPointIds = newlyEnclosed;
+                    } else {
+                        newlyEnclosed.forEach(id => selectedPointIds.add(id));
+                    }
+
+                    updateAllViews();
+                    return;
+                }
+
+                // Tool Previews
                 if (currentTool === 'line' && lineStartPointId !== null) {
                     linePreviewMousePos = { viewType, x: mouseX, y: mouseY };
                     updateAllViews();
@@ -556,7 +653,7 @@
                         e.stopPropagation();
                         selectedEdgeIndex = idx;
                         selectedCurveIndex = null;
-                        selectedPointId = null;
+                        clearSelection();
                         updateAllViews();
                     }
                 });
@@ -577,7 +674,7 @@
                         e.stopPropagation();
                         selectedCurveIndex = idx;
                         selectedEdgeIndex = null;
-                        selectedPointId = null;
+                        clearSelection();
                         updateAllViews();
                     }
                 });
@@ -600,14 +697,14 @@
                 handleGroup.appendChild(rect);
 
                 handleGroup.addEventListener('mouseenter', () => {
-                    if (!isDragging && currentTool !== 'addpoint') {
+                    if (!isDraggingPoints && !isBoxSelecting && currentTool !== 'addpoint') {
                         hoverPointId = v.id;
                         updateAllViews();
                     }
                 });
 
                 handleGroup.addEventListener('mouseleave', () => {
-                    if (!isDragging && hoverPointId === v.id) {
+                    if (!isDraggingPoints && !isBoxSelecting && hoverPointId === v.id) {
                         hoverPointId = null;
                         updateAllViews();
                     }
@@ -621,14 +718,16 @@
                         if (curveStartPointId === null) {
                             curveStartPointId = v.id;
                             curveSequence = [v.id];
-                            selectedPointId = v.id;
+                            clearSelection();
+                            selectedPointIds.add(v.id);
                             selectedEdgeIndex = null;
                             selectedCurveIndex = null;
                         } else if (curveControlPointId === null) {
                             if (v.id !== curveStartPointId) {
                                 curveControlPointId = v.id;
                                 curveSequence.push(v.id);
-                                selectedPointId = v.id;
+                                clearSelection();
+                                selectedPointIds.add(v.id);
                             }
                         } else {
                             if (v.id !== curveControlPointId) {
@@ -638,12 +737,14 @@
 
                                 if (isLoopCreated) {
                                     resetCurveChain();
-                                    selectedPointId = v.id;
+                                    clearSelection();
+                                    selectedPointIds.add(v.id);
                                 } else {
                                     curveStartPointId = v.id;
                                     curveControlPointId = null;
                                     curveSequence.push(v.id);
-                                    selectedPointId = v.id;
+                                    clearSelection();
+                                    selectedPointIds.add(v.id);
                                 }
                                 saveToLocalStorage();
                                 rebuildDOM();
@@ -658,7 +759,8 @@
                         if (lineStartPointId === null) {
                             lineStartPointId = v.id;
                             lineSequence = [v.id];
-                            selectedPointId = v.id;
+                            clearSelection();
+                            selectedPointIds.add(v.id);
                             selectedEdgeIndex = null;
                             selectedCurveIndex = null;
                         } else if (lineStartPointId !== v.id) {
@@ -675,11 +777,13 @@
 
                             if (isLoopCreated) {
                                 resetLineChain();
-                                selectedPointId = v.id;
+                                clearSelection();
+                                selectedPointIds.add(v.id);
                             } else {
                                 lineStartPointId = v.id;
                                 lineSequence.push(v.id);
-                                selectedPointId = v.id;
+                                clearSelection();
+                                selectedPointIds.add(v.id);
                             }
                             saveToLocalStorage();
                             rebuildDOM();
@@ -688,23 +792,54 @@
                         return;
                     }
 
-                    // Point Mode
+                    // Point Tool Click Handling
                     if (currentTool === 'point') {
-                        selectedPointId = v.id;
+                        if (e.ctrlKey || e.metaKey) {
+                            togglePointSelection(v.id);
+                        } else {
+                            if (!selectedPointIds.has(v.id)) {
+                                clearSelection();
+                                selectedPointIds.add(v.id);
+                            }
+                        }
                         selectedEdgeIndex = null;
                         selectedCurveIndex = null;
                         updateAllViews();
                     }
                 });
 
+                // Point Mode Drag Initiation
                 handleGroup.addEventListener('mousedown', (e) => {
                     if (currentTool === 'point') {
                         e.stopPropagation();
-                        selectedPointId = v.id;
+
+                        if (e.ctrlKey || e.metaKey) {
+                            togglePointSelection(v.id);
+                        } else if (!selectedPointIds.has(v.id)) {
+                            clearSelection();
+                            selectedPointIds.add(v.id);
+                        }
+
                         selectedEdgeIndex = null;
                         selectedCurveIndex = null;
-                        isDragging = true;
-                        dragViewType = viewType;
+
+                        if (selectedPointIds.size > 0) {
+                            isDraggingPoints = true;
+                            dragViewType = viewType;
+                            
+                            const rect = svg.getBoundingClientRect();
+                            const mouseX = e.clientX - rect.left;
+                            const mouseY = e.clientY - rect.top;
+                            
+                            dragInitialMousePlane = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
+
+                            dragInitialVerticesState.clear();
+                            selectedPointIds.forEach(id => {
+                                const pt = vertices.find(p => p.id === id);
+                                if (pt) dragInitialVerticesState.set(id, { x: pt.x, y: pt.y, z: pt.z });
+                            });
+                        }
+
                         updateAllViews();
                     }
                 });
@@ -720,8 +855,20 @@
         }
 
         window.addEventListener('mouseup', () => {
-            isDragging = false;
+            isDraggingPoints = false;
             dragViewType = null;
+            dragInitialVerticesState.clear();
+
+            if (isBoxSelecting) {
+                isBoxSelecting = false;
+                if (boxSelectViewType) {
+                    const boxEl = viewRenderCache[boxSelectViewType].selectionBox;
+                    if (boxEl) boxEl.style.display = 'none';
+                }
+                boxSelectViewType = null;
+                boxSelectStartPos = null;
+                updateAllViews();
+            }
         });
 
         function updateView(viewType) {
@@ -886,7 +1033,10 @@
                 item.rect.setAttribute('x', p.x - 7);
                 item.rect.setAttribute('y', p.y - 7);
 
-                if (v.id === selectedPointId || v.id === lineStartPointId || v.id === curveStartPointId || v.id === curveControlPointId) {
+                const isSelected = selectedPointIds.has(v.id);
+                const isCreationPoint = (v.id === lineStartPointId || v.id === curveStartPointId || v.id === curveControlPointId);
+
+                if (isSelected || isCreationPoint) {
                     item.circle.setAttribute('fill', '#ffff00');
                     item.circle.setAttribute('r', '5');
                     item.rect.style.display = 'block';
