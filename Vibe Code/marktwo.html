@@ -131,8 +131,8 @@
         /* Mode visibility rules */
         body.mode-preview #editor-grid { display: none; }
         body.mode-preview #preview-panel { display: block; }
-        body.edit-mode-point line { cursor: default; }
-        body.edit-mode-line circle, body.edit-mode-line rect { pointer-events: none; }
+        body.edit-mode-addpoint svg { cursor: crosshair; }
+        body.edit-mode-line line { cursor: pointer; }
     </style>
 </head>
 <body class="edit-mode-point">
@@ -147,6 +147,7 @@
         <div class="btn-group" id="edit-subtools">
             <span style="font-size: 12px; color: #888; margin-right: 4px;">Tool:</span>
             <button id="btn-tool-point" class="active">Point Mode</button>
+            <button id="btn-tool-addpoint">Create Point Mode</button>
             <button id="btn-tool-line">Line Mode</button>
         </div>
 
@@ -203,7 +204,8 @@
     </div>
 
     <script>
-        // --- INITIAL MODEL STATE (Volkswagen Golf Mk2 Geometry Data) ---
+        // --- INITIAL MODEL STATE ---
+        let nextVertexId = 24;
         const vertices = [
             // Base / Bumpers
             { id: 0, x: -33, y: -4, z: 80 },   // FB Top L
@@ -261,15 +263,18 @@
 
         // System Variables
         let currentMode = 'edit'; // 'edit' or 'preview'
-        let currentTool = 'point'; // 'point' or 'line'
+        let currentTool = 'point'; // 'point', 'addpoint', or 'line'
         let selectedPointId = null;
         let hoverPointId = null;
         let selectedEdgeIndex = null;
         let isDragging = false;
         let dragViewType = null;
 
+        // Line Creation Tool Variables
+        let lineStartPointId = null;
+        let linePreviewMousePos = null; // { x, y } in view plane
+
         // View Configurations and Axis Mapping
-        // Coordinates map to SVG space: X_svg = origin + val * scale, Y_svg = origin - val * scale
         const views = {
             top:   { svg: document.getElementById('svg-top'),   map: (v) => ({ x: v.x, y: v.z }), unmap: (x, y) => ({ x: x, z: y }) },
             left:  { svg: document.getElementById('svg-left'),  map: (v) => ({ x: -v.z, y: v.y }), unmap: (x, y) => ({ z: -x, y: y }) },
@@ -286,7 +291,7 @@
         // Dynamic Elements Map
         const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
 
-        // Helper: Convert 3D Point to View SVG Canvas Coordinates
+        // Helper Projection Functions
         function projectToView(v, viewType, width, height) {
             const scale = 2.2;
             const cx = width / 2;
@@ -298,7 +303,6 @@
             };
         }
 
-        // Helper: Convert View SVG Canvas Mouse Coordinates to 3D Plane Coordinates
         function unprojectFromView(screenX, screenY, viewType, width, height) {
             const scale = 2.2;
             const cx = width / 2;
@@ -308,7 +312,6 @@
             return views[viewType].unmap(planeX, planeY);
         }
 
-        // Helper: Create SVG Element with Attributes
         function createSvgEl(tag, attrs) {
             const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
             for (let k in attrs) el.setAttribute(k, attrs[k]);
@@ -318,23 +321,101 @@
         // --- RENDER & BUILD EDITING VIEWS ---
         function initViewDOM(viewType) {
             const svg = views[viewType].svg;
-            svg.innerHTML = ''; // Clear viewport
+            svg.innerHTML = '';
 
             const lineGroup = createSvgEl('g', { id: `${viewType}-lines` });
+            const previewLine = createSvgEl('line', {
+                'id': `${viewType}-preview-line`,
+                'stroke': '#ffff00',
+                'stroke-width': '2',
+                'stroke-dasharray': '4 4',
+                'display': 'none',
+                'pointer-events': 'none'
+            });
             const pointGroup = createSvgEl('g', { id: `${viewType}-points` });
+            
             svg.appendChild(lineGroup);
+            svg.appendChild(previewLine);
             svg.appendChild(pointGroup);
 
-            // Create Line Elements
+            viewRenderCache[viewType].previewLine = previewLine;
+
+            // Handle Clicks on Empty Canvas for Creation/Deselection
+            svg.addEventListener('click', (e) => {
+                const rect = svg.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // 1. Create Point Mode
+                if (currentTool === 'addpoint') {
+                    const planeCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
+                    const newPoint = { id: nextVertexId++, x: 0, y: 0, z: 0 };
+                    Object.assign(newPoint, planeCoords);
+                    vertices.push(newPoint);
+                    
+                    // Auto select the created point
+                    selectedPointId = newPoint.id;
+                    rebuildDOM();
+                    updateAllViews();
+                    return;
+                }
+
+                // 2. Deselect when clicking empty space
+                if (e.target.tagName === 'svg') {
+                    if (currentTool === 'line') {
+                        lineStartPointId = null;
+                        linePreviewMousePos = null;
+                    }
+                    selectedPointId = null;
+                    selectedEdgeIndex = null;
+                    updateAllViews();
+                }
+            });
+
+            // Tracking Mouse Movement for Real-Time Line Creation Preview
+            svg.addEventListener('mousemove', (e) => {
+                const rect = svg.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // Handle Point Dragging
+                if (isDragging && selectedPointId !== null && dragViewType === viewType) {
+                    const updatedPlaneCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
+                    const vertex = vertices.find(v => v.id === selectedPointId);
+                    if (vertex) {
+                        Object.assign(vertex, updatedPlaneCoords);
+                        updateAllViews();
+                    }
+                }
+
+                // Handle Line Drawing Preview Movement
+                if (currentTool === 'line' && lineStartPointId !== null) {
+                    linePreviewMousePos = { viewType, x: mouseX, y: mouseY };
+                    updateAllViews();
+                }
+            });
+
+            buildDOMForView(viewType);
+        }
+
+        // Build individual dynamic line/point SVG elements
+        function buildDOMForView(viewType) {
+            const svg = views[viewType].svg;
+            const lineGroup = svg.querySelector(`#${viewType}-lines`);
+            const pointGroup = svg.querySelector(`#${viewType}-points`);
+
+            lineGroup.innerHTML = '';
+            pointGroup.innerHTML = '';
+
+            // Lines
             viewRenderCache[viewType].lines = edges.map((edge, idx) => {
                 const line = createSvgEl('line', {
                     'stroke': '#00ffcc',
                     'stroke-width': '2',
-                    'data-idx': idx,
-                    'cursor': currentTool === 'line' ? 'pointer' : 'default'
+                    'data-idx': idx
                 });
                 line.addEventListener('click', (e) => {
-                    if (currentTool === 'line') {
+                    if (currentTool === 'line' && lineStartPointId === null) {
                         e.stopPropagation();
                         selectedEdgeIndex = idx;
                         selectedPointId = null;
@@ -345,34 +426,22 @@
                 return line;
             });
 
-            // Create Point / Handle Elements
+            // Points
             viewRenderCache[viewType].points = vertices.map((v) => {
                 const handleGroup = createSvgEl('g', { 'data-id': v.id });
                 
-                // Normal point circle
-                const circle = createSvgEl('circle', {
-                    'r': '5',
-                    'fill': '#ff0055',
-                    'cursor': 'pointer'
-                });
-
-                // Selection rectangle marker
+                const circle = createSvgEl('circle', { 'r': '5', 'fill': '#ff0055', 'cursor': 'pointer' });
                 const rect = createSvgEl('rect', {
-                    'width': '14',
-                    'height': '14',
-                    'fill': 'none',
-                    'stroke': '#ffff00',
-                    'stroke-width': '2',
-                    'display': 'none',
-                    'pointer-events': 'none'
+                    'width': '14', 'height': '14', 'fill': 'none',
+                    'stroke': '#ffff00', 'stroke-width': '2',
+                    'display': 'none', 'pointer-events': 'none'
                 });
 
                 handleGroup.appendChild(circle);
                 handleGroup.appendChild(rect);
 
-                // Mouse Interactions for Point Selection
                 handleGroup.addEventListener('mouseenter', () => {
-                    if (!isDragging && currentTool === 'point') {
+                    if (!isDragging && currentTool !== 'addpoint') {
                         hoverPointId = v.id;
                         updateAllViews();
                     }
@@ -381,6 +450,42 @@
                 handleGroup.addEventListener('mouseleave', () => {
                     if (!isDragging && hoverPointId === v.id) {
                         hoverPointId = null;
+                        updateAllViews();
+                    }
+                });
+
+                handleGroup.addEventListener('click', (e) => {
+                    e.stopPropagation();
+
+                    // LINE EDITING MODE: Two-step click line creation
+                    if (currentTool === 'line') {
+                        if (lineStartPointId === null) {
+                            // First Point Click
+                            lineStartPointId = v.id;
+                            selectedPointId = v.id;
+                            selectedEdgeIndex = null;
+                        } else if (lineStartPointId !== v.id) {
+                            // Second Point Click -> Add Edge Connection!
+                            const edgeExists = edges.some(e => 
+                                (e[0] === lineStartPointId && e[1] === v.id) || 
+                                (e[0] === v.id && e[1] === lineStartPointId)
+                            );
+                            if (!edgeExists) {
+                                edges.push([lineStartPointId, v.id]);
+                            }
+                            lineStartPointId = null;
+                            linePreviewMousePos = null;
+                            selectedPointId = v.id;
+                            rebuildDOM();
+                        }
+                        updateAllViews();
+                        return;
+                    }
+
+                    // POINT SELECTION MODE
+                    if (currentTool === 'point') {
+                        selectedPointId = v.id;
+                        selectedEdgeIndex = null;
                         updateAllViews();
                     }
                 });
@@ -399,77 +504,96 @@
                 pointGroup.appendChild(handleGroup);
                 return { group: handleGroup, circle: circle, rect: rect };
             });
-
-            // Handle Dragging in Canvas
-            svg.addEventListener('mousemove', (e) => {
-                if (isDragging && selectedPointId !== null && dragViewType === viewType) {
-                    const rect = svg.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
-
-                    const updatedPlaneCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
-                    const vertex = vertices.find(v => v.id === selectedPointId);
-
-                    if (vertex) {
-                        // Apply updated plane coordinates to 3D point object
-                        Object.assign(vertex, updatedPlaneCoords);
-                        updateAllViews();
-                    }
-                }
-            });
         }
 
-        // Global Mouse Up Listener for Drag end
+        function rebuildDOM() {
+            ['top', 'left', 'front', 'rear'].forEach(buildDOMForView);
+            initIsoDOM();
+        }
+
         window.addEventListener('mouseup', () => {
             isDragging = false;
             dragViewType = null;
         });
 
-        // Update Position and Styling of Geometry across 4 Viewports
+        // Update Rendering Across Views
         function updateView(viewType) {
             const svg = views[viewType].svg;
             const rect = svg.getBoundingClientRect();
             if (rect.width === 0 || rect.height === 0) return;
 
-            // 1. Update Edges / Lines
+            // 1. Update Existing Edges / Lines
             edges.forEach((edge, idx) => {
                 const v1 = vertices.find(v => v.id === edge[0]);
                 const v2 = vertices.find(v => v.id === edge[1]);
+                if (!v1 || !v2) return;
+
                 const p1 = projectToView(v1, viewType, rect.width, rect.height);
                 const p2 = projectToView(v2, viewType, rect.width, rect.height);
 
                 const lineEl = viewRenderCache[viewType].lines[idx];
-                lineEl.setAttribute('x1', p1.x);
-                lineEl.setAttribute('y1', p1.y);
-                lineEl.setAttribute('x2', p2.x);
-                lineEl.setAttribute('y2', p2.y);
+                if (lineEl) {
+                    lineEl.setAttribute('x1', p1.x);
+                    lineEl.setAttribute('y1', p1.y);
+                    lineEl.setAttribute('x2', p2.x);
+                    lineEl.setAttribute('y2', p2.y);
 
-                // Highlight line if selected
-                if (idx === selectedEdgeIndex) {
-                    lineEl.setAttribute('stroke', '#ffff00');
-                    lineEl.setAttribute('stroke-width', '3.5');
-                } else {
-                    lineEl.setAttribute('stroke', '#00ffcc');
-                    lineEl.setAttribute('stroke-width', '2');
+                    if (idx === selectedEdgeIndex) {
+                        lineEl.setAttribute('stroke', '#ffff00');
+                        lineEl.setAttribute('stroke-width', '3.5');
+                    } else {
+                        lineEl.setAttribute('stroke', '#00ffcc');
+                        lineEl.setAttribute('stroke-width', '2');
+                    }
                 }
-                lineEl.style.cursor = currentTool === 'line' ? 'pointer' : 'default';
             });
 
-            // 2. Update Points / Handles
+            // 2. Render Interactive Line Creation Preview (Dashed Yellow Line)
+            const previewLineEl = viewRenderCache[viewType].previewLine;
+            if (currentTool === 'line' && lineStartPointId !== null) {
+                const startV = vertices.find(v => v.id === lineStartPointId);
+                if (startV) {
+                    const pStart = projectToView(startV, viewType, rect.width, rect.height);
+                    let targetX = pStart.x;
+                    let targetY = pStart.y;
+
+                    if (hoverPointId !== null && hoverPointId !== lineStartPointId) {
+                        // Snap to hover target point
+                        const hoverV = vertices.find(v => v.id === hoverPointId);
+                        const pTarget = projectToView(hoverV, viewType, rect.width, rect.height);
+                        targetX = pTarget.x;
+                        targetY = pTarget.y;
+                    } else if (linePreviewMousePos && linePreviewMousePos.viewType === viewType) {
+                        // Follow active mouse pointer
+                        targetX = linePreviewMousePos.x;
+                        targetY = linePreviewMousePos.y;
+                    }
+
+                    previewLineEl.setAttribute('x1', pStart.x);
+                    previewLineEl.setAttribute('y1', pStart.y);
+                    previewLineEl.setAttribute('x2', targetX);
+                    previewLineEl.setAttribute('y2', targetY);
+                    previewLineEl.style.display = 'block';
+                }
+            } else {
+                previewLineEl.style.display = 'none';
+            }
+
+            // 3. Update Points / Handles
             vertices.forEach((v, idx) => {
                 const p = projectToView(v, viewType, rect.width, rect.height);
                 const item = viewRenderCache[viewType].points[idx];
+                if (!item) return;
 
                 item.circle.setAttribute('cx', p.x);
                 item.circle.setAttribute('cy', p.y);
                 item.rect.setAttribute('x', p.x - 7);
                 item.rect.setAttribute('y', p.y - 7);
 
-                // Point selection & hover highlighting
-                if (v.id === selectedPointId) {
+                if (v.id === selectedPointId || v.id === lineStartPointId) {
                     item.circle.setAttribute('fill', '#ffff00');
                     item.circle.setAttribute('r', '5');
-                    item.rect.style.display = 'block'; // Display Rectangle Marker
+                    item.rect.style.display = 'block';
                 } else if (v.id === hoverPointId) {
                     item.circle.setAttribute('fill', '#00aaff');
                     item.circle.setAttribute('r', '7');
@@ -500,7 +624,7 @@
         }
 
         function projectIso(point, angleY, width, height) {
-            const isoAngleX = Math.PI / 6; // 30 deg pitch
+            const isoAngleX = Math.PI / 6;
             const cosY = Math.cos(angleY);
             const sinY = Math.sin(angleY);
 
@@ -525,34 +649,38 @@
             if (currentMode !== 'preview') return;
             const rect = isoSvg.getBoundingClientRect();
 
-            // Smooth Interpolation
             isoAngleY += (isoTargetAngleY - isoAngleY) * 0.08;
 
             const projectedPoints = vertices.map(v => projectIso(v, isoAngleY, rect.width, rect.height));
 
             edges.forEach((edge, idx) => {
-                const p1 = projectedPoints[edge[0]];
-                const p2 = projectedPoints[edge[1]];
+                const v1Idx = vertices.findIndex(v => v.id === edge[0]);
+                const v2Idx = vertices.findIndex(v => v.id === edge[1]);
+                if (v1Idx === -1 || v2Idx === -1) return;
+
+                const p1 = projectedPoints[v1Idx];
+                const p2 = projectedPoints[v2Idx];
                 const line = viewRenderCache.iso.lines[idx];
 
-                line.setAttribute('x1', p1.x);
-                line.setAttribute('y1', p1.y);
-                line.setAttribute('x2', p2.x);
-                line.setAttribute('y2', p2.y);
+                if (line) {
+                    line.setAttribute('x1', p1.x);
+                    line.setAttribute('y1', p1.y);
+                    line.setAttribute('x2', p2.x);
+                    line.setAttribute('y2', p2.y);
 
-                if (idx === selectedEdgeIndex) {
-                    line.setAttribute('stroke', '#ffff00');
-                    line.setAttribute('stroke-width', '3.5');
-                } else {
-                    line.setAttribute('stroke', '#00ffcc');
-                    line.setAttribute('stroke-width', '2');
+                    if (idx === selectedEdgeIndex) {
+                        line.setAttribute('stroke', '#ffff00');
+                        line.setAttribute('stroke-width', '3.5');
+                    } else {
+                        line.setAttribute('stroke', '#00ffcc');
+                        line.setAttribute('stroke-width', '2');
+                    }
                 }
             });
 
             requestAnimationFrame(updateIsoView);
         }
 
-        // Track Mouse in Isometric View for rotation
         window.addEventListener('mousemove', (e) => {
             if (currentMode === 'preview') {
                 const mouseX = e.clientX / window.innerWidth;
@@ -560,18 +688,18 @@
             }
         });
 
-        // --- GLOBAL SYNC & REFRESH ---
+        // --- GLOBAL REFRESH ---
         function updateAllViews() {
             if (currentMode === 'edit') {
                 ['top', 'left', 'front', 'rear'].forEach(updateView);
             }
         }
 
-        // --- UI INTERACTION SETUP ---
-        // Mode Switchers
+        // --- UI TOOLBAR NAVIGATION & BUTTONS ---
         const btnEditMode = document.getElementById('btn-mode-edit');
         const btnPreviewMode = document.getElementById('btn-mode-preview');
         const btnToolPoint = document.getElementById('btn-tool-point');
+        const btnToolAddPoint = document.getElementById('btn-tool-addpoint');
         const btnToolLine = document.getElementById('btn-tool-line');
 
         btnEditMode.addEventListener('click', () => {
@@ -590,36 +718,19 @@
             requestAnimationFrame(updateIsoView);
         });
 
-        // Editing Tools
-        btnToolPoint.addEventListener('click', () => {
-            currentTool = 'point';
-            document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' edit-mode-point';
-            btnToolPoint.classList.add('active');
-            btnToolLine.classList.remove('active');
-            selectedEdgeIndex = null;
+        function setActiveTool(toolName, bodyClass, activeBtn) {
+            currentTool = toolName;
+            lineStartPointId = null;
+            linePreviewMousePos = null;
+            document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' ' + bodyClass;
+            [btnToolPoint, btnToolAddPoint, btnToolLine].forEach(b => b.classList.remove('active'));
+            activeBtn.classList.add('active');
             updateAllViews();
-        });
+        }
 
-        btnToolLine.addEventListener('click', () => {
-            currentTool = 'line';
-            document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' edit-mode-line';
-            btnToolLine.classList.add('active');
-            btnToolPoint.classList.remove('active');
-            selectedPointId = null;
-            hoverPointId = null;
-            updateAllViews();
-        });
-
-        // Deselect when clicking empty background canvas space
-        document.querySelectorAll('svg.viewport').forEach(svg => {
-            svg.addEventListener('click', (e) => {
-                if (e.target.tagName === 'svg') {
-                    selectedPointId = null;
-                    selectedEdgeIndex = null;
-                    updateAllViews();
-                }
-            });
-        });
+        btnToolPoint.addEventListener('click', () => setActiveTool('point', 'edit-mode-point', btnToolPoint));
+        btnToolAddPoint.addEventListener('click', () => setActiveTool('addpoint', 'edit-mode-addpoint', btnToolAddPoint));
+        btnToolLine.addEventListener('click', () => setActiveTool('line', 'edit-mode-line', btnToolLine));
 
         // Background Image Loader Handlers
         document.querySelectorAll('input[type="file"]').forEach(input => {
@@ -636,10 +747,9 @@
             });
         });
 
-        // Screen Resize handling
         window.addEventListener('resize', updateAllViews);
 
-        // --- INITIALIZATION ---
+        // INITIALIZE
         ['top', 'left', 'front', 'rear'].forEach(initViewDOM);
         initIsoDOM();
         updateAllViews();
