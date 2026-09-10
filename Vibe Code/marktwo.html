@@ -38,9 +38,13 @@
             font-size: 13px;
             font-weight: 500;
             transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         button:hover { background-color: #3d3d3d; color: #fff; border-color: #555; }
         button.active { background-color: #007acc; color: #fff; border-color: #0098ff; }
+        button.btn-icon { padding: 6px; }
         button.btn-accent { background-color: #2e6930; color: #fff; border-color: #3e8e41; }
         button.btn-accent:hover { background-color: #388e3c; }
         button.btn-svg { background-color: #8e24aa; color: #fff; border-color: #ab47bc; }
@@ -165,11 +169,18 @@
             <button id="btn-mode-preview">Isometric Preview</button>
         </div>
 
-        <!-- Preview Angle Slider -->
+        <!-- Preview Angle Slider & Mouse Lock Toggle -->
         <div class="slider-container">
             <label for="input-iso-angle">Angle:</label>
             <input type="range" id="input-iso-angle" min="-180" max="180" value="0">
             <span id="label-iso-angle">0°</span>
+            <button id="btn-toggle-mouse-rotate" class="btn-icon" title="Toggle mouse movement rotation">
+                <!-- SVG Icon for Unlocked/Locked Mouse Rotation -->
+                <svg id="icon-mouse-rotate" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="7"></rect>
+                    <line x1="12" y1="6" x2="12" y2="10"></line>
+                </svg>
+            </button>
         </div>
 
         <div class="btn-group" id="edit-subtools">
@@ -231,7 +242,7 @@
         <!-- Single Isometric Interactive Preview Panel -->
         <div id="preview-panel">
             <div class="view-title">3D Interactive Preview</div>
-            <div class="info-hint">Move mouse horizontally to rotate 360°</div>
+            <div class="info-hint" id="preview-hint">Move mouse horizontally to rotate 360°</div>
             <svg class="viewport" id="svg-iso"></svg>
         </div>
 
@@ -306,6 +317,7 @@
         // System Variables
         let currentMode = 'edit';
         let currentTool = 'point'; // 'point', 'addpoint', 'line', or 'curve'
+        let isMouseRotationEnabled = true; // State for toggling mouse rotation in isometric mode
         
         // Track Viewport Hover State
         let currentActiveHoverView = null;
@@ -347,6 +359,7 @@
         };
 
         const isoSvg = document.getElementById('svg-iso');
+        const previewPanel = document.getElementById('preview-panel');
 
         let isoAngleY = 0;
         let isoTargetAngleY = 0;
@@ -471,13 +484,45 @@
             curvePreviewMousePos = null;
         }
 
-        // --- KEYBOARD LISTENERS (ARROW KEYS + ESCAPE) ---
+        // --- POINT DELETION logic ---
+        function deleteSelectedPoints() {
+            if (selectedPointIds.size === 0) return;
+
+            // Remove selected vertices
+            vertices = vertices.filter(v => !selectedPointIds.has(v.id));
+
+            // Remove connected edges
+            edges = edges.filter(edge => !selectedPointIds.has(edge[0]) && !selectedPointIds.has(edge[1]));
+
+            // Remove connected curves
+            curves = curves.filter(crv => !selectedPointIds.has(crv[0]) && !selectedPointIds.has(crv[1]) && !selectedPointIds.has(crv[2]));
+
+            clearSelection();
+            selectedEdgeIndex = null;
+            selectedCurveIndex = null;
+
+            rebuildDOM();
+            saveToLocalStorage();
+            updateAllViews();
+        }
+
+        // --- KEYBOARD LISTENERS (BACKSPACE / ARROW KEYS / ESCAPE) ---
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 resetLineChain();
                 resetCurveChain();
                 clearSelection();
                 updateAllViews();
+                return;
+            }
+
+            // Backspace / Delete key point deletion in Point editing mode
+            if ((e.key === 'Backspace' || e.key === 'Delete') && currentMode === 'edit' && currentTool === 'point') {
+                // Avoid deleting if focusing on text inputs (e.g. angle input)
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+                e.preventDefault();
+                deleteSelectedPoints();
                 return;
             }
 
@@ -1283,10 +1328,30 @@
             }
         });
 
-        window.addEventListener('mousemove', (e) => {
-            if (currentMode === 'preview') {
-                const mouseX = e.clientX / window.innerWidth;
-                isoTargetAngleY = (mouseX - 0.5) * Math.PI * 2;
+        // Toggle Mouse Movement Rotation
+        const btnToggleMouseRotate = document.getElementById('btn-toggle-mouse-rotate');
+        const iconMouseRotate = document.getElementById('icon-mouse-rotate');
+        const previewHint = document.getElementById('preview-hint');
+
+        btnToggleMouseRotate.addEventListener('click', () => {
+            isMouseRotationEnabled = !isMouseRotationEnabled;
+            if (isMouseRotationEnabled) {
+                btnToggleMouseRotate.classList.remove('active');
+                iconMouseRotate.style.opacity = '1';
+                previewHint.style.display = 'block';
+            } else {
+                btnToggleMouseRotate.classList.add('active');
+                iconMouseRotate.style.opacity = '0.5';
+                previewHint.style.display = 'none';
+            }
+        });
+
+        // Restrict Mouse Rotation specifically to movement inside the preview viewport
+        previewPanel.addEventListener('mousemove', (e) => {
+            if (currentMode === 'preview' && isMouseRotationEnabled) {
+                const rect = previewPanel.getBoundingClientRect();
+                const relativeX = (e.clientX - rect.left) / rect.width;
+                isoTargetAngleY = (relativeX - 0.5) * Math.PI * 2;
             }
         });
 

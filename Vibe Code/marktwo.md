@@ -20,3 +20,6 @@ When shift key is held movement in point editing mode should be restricted to th
 
 Add a button for exporting all five views as svg. All five views including the isometric preview should be saved as an individual svg file exactly corresponding to the svg contents in each of the five views. There should also be a range input that contains the rotation angle for the preview. This input should be updated to correspond to the angle given by the mouse rotation in the preview mode. The angle in the angle input should be the angle used for the svg export of the preview svg file. 
 
+In point editing mode when backspace is pressed the currently selected points should be deleted.
+
+The isometric preview rotation should only change when the mouse is in the preview and not when the mouse is in the menu pane. There should also be an icon in the menu for disabling the mouse movement rotation, limiting the rotation to only the range input. 
