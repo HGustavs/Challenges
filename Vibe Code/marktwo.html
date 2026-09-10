@@ -3,252 +3,504 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Isometric VW Golf Mk2 Detailed Blueprint</title>
+    <title>3D Isometric Vector Geometry Editor</title>
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #111;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
             height: 100vh;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
-            color: #fff;
-            font-family: sans-serif;
         }
-        svg {
-            background-color: #1a1a1a;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border-radius: 8px;
+
+        /* Top Toolbar */
+        #toolbar {
+            height: 50px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 10;
         }
-        .info {
-            position: absolute;
-            top: 20px;
-            color: #888;
-            pointer-events: none;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        .btn-group { display: flex; gap: 8px; align-items: center; }
+        button {
+            background-color: #2d2d2d;
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+        button:hover { background-color: #3d3d3d; color: #fff; border-color: #555; }
+        button.active { background-color: #007acc; color: #fff; border-color: #0098ff; }
+        
+        .file-input-label {
+            background-color: #252526;
+            color: #aaa;
+            border: 1px dashed #444;
+            padding: 5px 10px;
+            border-radius: 4px;
             font-size: 12px;
+            cursor: pointer;
         }
+        .file-input-label:hover { color: #fff; border-color: #666; }
+        input[type="file"] { display: none; }
+
+        /* Main Workspace */
+        #workspace {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 50px);
+        }
+
+        /* Four Orthographic Views Grid */
+        #editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            width: 100%;
+            height: 100%;
+            gap: 2px;
+            background-color: #2a2a2a;
+        }
+        .view-panel {
+            position: relative;
+            background-color: #181818;
+            overflow: hidden;
+        }
+        .view-title {
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #007acc;
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 5;
+            background: rgba(24, 24, 24, 0.8);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .bg-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+        svg.viewport {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Isometric Fullscreen Preview Mode */
+        #preview-panel {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            position: relative;
+        }
+        .info-hint {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #666;
+            pointer-events: none;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Mode visibility rules */
+        body.mode-preview #editor-grid { display: none; }
+        body.mode-preview #preview-panel { display: block; }
+        body.edit-mode-point line { cursor: default; }
+        body.edit-mode-line circle, body.edit-mode-line rect { pointer-events: none; }
     </style>
 </head>
-<body>
+<body class="edit-mode-point">
 
-    <div class="info">Move mouse left / right to rotate VW Golf Mk2</div>
-    <svg id="canvas" width="800" height="600"></svg>
+    <!-- Top Navigation Toolbar -->
+    <div id="toolbar">
+        <div class="btn-group">
+            <button id="btn-mode-edit" class="active">Editing Mode</button>
+            <button id="btn-mode-preview">Isometric Preview</button>
+        </div>
+
+        <div class="btn-group" id="edit-subtools">
+            <span style="font-size: 12px; color: #888; margin-right: 4px;">Tool:</span>
+            <button id="btn-tool-point" class="active">Point Mode</button>
+            <button id="btn-tool-line">Line Mode</button>
+        </div>
+
+        <div class="btn-group" id="bg-tools">
+            <span style="font-size: 12px; color: #888; margin-right: 4px;">Backgrounds:</span>
+            <label class="file-input-label">Top <input type="file" accept="image/*" data-view="top"></label>
+            <label class="file-input-label">Left <input type="file" accept="image/*" data-view="left"></label>
+            <label class="file-input-label">Front <input type="file" accept="image/*" data-view="front"></label>
+            <label class="file-input-label">Rear <input type="file" accept="image/*" data-view="rear"></label>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div id="workspace">
+        
+        <!-- 4-View Editor Grid -->
+        <div id="editor-grid">
+            <!-- Top View (X-Z plane) -->
+            <div class="view-panel" id="panel-top">
+                <div class="view-title">Top View (X / Z)</div>
+                <img class="bg-img" id="bg-top" alt="">
+                <svg class="viewport" id="svg-top"></svg>
+            </div>
+
+            <!-- Left Side View (Z-Y plane) -->
+            <div class="view-panel" id="panel-left">
+                <div class="view-title">Left Side View (Z / Y)</div>
+                <img class="bg-img" id="bg-left" alt="">
+                <svg class="viewport" id="svg-left"></svg>
+            </div>
+
+            <!-- Front View (X-Y plane) -->
+            <div class="view-panel" id="panel-front">
+                <div class="view-title">Front View (X / Y)</div>
+                <img class="bg-img" id="bg-front" alt="">
+                <svg class="viewport" id="svg-front"></svg>
+            </div>
+
+            <!-- Rear View (X-Y plane) -->
+            <div class="view-panel" id="panel-rear">
+                <div class="view-title">Rear View (X / Y)</div>
+                <img class="bg-img" id="bg-rear" alt="">
+                <svg class="viewport" id="svg-rear"></svg>
+            </div>
+        </div>
+
+        <!-- Single Isometric Interactive Preview Panel -->
+        <div id="preview-panel">
+            <div class="view-title">3D Interactive Preview</div>
+            <div class="info-hint">Move mouse horizontally to rotate 360°</div>
+            <svg class="viewport" id="svg-iso"></svg>
+        </div>
+
+    </div>
 
     <script>
-        const svg = document.getElementById('canvas');
-        const width = 800;
-        const height = 600;
-        const originX = width / 2;
-        const originY = height / 2 + 30;
+        // --- INITIAL MODEL STATE (Volkswagen Golf Mk2 Geometry Data) ---
+        const vertices = [
+            // Base / Bumpers
+            { id: 0, x: -33, y: -4, z: 80 },   // FB Top L
+            { id: 1, x: 33, y: -4, z: 80 },    // FB Top R
+            { id: 2, x: -33, y: 3, z: 80 },    // FB Bot L
+            { id: 3, x: 33, y: 3, z: 80 },     // FB Bot R
+            { id: 4, x: -35, y: -4, z: -80 },  // RB Top L
+            { id: 5, x: 35, y: -4, z: -80 },   // RB Top R
+            { id: 6, x: -35, y: 3, z: -80 },   // RB Bot L
+            { id: 7, x: 35, y: 3, z: -80 },    // RB Bot R
 
-        const isoAngleX = Math.PI / 6; // 30 degrees tilt down
-        
-        let targetAngleY = 0;
-        let currentAngleY = 0;
+            // Body Main Frame
+            { id: 8, x: -32, y: -20, z: 74 },  // Hood L
+            { id: 9, x: 32, y: -20, z: 74 },   // Hood R
+            { id: 10, x: -35, y: -20, z: -74 },// Rear Belt L
+            { id: 11, x: 35, y: -20, z: -74 }, // Rear Belt R
 
-        // Base Vertices array for body, bumpers, windows, and details
-        const baseVertices = [
-            // --- FRONT BUMPER (Protruding) ---
-            { id: 'fb_top_l', x: -33, y: -4, z: 80 },
-            { id: 'fb_top_r', x: 33, y: -4, z: 80 },
-            { id: 'fb_bot_l', x: -33, y: 3, z: 80 },
-            { id: 'fb_bot_r', x: 33, y: 3, z: 80 },
-            { id: 'fb_back_l', x: -35, y: -4, z: 74 },
-            { id: 'fb_back_r', x: 35, y: -4, z: 74 },
+            // Roof
+            { id: 12, x: -28, y: -52, z: 12 },  // Roof Front L
+            { id: 13, x: 28, y: -52, z: 12 },   // Roof Front R
+            { id: 14, x: -28, y: -52, z: -50 }, // Roof Rear L
+            { id: 15, x: 28, y: -52, z: -50 },  // Roof Rear R
 
-            // --- REAR BUMPER (Protruding) ---
-            { id: 'rb_top_l', x: -35, y: -4, z: -80 },
-            { id: 'rb_top_r', x: 35, y: -4, z: -80 },
-            { id: 'rb_bot_l', x: -35, y: 3, z: -80 },
-            { id: 'rb_bot_r', x: 35, y: 3, z: -80 },
-            { id: 'rb_front_l', x: -35, y: -4, z: -74 },
-            { id: 'rb_front_r', x: 35, y: -4, z: -74 },
+            // Windshield / Windows
+            { id: 16, x: -32, y: -25, z: 25 },  // Windshield Base L
+            { id: 17, x: 32, y: -25, z: 25 },   // Windshield Base R
+            { id: 18, x: -28, y: -52, z: -18 }, // B-Pillar Top L
+            { id: 19, x: 28, y: -52, z: -18 },  // B-Pillar Top R
+            { id: 20, x: -35, y: -20, z: -18 }, // B-Pillar Bot L
+            { id: 21, x: 35, y: -20, z: -18 },  // B-Pillar Bot R
 
-            // --- MAIN BODY BASE (Narrower Front, Wider Mid) ---
-            { id: 'body_f_l', x: -32, y: -20, z: 74 },
-            { id: 'body_f_r', x: 32, y: -20, z: 74 },
-            { id: 'body_m_l', x: -35, y: -20, z: 0 },
-            { id: 'body_m_r', x: 35, y: -20, z: 0 },
-            { id: 'body_r_l', x: -34, y: -20, z: -74 },
-            { id: 'body_r_r', x: 34, y: -20, z: -74 },
-
-            // --- SIDE MOLDINGS / RUBBING STRIPS ---
-            { id: 'strip_f_l', x: -33, y: -12, z: 70 },
-            { id: 'strip_f_r', x: 33, y: -12, z: 70 },
-            { id: 'strip_r_l', x: -35, y: -12, z: -70 },
-            { id: 'strip_r_r', x: 35, y: -12, z: -70 },
-
-            // --- WINDSHIELD & CABIN BASE ---
-            { id: 'wind_bot_l', x: -32, y: -25, z: 25 },
-            { id: 'wind_bot_r', x: 32, y: -25, z: 25 },
-            { id: 'wind_top_l', x: -28, y: -52, z: 12 },
-            { id: 'wind_top_r', x: 28, y: -52, z: 12 },
-
-            // --- ROOF STRUCTURE ---
-            { id: 'roof_r_l', x: -28, y: -52, z: -50 },
-            { id: 'roof_r_r', x: 28, y: -52, z: -50 },
-
-            // --- REAR HATCH & C-PILLAR ---
-            { id: 'hatch_mid_l', x: -33, y: -24, z: -74 },
-            { id: 'hatch_mid_r', x: 33, y: -24, z: -74 },
-
-            // --- SIDE WINDOWS (B-Pillar division) ---
-            { id: 'bpillar_top_l', x: -28, y: -52, z: -18 },
-            { id: 'bpillar_top_r', x: 28, y: -52, z: -18 },
-            { id: 'bpillar_bot_l', x: -35, y: -22, z: -18 },
-            { id: 'bpillar_bot_r', x: 35, y: -22, z: -18 },
-
-            // --- DOOR HANDLES ---
-            { id: 'dh_f_l_1', x: -35.5, y: -16, z: 10 },
-            { id: 'dh_f_l_2', x: -35.5, y: -16, z: 2 },
-            { id: 'dh_r_l_1', x: -35.5, y: -16, z: -25 },
-            { id: 'dh_r_l_2', x: -35.5, y: -16, z: -33 },
-
-            { id: 'dh_f_r_1', x: 35.5, y: -16, z: 10 },
-            { id: 'dh_f_r_2', x: 35.5, y: -16, z: 2 },
-            { id: 'dh_r_r_1', x: 35.5, y: -16, z: -25 },
-            { id: 'dh_r_r_2', x: 35.5, y: -16, z: -33 },
-
-            // --- FRONT GRILLE SLATS (Horizontal line endpoints) ---
-            { id: 'grill_s1_l', x: -31, y: -16, z: 74.2 },
-            { id: 'grill_s1_r', x: 31, y: -16, z: 74.2 },
-            { id: 'grill_s2_l', x: -31, y: -11, z: 74.2 },
-            { id: 'grill_s2_r', x: 31, y: -11, z: 74.2 },
-            { id: 'grill_s3_l', x: -31, y: -6, z: 74.2 },
-            { id: 'grill_s3_r', x: 31, y: -6, z: 74.2 },
+            // Grille & Headlight Markers
+            { id: 22, x: -20, y: -11, z: 74.5 }, // HL Left Center
+            { id: 23, x: 20, y: -11, z: 74.5 },  // HL Right Center
         ];
 
-        // Generator helpers
-        function createWheel(centerX, centerY, centerZ, radius = 9.5) {
-            const points = [];
-            for (let i = 0; i < 8; i++) {
-                const angle = (i / 8) * Math.PI * 2;
-                points.push({
-                    x: centerX,
-                    y: centerY + Math.sin(angle) * radius,
-                    z: centerZ + Math.cos(angle) * radius
-                });
-            }
-            return points;
-        }
-
-        function createHeadlight(centerX, centerY, centerZ, radius = 5.5) {
-            const points = [];
-            for (let i = 0; i < 8; i++) {
-                const angle = (i / 8) * Math.PI * 2;
-                points.push({
-                    x: centerX + Math.cos(angle) * radius,
-                    y: centerY + Math.sin(angle) * radius,
-                    z: centerZ
-                });
-            }
-            return points;
-        }
-
-        // Generate wheels & headlights
-        const wheelFL = createWheel(-33, 5, 42);
-        const wheelFR = createWheel(33, 5, 42);
-        const wheelRL = createWheel(-34, 5, -42);
-        const wheelRR = createWheel(34, 5, -42);
-
-        const headlightL = createHeadlight(-20, -11, 74.5);
-        const headlightR = createHeadlight(20, -11, 74.5);
-
-        // Combine all 3D vertices
-        const allVertices = [
-            ...baseVertices,
-            ...wheelFL, ...wheelFR, ...wheelRL, ...wheelRR,
-            ...headlightL, ...headlightR
-        ];
-
-        // Define Wireframe Edges
         const edges = [
-            // --- FRONT BUMPER ---
+            // Front Bumper Frame
             [0, 1], [2, 3], [0, 2], [1, 3],
-            [0, 4], [2, 4], [1, 5], [3, 5],
-
-            // --- REAR BUMPER ---
-            [6, 7], [8, 9], [6, 8], [7, 9],
-            [6, 10], [8, 10], [7, 11], [9, 11],
-
-            // --- HOOD & LOWER BODY ---
-            [12, 13], [12, 18], [13, 19], // Hood profile
-            [18, 22], [19, 23], // Windshield lower boundary
-            [12, 14], [13, 15], [14, 16], [15, 17], // Beltline
-
-            // --- SIDE RUBBING STRIPS ---
-            [20, 21],
-
-            // --- WINDSHIELD & ROOF ---
-            [22, 23], [24, 25], [22, 24], [23, 25], // Windshield glass frame
-            [24, 26], [25, 27], [26, 27],           // Roof perimeter
-
-            // --- HATCHBACK / REAR WINDOW ---
-            [26, 28], [27, 29], [28, 29], [28, 16], [29, 17],
-
-            // --- SIDE WINDOWS & B-PILLAR ---
-            [30, 31], [30, 32], [31, 33],
-
-            // --- DOOR HANDLES ---
-            [34, 35], [36, 37], [38, 39], [40, 41],
-
-            // --- FRONT GRILLE SLATS ---
-            [42, 43], [44, 45], [46, 47]
+            // Rear Bumper Frame
+            [4, 5], [6, 7], [4, 6], [5, 7],
+            // Body Contour & Hood
+            [8, 9], [8, 16], [9, 17], [16, 17],
+            [8, 0], [9, 1], [10, 4], [11, 5],
+            // Windshield & A-Pillars
+            [16, 12], [17, 13], [12, 13],
+            // Roof & Rear Hatch
+            [12, 14], [13, 15], [14, 15],
+            [14, 10], [15, 11], [10, 11],
+            // B-Pillars & Side Windows
+            [18, 19], [18, 20], [19, 21], [12, 18], [13, 19], [14, 18], [15, 19],
+            // Headlight Connections
+            [0, 22], [1, 23], [8, 22], [9, 23]
         ];
 
-        // Helper to loop index rings
-        function addLoopEdges(startIndex) {
-            for (let i = 0; i < 8; i++) {
-                const next = (i === 7) ? startIndex : startIndex + i + 1;
-                edges.push([startIndex + i, next]);
-            }
+        // System Variables
+        let currentMode = 'edit'; // 'edit' or 'preview'
+        let currentTool = 'point'; // 'point' or 'line'
+        let selectedPointId = null;
+        let hoverPointId = null;
+        let selectedEdgeIndex = null;
+        let isDragging = false;
+        let dragViewType = null;
+
+        // View Configurations and Axis Mapping
+        // Coordinates map to SVG space: X_svg = origin + val * scale, Y_svg = origin - val * scale
+        const views = {
+            top:   { svg: document.getElementById('svg-top'),   map: (v) => ({ x: v.x, y: v.z }), unmap: (x, y) => ({ x: x, z: y }) },
+            left:  { svg: document.getElementById('svg-left'),  map: (v) => ({ x: -v.z, y: v.y }), unmap: (x, y) => ({ z: -x, y: y }) },
+            front: { svg: document.getElementById('svg-front'), map: (v) => ({ x: v.x, y: v.y }), unmap: (x, y) => ({ x: x, y: y }) },
+            rear:  { svg: document.getElementById('svg-rear'),  map: (v) => ({ x: -v.x, y: v.y }), unmap: (x, y) => ({ x: -x, y: y }) }
+        };
+
+        const isoSvg = document.getElementById('svg-iso');
+
+        // Animation State for 3D Isometric View
+        let isoAngleY = 0;
+        let isoTargetAngleY = 0;
+
+        // Dynamic Elements Map
+        const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
+
+        // Helper: Convert 3D Point to View SVG Canvas Coordinates
+        function projectToView(v, viewType, width, height) {
+            const scale = 2.2;
+            const cx = width / 2;
+            const cy = height / 2;
+            const projected = views[viewType].map(v);
+            return {
+                x: cx + projected.x * scale,
+                y: cy + projected.y * scale
+            };
         }
 
-        const baseVCount = baseVertices.length;
-        addLoopEdges(baseVCount);      // FL Wheel
-        addLoopEdges(baseVCount + 8);  // FR Wheel
-        addLoopEdges(baseVCount + 16); // RL Wheel
-        addLoopEdges(baseVCount + 24); // RR Wheel
+        // Helper: Convert View SVG Canvas Mouse Coordinates to 3D Plane Coordinates
+        function unprojectFromView(screenX, screenY, viewType, width, height) {
+            const scale = 2.2;
+            const cx = width / 2;
+            const cy = height / 2;
+            const planeX = (screenX - cx) / scale;
+            const planeY = (screenY - cy) / scale;
+            return views[viewType].unmap(planeX, planeY);
+        }
 
-        const wheelsVCount = baseVCount + 32;
-        addLoopEdges(wheelsVCount);     // Left Headlight
-        addLoopEdges(wheelsVCount + 8); // Right Headlight
-
-        // Build SVG elements
-        function createSvgElement(tag, attrs) {
+        // Helper: Create SVG Element with Attributes
+        function createSvgEl(tag, attrs) {
             const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-            for (let key in attrs) {
-                el.setAttribute(key, attrs[key]);
-            }
+            for (let k in attrs) el.setAttribute(k, attrs[k]);
             return el;
         }
 
-        const lineElements = [];
-        edges.forEach((edge, index) => {
-            const isHeadlight = index >= (edges.length - 16);
-            const line = createSvgElement('line', {
-                'stroke': isHeadlight ? '#ffff00' : '#00ffcc',
-                'stroke-width': isHeadlight ? '1.8' : '1.5',
-                'stroke-linecap': 'round',
-                'stroke-linejoin': 'round'
+        // --- RENDER & BUILD EDITING VIEWS ---
+        function initViewDOM(viewType) {
+            const svg = views[viewType].svg;
+            svg.innerHTML = ''; // Clear viewport
+
+            const lineGroup = createSvgEl('g', { id: `${viewType}-lines` });
+            const pointGroup = createSvgEl('g', { id: `${viewType}-points` });
+            svg.appendChild(lineGroup);
+            svg.appendChild(pointGroup);
+
+            // Create Line Elements
+            viewRenderCache[viewType].lines = edges.map((edge, idx) => {
+                const line = createSvgEl('line', {
+                    'stroke': '#00ffcc',
+                    'stroke-width': '2',
+                    'data-idx': idx,
+                    'cursor': currentTool === 'line' ? 'pointer' : 'default'
+                });
+                line.addEventListener('click', (e) => {
+                    if (currentTool === 'line') {
+                        e.stopPropagation();
+                        selectedEdgeIndex = idx;
+                        selectedPointId = null;
+                        updateAllViews();
+                    }
+                });
+                lineGroup.appendChild(line);
+                return line;
             });
-            svg.appendChild(line);
-            lineElements.push(line);
+
+            // Create Point / Handle Elements
+            viewRenderCache[viewType].points = vertices.map((v) => {
+                const handleGroup = createSvgEl('g', { 'data-id': v.id });
+                
+                // Normal point circle
+                const circle = createSvgEl('circle', {
+                    'r': '5',
+                    'fill': '#ff0055',
+                    'cursor': 'pointer'
+                });
+
+                // Selection rectangle marker
+                const rect = createSvgEl('rect', {
+                    'width': '14',
+                    'height': '14',
+                    'fill': 'none',
+                    'stroke': '#ffff00',
+                    'stroke-width': '2',
+                    'display': 'none',
+                    'pointer-events': 'none'
+                });
+
+                handleGroup.appendChild(circle);
+                handleGroup.appendChild(rect);
+
+                // Mouse Interactions for Point Selection
+                handleGroup.addEventListener('mouseenter', () => {
+                    if (!isDragging && currentTool === 'point') {
+                        hoverPointId = v.id;
+                        updateAllViews();
+                    }
+                });
+
+                handleGroup.addEventListener('mouseleave', () => {
+                    if (!isDragging && hoverPointId === v.id) {
+                        hoverPointId = null;
+                        updateAllViews();
+                    }
+                });
+
+                handleGroup.addEventListener('mousedown', (e) => {
+                    if (currentTool === 'point') {
+                        e.stopPropagation();
+                        selectedPointId = v.id;
+                        selectedEdgeIndex = null;
+                        isDragging = true;
+                        dragViewType = viewType;
+                        updateAllViews();
+                    }
+                });
+
+                pointGroup.appendChild(handleGroup);
+                return { group: handleGroup, circle: circle, rect: rect };
+            });
+
+            // Handle Dragging in Canvas
+            svg.addEventListener('mousemove', (e) => {
+                if (isDragging && selectedPointId !== null && dragViewType === viewType) {
+                    const rect = svg.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+
+                    const updatedPlaneCoords = unprojectFromView(mouseX, mouseY, viewType, rect.width, rect.height);
+                    const vertex = vertices.find(v => v.id === selectedPointId);
+
+                    if (vertex) {
+                        // Apply updated plane coordinates to 3D point object
+                        Object.assign(vertex, updatedPlaneCoords);
+                        updateAllViews();
+                    }
+                }
+            });
+        }
+
+        // Global Mouse Up Listener for Drag end
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            dragViewType = null;
         });
 
-        // Track mouse rotation
-        window.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX / window.innerWidth;
-            targetAngleY = (mouseX - 0.5) * Math.PI * 2;
-        });
+        // Update Position and Styling of Geometry across 4 Viewports
+        function updateView(viewType) {
+            const svg = views[viewType].svg;
+            const rect = svg.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
 
-        // 3D Matrix Projection
-        function project(point, angleY) {
-            // Y-axis Yaw rotation
+            // 1. Update Edges / Lines
+            edges.forEach((edge, idx) => {
+                const v1 = vertices.find(v => v.id === edge[0]);
+                const v2 = vertices.find(v => v.id === edge[1]);
+                const p1 = projectToView(v1, viewType, rect.width, rect.height);
+                const p2 = projectToView(v2, viewType, rect.width, rect.height);
+
+                const lineEl = viewRenderCache[viewType].lines[idx];
+                lineEl.setAttribute('x1', p1.x);
+                lineEl.setAttribute('y1', p1.y);
+                lineEl.setAttribute('x2', p2.x);
+                lineEl.setAttribute('y2', p2.y);
+
+                // Highlight line if selected
+                if (idx === selectedEdgeIndex) {
+                    lineEl.setAttribute('stroke', '#ffff00');
+                    lineEl.setAttribute('stroke-width', '3.5');
+                } else {
+                    lineEl.setAttribute('stroke', '#00ffcc');
+                    lineEl.setAttribute('stroke-width', '2');
+                }
+                lineEl.style.cursor = currentTool === 'line' ? 'pointer' : 'default';
+            });
+
+            // 2. Update Points / Handles
+            vertices.forEach((v, idx) => {
+                const p = projectToView(v, viewType, rect.width, rect.height);
+                const item = viewRenderCache[viewType].points[idx];
+
+                item.circle.setAttribute('cx', p.x);
+                item.circle.setAttribute('cy', p.y);
+                item.rect.setAttribute('x', p.x - 7);
+                item.rect.setAttribute('y', p.y - 7);
+
+                // Point selection & hover highlighting
+                if (v.id === selectedPointId) {
+                    item.circle.setAttribute('fill', '#ffff00');
+                    item.circle.setAttribute('r', '5');
+                    item.rect.style.display = 'block'; // Display Rectangle Marker
+                } else if (v.id === hoverPointId) {
+                    item.circle.setAttribute('fill', '#00aaff');
+                    item.circle.setAttribute('r', '7');
+                    item.rect.style.display = 'none';
+                } else {
+                    item.circle.setAttribute('fill', '#ff0055');
+                    item.circle.setAttribute('r', '4');
+                    item.rect.style.display = 'none';
+                }
+            });
+        }
+
+        // --- ISOMETRIC PREVIEW ENGINE ---
+        function initIsoDOM() {
+            isoSvg.innerHTML = '';
+            const lineGroup = createSvgEl('g', { id: 'iso-lines' });
+            isoSvg.appendChild(lineGroup);
+
+            viewRenderCache.iso.lines = edges.map(() => {
+                const line = createSvgEl('line', {
+                    'stroke': '#00ffcc',
+                    'stroke-width': '2',
+                    'stroke-linecap': 'round'
+                });
+                lineGroup.appendChild(line);
+                return line;
+            });
+        }
+
+        function projectIso(point, angleY, width, height) {
+            const isoAngleX = Math.PI / 6; // 30 deg pitch
             const cosY = Math.cos(angleY);
             const sinY = Math.sin(angleY);
 
@@ -256,42 +508,141 @@
             const y1 = point.y;
             const z1 = -point.x * sinY + point.z * cosY;
 
-            // X-axis Pitch tilt
             const cosX = Math.cos(isoAngleX);
             const sinX = Math.sin(isoAngleX);
 
             const x2 = x1;
             const y2 = y1 * cosX - z1 * sinX;
-            const z2 = y1 * sinX + z1 * cosX;
 
-            // Scale to screen
-            const scale = 2.3;
-            const screenX = originX + x2 * scale;
-            const screenY = originY + y2 * scale;
-
-            return { x: screenX, y: screenY, z: z2 };
+            const scale = 2.5;
+            return {
+                x: (width / 2) + x2 * scale,
+                y: (height / 2) + y2 * scale
+            };
         }
 
-        // Animation Loop
-        function animate() {
-            currentAngleY += (targetAngleY - currentAngleY) * 0.08;
+        function updateIsoView() {
+            if (currentMode !== 'preview') return;
+            const rect = isoSvg.getBoundingClientRect();
 
-            const projectedPoints = allVertices.map(v => project(v, currentAngleY));
+            // Smooth Interpolation
+            isoAngleY += (isoTargetAngleY - isoAngleY) * 0.08;
 
-            edges.forEach((edge, index) => {
+            const projectedPoints = vertices.map(v => projectIso(v, isoAngleY, rect.width, rect.height));
+
+            edges.forEach((edge, idx) => {
                 const p1 = projectedPoints[edge[0]];
                 const p2 = projectedPoints[edge[1]];
+                const line = viewRenderCache.iso.lines[idx];
 
-                lineElements[index].setAttribute('x1', p1.x);
-                lineElements[index].setAttribute('y1', p1.y);
-                lineElements[index].setAttribute('x2', p2.x);
-                lineElements[index].setAttribute('y2', p2.y);
+                line.setAttribute('x1', p1.x);
+                line.setAttribute('y1', p1.y);
+                line.setAttribute('x2', p2.x);
+                line.setAttribute('y2', p2.y);
+
+                if (idx === selectedEdgeIndex) {
+                    line.setAttribute('stroke', '#ffff00');
+                    line.setAttribute('stroke-width', '3.5');
+                } else {
+                    line.setAttribute('stroke', '#00ffcc');
+                    line.setAttribute('stroke-width', '2');
+                }
             });
 
-            requestAnimationFrame(animate);
+            requestAnimationFrame(updateIsoView);
         }
 
-        animate();
+        // Track Mouse in Isometric View for rotation
+        window.addEventListener('mousemove', (e) => {
+            if (currentMode === 'preview') {
+                const mouseX = e.clientX / window.innerWidth;
+                isoTargetAngleY = (mouseX - 0.5) * Math.PI * 2;
+            }
+        });
+
+        // --- GLOBAL SYNC & REFRESH ---
+        function updateAllViews() {
+            if (currentMode === 'edit') {
+                ['top', 'left', 'front', 'rear'].forEach(updateView);
+            }
+        }
+
+        // --- UI INTERACTION SETUP ---
+        // Mode Switchers
+        const btnEditMode = document.getElementById('btn-mode-edit');
+        const btnPreviewMode = document.getElementById('btn-mode-preview');
+        const btnToolPoint = document.getElementById('btn-tool-point');
+        const btnToolLine = document.getElementById('btn-tool-line');
+
+        btnEditMode.addEventListener('click', () => {
+            currentMode = 'edit';
+            document.body.classList.remove('mode-preview');
+            btnEditMode.classList.add('active');
+            btnPreviewMode.classList.remove('active');
+            updateAllViews();
+        });
+
+        btnPreviewMode.addEventListener('click', () => {
+            currentMode = 'preview';
+            document.body.classList.add('mode-preview');
+            btnPreviewMode.classList.add('active');
+            btnEditMode.classList.remove('active');
+            requestAnimationFrame(updateIsoView);
+        });
+
+        // Editing Tools
+        btnToolPoint.addEventListener('click', () => {
+            currentTool = 'point';
+            document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' edit-mode-point';
+            btnToolPoint.classList.add('active');
+            btnToolLine.classList.remove('active');
+            selectedEdgeIndex = null;
+            updateAllViews();
+        });
+
+        btnToolLine.addEventListener('click', () => {
+            currentTool = 'line';
+            document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' edit-mode-line';
+            btnToolLine.classList.add('active');
+            btnToolPoint.classList.remove('active');
+            selectedPointId = null;
+            hoverPointId = null;
+            updateAllViews();
+        });
+
+        // Deselect when clicking empty background canvas space
+        document.querySelectorAll('svg.viewport').forEach(svg => {
+            svg.addEventListener('click', (e) => {
+                if (e.target.tagName === 'svg') {
+                    selectedPointId = null;
+                    selectedEdgeIndex = null;
+                    updateAllViews();
+                }
+            });
+        });
+
+        // Background Image Loader Handlers
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const viewType = e.target.getAttribute('data-view');
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        document.getElementById(`bg-${viewType}`).src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        // Screen Resize handling
+        window.addEventListener('resize', updateAllViews);
+
+        // --- INITIALIZATION ---
+        ['top', 'left', 'front', 'rear'].forEach(initViewDOM);
+        initIsoDOM();
+        updateAllViews();
     </script>
 </body>
 </html>
