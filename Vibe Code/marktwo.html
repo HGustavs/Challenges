@@ -61,14 +61,8 @@
         
         .file-input-label {
             background-color: #252526;
-            color: #aaa;
-            border: 1px dashed #444;
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-        .file-input-label.btn-icon-label {
-            border-style: solid;
             color: #ccc;
+            border: 1px solid #444;
             padding: 6px;
         }
         input[type="file"] { display: none; }
@@ -220,18 +214,29 @@
             <button id="btn-export-json" class="btn-accent" title="Download JSON" aria-label="Download JSON">
                 <span class="material-symbols-outlined" alt="Download JSON">file_save</span>
             </button>
-            <label class="file-input-label btn-icon-label" title="Upload JSON" aria-label="Upload JSON">
+            <label class="file-input-label" title="Upload JSON" aria-label="Upload JSON">
                 <span class="material-symbols-outlined" alt="Upload JSON">file_open</span>
                 <input type="file" id="input-import-json" accept=".json">
             </label>
         </div>
 
         <div class="btn-group" id="bg-tools">
-            <span style="font-size: 12px; color: #888; margin-right: 4px;">Backgrounds:</span>
-            <label class="file-input-label">Top <input type="file" accept="image/*" data-view="top"></label>
-            <label class="file-input-label">Left <input type="file" accept="image/*" data-view="left"></label>
-            <label class="file-input-label">Front <input type="file" accept="image/*" data-view="front"></label>
-            <label class="file-input-label">Rear <input type="file" accept="image/*" data-view="rear"></label>
+            <label class="file-input-label" title="Top View Background" aria-label="Top View Background">
+                <span class="material-symbols-outlined" alt="Top View Background">subheader</span>
+                <input type="file" accept="image/*" data-view="top">
+            </label>
+            <label class="file-input-label" title="Right View Background" aria-label="Right View Background">
+                <span class="material-symbols-outlined" alt="Right View Background">position_top_right</span>
+                <input type="file" accept="image/*" data-view="left">
+            </label>
+            <label class="file-input-label" title="Front View Background" aria-label="Front View Background">
+                <span class="material-symbols-outlined" alt="Front View Background">position_bottom_left</span>
+                <input type="file" accept="image/*" data-view="front">
+            </label>
+            <label class="file-input-label" title="Rear View Background" aria-label="Rear View Background">
+                <span class="material-symbols-outlined" alt="Rear View Background">position_bottom_right</span>
+                <input type="file" accept="image/*" data-view="rear">
+            </label>
         </div>
     </div>
 
