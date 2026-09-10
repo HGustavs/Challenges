@@ -1,0 +1,279 @@
+<html>
+<head>
+		<style>
+				body {margin: 0; height: 100%; overflow: hidden}
+		</style>
+    <script>document.write("<script type='text/javascript' src='pento.js?t=" + Date.now() + "'><\/script>");</script>
+		<script>
+
+        //        (\ /)
+        //        (. .)           
+        //       c(")(")       ∴
+        // 
+        // Circle lens
+        // Video intro with circles that get magnified close to center point in grid
+
+				var c;
+        var mx=0,my=0;
+        var mmx=310;
+        var mmy=140;
+
+//------------------------------------=======############==========----------------------------------------
+//                                          Tilemap editor
+//------------------------------------=======############==========----------------------------------------
+	        
+
+const gridSize=50;                          // Grid size
+const gridOffs=50;                          // Offset from screen edges
+const gridW=9;                              // Grid width and height at 8x8 currently
+const gridH=9;
+
+var tilemap=[];
+var mapp=[];
+
+
+var currenttile=2;                          // Current chosen tile
+
+function mouseMove(e)
+{
+		var rect = e.target.getBoundingClientRect();
+    mx = e.clientX - rect.left; //x position within the element.
+    my = e.clientY - rect.top;  //y position within the element
+
+
+}
+
+ function mouseDown(e)
+ {
+    e.preventDefault();
+    return false;
+ }
+
+function keydown(e)
+{
+		if(e.keyCode==37){
+				xd=-1;
+		}else if(e.keyCode==39){
+				xd=1;
+		}else if(e.keyCode==38){
+				yd=-1;
+		}else if(e.keyCode==40){
+				yd=1;
+		}
+}
+
+function keyup(e)
+{
+		if(e.keyCode==37||e.keyCode==39){
+				xd=0;
+		}else if(e.keyCode==38||e.keyCode==40){
+				yd=0;
+		}
+}			
+
+function setup()
+{
+		var cc = document.getElementById("myCanvas");
+    c = cc.getContext("2d");
+
+    cc.addEventListener('contextmenu', event => event.preventDefault());
+    cc.addEventListener('mousemove',function(e){mouseMove(e)});
+    cc.addEventListener('mousedown',function(e){mouseDown(e)});
+
+    drawit();
+}
+							
+function updatestate()
+{
+
+}
+
+// -------------------==============########==============-------------------
+// Useful bits
+
+function drawLine(x1,y1,x2,y2,width,color)
+{
+    c.strokeStyle=color;
+    c.globalAlpha=1.0;
+    c.lineWidth=width;
+
+    c.beginPath();
+    c.moveTo(x1,y1);
+    c.lineTo(x2,y2);
+    c.stroke();
+
+    c.lineWidth=1.0;
+}
+
+function drawCirc(x1,y1,rad,width,color)
+{
+      c.strokeStyle=color;
+      c.lineWidth=width;
+      c.beginPath();
+		  c.arc(x1, y1, rad, 0, 2 * Math.PI);
+		  c.stroke();
+      c.lineWidth=1.0; 				
+}
+
+function drawThickLine(x1,y1,x2,y2,linewidth,color)
+{
+    var dx=x2-x1;
+    var dy=y2-y1;
+    var len=Math.sqrt((dx*dx)+(dy*dy));
+    var ox=(-dy/len)*linewidth;
+    var oy=(dx/len)*linewidth;
+    var sx=(dx/len)*linewidth;
+    var sy=(dy/len)*linewidth;
+
+    p1={x:x1,y:y1};
+    p2={x:x1+sx+ox,y:y1+sy+oy};
+    p3={x:x2-sx+ox,y:y2-sy+oy};
+    p4={x:x2,y:y2};
+    p5={x:x2-sx-ox,y:y2-sy-oy};
+    p6={x:x1+sx-ox,y:y1+sy-oy};
+    
+    var pointlist=[p1,p2,p3,p4,p5,p6];
+    c.fillStyle=color;
+    drawSegments(pointlist,false);
+
+}
+
+function drawSegments(pointlist,kind)
+{
+    c.beginPath();
+    for(var i=0;i<pointlist.length;i++){
+        if(i==0){
+            c.moveTo(pointlist[i].x,pointlist[i].y);
+        }else{
+            c.lineTo(pointlist[i].x,pointlist[i].y);        
+        }
+    }
+    if(pointlist.length>0){
+        c.lineTo(pointlist[0].x,pointlist[0].y);
+    }
+
+    if(kind){
+        c.stroke();
+    }else{
+        c.fill();    
+    }
+
+}
+
+function drawCross(xk,yk,length,linewidth,color)
+{
+    var p1={x:xk,y:yk-(linewidth*2)};
+    var p2={x:(xk-length+linewidth),y:(yk-length-linewidth)};
+    var p3={x:(xk-length-linewidth),y:(yk-length+linewidth)};    
+    var p4={x:xk-(linewidth*2),y:yk};
+    var p5={x:(xk-length-linewidth),y:(yk+length-linewidth)};
+    var p6={x:(xk-length+linewidth),y:(yk+length+linewidth)}; 
+    var p7={x:xk,y:yk+(linewidth*2)};
+    var p8={x:(xk+length-linewidth),y:(yk+length+linewidth)};
+    var p9={x:(xk+length+linewidth),y:(yk+length-linewidth)};
+    var p10={x:xk+(linewidth*2),y:yk};
+    var p11={x:(xk+length+linewidth),y:(yk-length+linewidth)};
+    var p12={x:(xk+length-linewidth),y:(yk-length-linewidth)};
+
+    var pointlist=[p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12];
+    c.fillStyle=color;
+    drawSegments(pointlist,false);
+}
+
+// We draw a tile with the following characteristics 
+// 
+function drawTile(x,y,tileW,tileH,linewidth,lineoffs,tileno)
+{   
+    var lo=lineoffs*0.25;
+    if(tileno>7){
+        c.fillStyle="#68b";        
+    }else{
+        c.fillStyle="#b86";    
+    }
+    pointlist=[{x:x+lo,y:y+lo},{x:x+lo,y:y+tileH-lo},{x:x+tileW-lo,y:y+tileH-lo},{x:x+tileW-lo,y:y+lo}];
+    drawSegments(pointlist,false);
+
+    if(tileno==8){
+        drawCross(x+(tileW*0.5),y+(tileH*0.5),tileW*0.15,linewidth*0.5,"#A40");
+    }
+    if(tileno==1||tileno==5||tileno==9){
+        // Top connectior
+        drawThickLine( x+(tileW*0.5)-(lineoffs*0.5),y, x+(tileW*0.5)-(lineoffs),y+(lineoffs*2), linewidth, "#000");
+        drawThickLine( x+(tileW*0.5)+(lineoffs),y,x+(tileW*0.5)+(lineoffs*0.5),y+(lineoffs*2), linewidth, "#000");
+    }
+    if(tileno==2||tileno==5||tileno==10){
+        // Bottom connectior
+        drawThickLine( x+(tileW*0.5)-(lineoffs),y+tileH,x+(tileW*0.5)-(lineoffs*0.5),y+tileH-(lineoffs*2), linewidth, "#000");
+        drawThickLine( x+(tileW*0.5)+(lineoffs*0.5),y+tileH,x+(tileW*0.5)+(lineoffs),y+tileH-(lineoffs*2), linewidth, "#000");
+    }
+    if(tileno==3||tileno==6||tileno==11){
+        // Right connectior
+        drawThickLine( x+tileW,y+(tileH*0.5)-(lineoffs*0.5),x+tileW-(lineoffs*2), y+(tileH*0.5)-(lineoffs), linewidth, "#000");
+        drawThickLine( x+tileW,y+(tileH*0.5)+(lineoffs),x+tileW-(lineoffs*2), y+(tileH*0.5)+(lineoffs*0.5), linewidth, "#000");
+    }
+    if(tileno==4||tileno==6||tileno==12){
+        // Left connectior
+        drawThickLine( x,y+(tileH*0.5)-(lineoffs),x+(lineoffs*2), y+(tileH*0.5)-(lineoffs*0.5), linewidth, "#000");
+        drawThickLine( x,y+(tileH*0.5)+(lineoffs*0.5),x+(lineoffs*2), y+(tileH*0.5)+(lineoffs), linewidth, "#000");
+    }
+}
+
+
+//tilemap.push({x:0,y:0,no:8});
+
+function placeTile(xk,yk)
+{
+    // We place 
+}
+
+// Go through list and check availability we give pno and index of variant
+function availableTile(xk,yk,pno,pind)
+{
+    // We check all tiles including blue tiles
+
+    // For X tile there must not be a tile in that spot
+    // If limit is 0 any tile can be placed in that spot
+
+}
+
+function drawit()
+{	
+
+		c.clearRect(0,0,900,900);
+
+    // Draw grid
+    c.globalAlpha=0.5;
+   
+
+    c.globalAlpha=1.0;
+
+    // Draw hud icon tiles
+    c.textBaseline="middle";
+    c.textAlign="center";
+    		// window.requestAnimationFrame(drawit);
+
+    for(var xk=20;xk<400;xk+=20){
+        for(var yk=20;yk<400;yk+=20){
+            // We magnify the size of circle by square of distance to center
+            var r=4;
+            var dx=xk-mx;
+            var dy=yk-my;
+            var d=100-Math.sqrt((dx*dx)+(dy*dy));
+            d=d/10;
+            if(d<0) d=0;
+            if(d>10) d=10;
+            if(d<4) d=4;
+            drawCirc(xk-(dx*(4-d)),yk-(dy*(4-d)),d,1.5,"#c62");
+        }
+    }
+
+    window.requestAnimationFrame(drawit);
+
+}
+			
+		</script>
+</head>
+<body onload="setup();" onkeydown="keydown(event);" onkeyup="keyup(event);" >
+ 	<canvas id="myCanvas" width="900" height="900" style="border:1px solid #000000;"></canvas>
+	<svg style='border:1px dotted red;' height="900" width="900" id="mainsvg"></svg>
+</body>

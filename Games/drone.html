@@ -1,0 +1,79 @@
+<html>
+<head>
+		<script>
+
+        // A freestyle relative of Brilliant's halfsies https://brilliant.org/challenges/halfsies/
+
+				var ctx;
+			  var mx,my,mb=0;
+			
+				function setup()
+				{
+						var cc = document.getElementById("myCanvas");
+				    ctx = cc.getContext("2d");
+					
+						setInterval(updatestate,20);
+					
+						drawit();
+				}
+								
+				function updatestate()
+				{
+
+				}
+			
+				function mouseUp(e)
+				{
+						mb=0;
+				}
+			
+				function mouseDown(e)
+				{
+						mb=e.which;
+				}
+			
+				function mouseMove(e,t)
+				{
+						var rect = e.target.getBoundingClientRect();
+            mx = e.clientX - rect.left; //x position within the element.
+            my = e.clientY - rect.top;  //y position within the element
+				}
+
+        // Cost is saved for next level
+
+        // Drone Prop 50
+        // Drone Jet 50
+        // Drone Prop Decoy
+        // Drone Jet Decoy
+        // Ballistic
+        // Fiber Drone
+        // Radio Drone
+        // Anti Radiation
+        // Stealth Drone
+
+        // Short Range AA
+        // Medium Range AA
+        // Long Range AA (High Alt)
+        // Radar Station
+        // GPS Jammer
+        // Drone Jammer
+
+        // Fog of war - per line segment in coordinate box.
+			
+				function drawit()
+				{	
+						ctx.clearRect(0,0,900,900);
+
+            // Displace percentage
+            ctx.font="20px Arial Narrow";
+            ctx.fillText(Math.round((both/areaA)*100)/100,10,20);
+
+
+            window.requestAnimationFrame(drawit);
+				} 			
+						
+		</script>
+</head>
+<body onload="setup();">
+ 	<canvas id="myCanvas" onmousedown="mouseDown(event);" onmouseup="mouseUp(event);" onmousemove="mouseMove(event,this);" width="900" height="900" style="border:1px solid #000000;"></canvas> 
+</body>

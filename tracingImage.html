@@ -100,7 +100,7 @@ function zetup()
     var cc = document.getElementById("myCanvas");
     c = cc.getContext("2d");
 
-    world.src = 'data/Car.png';
+    world.src = 'data/Equirectangular2.png';
     world.onload = function () {
         updatestate();
     };    
@@ -881,9 +881,9 @@ function updatestate()
     var pixelbuffer=[];
 
     var reduce=2;
-    var medianarea=8;
+    var medianarea=4;
     var Clustercnt=64;
-    var Reduceto=4;
+    var Reduceto=6;
     var clusterTreshold=10;
     var reduceStride=8;
     var reduceRandcnt=8;
@@ -980,7 +980,6 @@ function updatestate()
     }
 
     // Process full document
-    /*
     for(compoundpath of PathDocument){
         //drawPath(compoundpath.original,2048,yoffs,scale,true,path.RGBColor);        
         drawBoundingBox(compoundpath.original,2048,yoffs,scale,compoundpath.reduced.length);        
@@ -988,7 +987,6 @@ function updatestate()
     }
     alert(PathDocument.length);
     benchmark("Path Handling All Clusters",null,null);
-    */
 
 
     // Figure out which parts of figures that represent holes
@@ -1003,10 +1001,7 @@ function updatestate()
     // Figure out holes and drawing order 
 
 
-    
-/*
-    var 
-
+/*    
     // Draw each compound path
     c.clearRect(0,0,width,height);
     for(compoundpath of compoundpaths){

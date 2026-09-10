@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Isometric VW Golf Mk2 Wireframe</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: #fff;
+            font-family: sans-serif;
+        }
+        svg {
+            background-color: #1a1a1a;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 8px;
+        }
+        .info {
+            position: absolute;
+            top: 20px;
+            color: #888;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="info">Move mouse left / right to rotate VW Golf Mk2</div>
+    <svg id="canvas" width="800" height="600"></svg>
+
+    <script>
+        const svg = document.getElementById('canvas');
+        const width = 800;
+        const height = 600;
+        const originX = width / 2;
+        const originY = height / 2 + 50;
+
+        // Isometric projection angles (in radians)
+        const isoAngleX = Math.PI / 6; // 30 degrees tilt down
+        
+        let targetAngleY = 0;
+        let currentAngleY = 0;
+
+        // Define Volkswagen Golf Mk2 3D Model Wireframe Coordinates (x, y, z)
+        // Center is at bottom-middle of the vehicle
+        const vertices = [
+            // Lower Body Base / Bumpers
+            { id: 'f_l_bump', x: -35, y: 0, z: 75 },
+            { id: 'f_r_bump', x: 35, y: 0, z: 75 },
+            { id: 'r_l_bump', x: -35, y: 0, z: -75 },
+            { id: 'r_r_bump', x: 35, y: 0, z: -75 },
+
+            // Hood / Beltline Level
+            { id: 'f_l_hood', x: -35, y: -25, z: 75 },
+            { id: 'f_r_hood', x: 35, y: -25, z: 75 },
+            { id: 'wind_l_bot', x: -35, y: -28, z: 25 },
+            { id: 'wind_r_bot', x: 35, y: -28, z: 25 },
+            { id: 'r_l_belt', x: -35, y: -28, z: -75 },
+            { id: 'r_r_belt', x: 35, y: -28, z: -75 },
+
+            // Roof Line (Boxy Mk2 Profile)
+            { id: 'roof_f_l', x: -30, y: -55, z: 10 },
+            { id: 'roof_f_r', x: 30, y: -55, z: 10 },
+            { id: 'roof_r_l', x: -30, y: -55, z: -55 },
+            { id: 'roof_r_r', x: 30, y: -55, z: -55 },
+
+            // Round Headlights (Mk2 signature)
+            { id: 'hl_l_c', x: -22, y: -14, z: 76 },
+            { id: 'hl_r_c', x: 22, y: -14, z: 76 },
+
+            // Front Grille Center Line
+            { id: 'grille_top', x: 0, y: -23, z: 75 },
+            { id: 'grille_bot', x: 0, y: -3, z: 75 },
+
+            // Wheel Centers (Front Left, Front Right, Rear Left, Rear Right)
+            { id: 'w_fl', x: -36, y: 5, z: 45 },
+            { id: 'w_fr', x: 36, y: 5, z: 45 },
+            { id: 'w_rl', x: -36, y: 5, z: -45 },
+            { id: 'w_rr', x: 36, y: 5, z: -45 },
+        ];
+
+        // Define wheel octagons (3D detail)
+        function createWheel(centerX, centerY, centerZ, radius = 10) {
+            const points = [];
+            const segments = 8;
+            for (let i = 0; i < segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                points.push({
+                    x: centerX,
+                    y: centerY + Math.sin(angle) * radius,
+                    z: centerZ + Math.cos(angle) * radius
+                });
+            }
+            return points;
+        }
+
+        const wheelFL = createWheel(-36, 5, 45);
+        const wheelFR = createWheel(36, 5, 45);
+        const wheelRL = createWheel(-36, 5, -45);
+        const wheelRR = createWheel(36, 5, -45);
+
+        // Add wheel points to total vertices array
+        const allVertices = [...vertices, ...wheelFL, ...wheelFR, ...wheelRL, ...wheelRR];
+
+        // Define Wireframe Connections (Edges between vertex indices)
+        const edges = [
+            // Lower Body Frame
+            [0, 1], [1, 3], [3, 2], [2, 0],
+
+            // Beltline & Hood
+            [4, 5], [5, 7], [7, 9], [9, 8], [8, 6], [6, 4],
+            [4, 0], [5, 1], [8, 2], [9, 3],
+            [6, 7], // Base of windshield
+
+            // Roof pillars (A & C pillars)
+            [6, 10], [7, 11], // Windshield A-pillars
+            [10, 11],         // Roof Front edge
+            [10, 12], [11, 13], // Roof Side edges
+            [12, 13],         // Roof Rear edge
+            [12, 8], [13, 9],   // C-pillars (Thick Mk2 characteristic)
+
+            // Front Grille & Details
+            [16, 17]
+        ];
+
+        // Add edges to close wheel octagons
+        function addWheelEdges(startIndex) {
+            for (let i = 0; i < 8; i++) {
+                const next = (i === 7) ? startIndex : startIndex + i + 1;
+                edges.push([startIndex + i, next]);
+            }
+        }
+
+        const baseVCount = vertices.length;
+        addWheelEdges(baseVCount);      // FL Wheel
+        addWheelEdges(baseVCount + 8);  // FR Wheel
+        addWheelEdges(baseVCount + 16); // RL Wheel
+        addWheelEdges(baseVCount + 24); // RR Wheel
+
+        // Helper: Generate SVG element
+        function createSvgElement(tag, attrs) {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (let key in attrs) {
+                el.setAttribute(key, attrs[key]);
+            }
+            return el;
+        }
+
+        // Initialize SVG elements for lines and headlights
+        const lineElements = [];
+        edges.forEach(() => {
+            const line = createSvgElement('line', {
+                'stroke': '#00ffcc',
+                'stroke-width': '2',
+                'stroke-linecap': 'round',
+                'stroke-linejoin': 'round'
+            });
+            svg.appendChild(line);
+            lineElements.push(line);
+        });
+
+        // Add Headlight SVG Circles
+        const hlLeft = createSvgElement('circle', { 'r': '6', 'fill': 'none', 'stroke': '#ffff00', 'stroke-width': '2' });
+        const hlRight = createSvgElement('circle', { 'r': '6', 'fill': 'none', 'stroke': '#ffff00', 'stroke-width': '2' });
+        svg.appendChild(hlLeft);
+        svg.appendChild(hlRight);
+
+        // Track Mouse position for rotation
+        window.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX / window.innerWidth;
+            // Map mouse position to Y-axis rotation (-PI to +PI)
+            targetAngleY = (mouseX - 0.5) * Math.PI * 2;
+        });
+
+        // 3D Matrix Rotation & Isometric Projection Function
+        function project(point, angleY) {
+            // 1. Rotate around Y-axis (Yaw)
+            const cosY = Math.cos(angleY);
+            const sinY = Math.sin(angleY);
+
+            const x1 = point.x * cosY + point.z * sinY;
+            const y1 = point.y;
+            const z1 = -point.x * sinY + point.z * cosY;
+
+            // 2. Apply fixed Isometric X-axis Tilt (Pitch)
+            const cosX = Math.cos(isoAngleX);
+            const sinX = Math.sin(isoAngleX);
+
+            const x2 = x1;
+            const y2 = y1 * cosX - z1 * sinX;
+            const z2 = y1 * sinX + z1 * cosX;
+
+            // 3. Scale and Project to 2D Canvas space
+            const scale = 2.2;
+            const screenX = originX + x2 * scale;
+            const screenY = originY + y2 * scale;
+
+            return { x: screenX, y: screenY, z: z2 };
+        }
+
+        // Main Animation Loop
+        function animate() {
+            // Smoothly interpolate rotation toward target
+            currentAngleY += (targetAngleY - currentAngleY) * 0.08;
+
+            // Transform all 3D points to 2D screen positions
+            const projectedPoints = allVertices.map(v => project(v, currentAngleY));
+
+            // Render Edges/Lines
+            edges.forEach((edge, index) => {
+                const p1 = projectedPoints[edge[0]];
+                const p2 = projectedPoints[edge[1]];
+
+                lineElements[index].setAttribute('x1', p1.x);
+                lineElements[index].setAttribute('y1', p1.y);
+                lineElements[index].setAttribute('x2', p2.x);
+                lineElements[index].setAttribute('y2', p2.y);
+            });
+
+            // Render Round Headlights
+            const pHeadlightL = projectedPoints[14];
+            const pHeadlightR = projectedPoints[15];
+
+            hlLeft.setAttribute('cx', pHeadlightL.x);
+            hlLeft.setAttribute('cy', pHeadlightL.y);
+            hlRight.setAttribute('cx', pHeadlightR.x);
+            hlRight.setAttribute('cy', pHeadlightR.y);
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
