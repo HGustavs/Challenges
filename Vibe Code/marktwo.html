@@ -251,7 +251,7 @@
         <!-- 4-View Editor Grid -->
         <div id="editor-grid">
             <div class="view-panel" id="panel-top" data-view="top">
-                <div class="view-title">Top View (X / Z)</div>
+                <div class="view-title">Top View (X / Z - Rotated 90° CCW)</div>
                 <img class="bg-img" id="bg-top" alt="">
                 <svg class="viewport" id="svg-top"></svg>
             </div>
@@ -401,8 +401,9 @@
         let curvePreviewMousePos = null;
 
         // View Configurations and Axis Mapping
+        // Top view coordinate map updated to reflect 90 degree counter-clockwise rotation
         const views = {
-            top:   { svg: document.getElementById('svg-top'),   map: (v) => ({ x: v.x, y: v.z }), unmap: (x, y) => ({ x: x, z: y }) },
+            top:   { svg: document.getElementById('svg-top'),   map: (v) => ({ x: v.z, y: -v.x }), unmap: (x, y) => ({ x: -y, z: x }) },
             left:  { svg: document.getElementById('svg-left'),  map: (v) => ({ x: -v.z, y: v.y }), unmap: (x, y) => ({ z: -x, y: y }) },
             front: { svg: document.getElementById('svg-front'), map: (v) => ({ x: v.x, y: v.y }), unmap: (x, y) => ({ x: x, y: y }) },
             rear:  { svg: document.getElementById('svg-rear'),  map: (v) => ({ x: -v.x, y: v.y }), unmap: (x, y) => ({ x: -x, y: y }) }
@@ -620,8 +621,8 @@
                     const v = vertices.find(pt => pt.id === id);
                     if (v) {
                         if (viewType === 'top') {
-                            v.x += dx;
-                            v.z += dy;
+                            v.z += dx;
+                            v.x -= dy;
                         } else if (viewType === 'left') {
                             v.z -= dx;
                             v.y += dy;
@@ -787,7 +788,7 @@
                         const absDz = Math.abs(dz);
 
                         if (viewType === 'top') {
-                            if (absDx >= absDz) dz = 0; else dx = 0;
+                            if (absDz >= absDx) dx = 0; else dz = 0;
                         } else if (viewType === 'left') {
                             if (absDz >= absDy) dy = 0; else dz = 0;
                         } else if (viewType === 'front' || viewType === 'rear') {
