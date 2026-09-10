@@ -25,3 +25,5 @@ In point editing mode when backspace is pressed the currently selected points sh
 The isometric preview rotation should only change when the mouse is in the preview and not when the mouse is in the menu pane. There should also be an icon in the menu for disabling the mouse movement rotation, limiting the rotation to only the range input. 
 
 The buttons should have icons from google fonts material design icons. The export, upload and download should have the Export Note, File Save and File Open Icons. The svg preview should have the preview icon. The point creation mode button should should have the "point scan" icon. The point edit, line edit and curve edit button should have the "Arrows Output", "Line End" and "Line Curve" icons. The edit mode button should have the "Edit" icon. 
+
+The buttons with icons should only have the icons and the text should be moved to the alt attribute. 

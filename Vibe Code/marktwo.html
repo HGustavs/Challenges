@@ -23,6 +23,7 @@
             font-size: 18px;
             vertical-align: middle;
             line-height: 1;
+            pointer-events: none;
         }
 
         /* Top Toolbar */
@@ -41,7 +42,7 @@
             background-color: #2d2d2d;
             color: #ccc;
             border: 1px solid #444;
-            padding: 6px 14px;
+            padding: 6px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 13px;
@@ -49,11 +50,10 @@
             transition: all 0.15s ease;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
         }
         button:hover, .file-input-label:hover { background-color: #3d3d3d; color: #fff; border-color: #555; }
         button.active { background-color: #007acc; color: #fff; border-color: #0098ff; }
-        button.btn-icon { padding: 6px; }
         button.btn-accent { background-color: #2e6930; color: #fff; border-color: #3e8e41; }
         button.btn-accent:hover { background-color: #388e3c; }
         button.btn-svg { background-color: #8e24aa; color: #fff; border-color: #ab47bc; }
@@ -65,6 +65,11 @@
             border: 1px dashed #444;
             padding: 5px 10px;
             font-size: 12px;
+        }
+        .file-input-label.btn-icon-label {
+            border-style: solid;
+            color: #ccc;
+            padding: 6px;
         }
         input[type="file"] { display: none; }
 
@@ -171,11 +176,11 @@
     <!-- Top Navigation Toolbar -->
     <div id="toolbar">
         <div class="btn-group">
-            <button id="btn-mode-edit" class="active">
-                <span class="material-symbols-outlined">edit</span> Editing Mode
+            <button id="btn-mode-edit" class="active" title="Editing Mode" aria-label="Editing Mode">
+                <span class="material-symbols-outlined" alt="Editing Mode">edit</span>
             </button>
-            <button id="btn-mode-preview">
-                <span class="material-symbols-outlined">preview</span> Isometric Preview
+            <button id="btn-mode-preview" title="Isometric Preview" aria-label="Isometric Preview">
+                <span class="material-symbols-outlined" alt="Isometric Preview">preview</span>
             </button>
         </div>
 
@@ -184,9 +189,9 @@
             <label for="input-iso-angle">Angle:</label>
             <input type="range" id="input-iso-angle" min="-180" max="180" value="0">
             <span id="label-iso-angle">0°</span>
-            <button id="btn-toggle-mouse-rotate" class="btn-icon" title="Toggle mouse movement rotation">
+            <button id="btn-toggle-mouse-rotate" title="Toggle mouse movement rotation" aria-label="Toggle mouse movement rotation">
                 <!-- SVG Icon for Unlocked/Locked Mouse Rotation -->
-                <svg id="icon-mouse-rotate" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg id="icon-mouse-rotate" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" alt="Toggle mouse movement rotation">
                     <rect x="5" y="2" width="14" height="20" rx="7"></rect>
                     <line x1="12" y1="6" x2="12" y2="10"></line>
                 </svg>
@@ -194,30 +199,29 @@
         </div>
 
         <div class="btn-group" id="edit-subtools">
-            <span style="font-size: 12px; color: #888; margin-right: 4px;">Tool:</span>
-            <button id="btn-tool-point" class="active">
-                <span class="material-symbols-outlined">arrows_output</span> Point Mode
+            <button id="btn-tool-point" class="active" title="Point Mode" aria-label="Point Mode">
+                <span class="material-symbols-outlined" alt="Point Mode">arrows_output</span>
             </button>
-            <button id="btn-tool-addpoint">
-                <span class="material-symbols-outlined">point_scan</span> Create Point Mode
+            <button id="btn-tool-addpoint" title="Create Point Mode" aria-label="Create Point Mode">
+                <span class="material-symbols-outlined" alt="Create Point Mode">point_scan</span>
             </button>
-            <button id="btn-tool-line">
-                <span class="material-symbols-outlined">line_end</span> Line Mode
+            <button id="btn-tool-line" title="Line Mode" aria-label="Line Mode">
+                <span class="material-symbols-outlined" alt="Line Mode">line_end</span>
             </button>
-            <button id="btn-tool-curve">
-                <span class="material-symbols-outlined">line_curve</span> Curve Mode
+            <button id="btn-tool-curve" title="Curve Mode" aria-label="Curve Mode">
+                <span class="material-symbols-outlined" alt="Curve Mode">line_curve</span>
             </button>
         </div>
 
         <div class="btn-group" id="io-tools">
-            <button id="btn-export-svg" class="btn-svg">
-                <span class="material-symbols-outlined">export_notes</span> Export SVGs
+            <button id="btn-export-svg" class="btn-svg" title="Export SVGs" aria-label="Export SVGs">
+                <span class="material-symbols-outlined" alt="Export SVGs">export_notes</span>
             </button>
-            <button id="btn-export-json" class="btn-accent">
-                <span class="material-symbols-outlined">file_save</span> Download JSON
+            <button id="btn-export-json" class="btn-accent" title="Download JSON" aria-label="Download JSON">
+                <span class="material-symbols-outlined" alt="Download JSON">file_save</span>
             </button>
-            <label class="file-input-label" style="border-style: solid; color: #ccc;">
-                <span class="material-symbols-outlined">file_open</span> Upload JSON
+            <label class="file-input-label btn-icon-label" title="Upload JSON" aria-label="Upload JSON">
+                <span class="material-symbols-outlined" alt="Upload JSON">file_open</span>
                 <input type="file" id="input-import-json" accept=".json">
             </label>
         </div>
