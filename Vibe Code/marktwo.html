@@ -163,8 +163,8 @@
         body.edit-mode-addpoint svg { cursor: crosshair; }
         body.edit-mode-line line { cursor: pointer; }
         body.edit-mode-curve path { cursor: pointer; }
-        body.edit-mode-panbg .view-panel { cursor: grab; }
-        body.edit-mode-panbg .view-panel:active { cursor: grabbing; }
+        body.edit-mode-panbg .view-panel, body.edit-mode-panview .view-panel { cursor: grab; }
+        body.edit-mode-panbg .view-panel:active, body.edit-mode-panview .view-panel:active { cursor: grabbing; }
     </style>
 </head>
 <body class="edit-mode-point">
@@ -206,6 +206,9 @@
             </button>
             <button id="btn-tool-curve" title="Curve Mode" aria-label="Curve Mode">
                 <span class="material-symbols-outlined" alt="Curve Mode">line_curve</span>
+            </button>
+            <button id="btn-tool-panview" title="Pan View" aria-label="Pan View">
+                <span class="material-symbols-outlined" alt="pan mode">pan_tool</span>
             </button>
         </div>
 
@@ -358,9 +361,17 @@
             rear: { x: 0, y: 0 }
         };
 
+        // Viewport Pan Offsets
+        let viewPanOffsets = {
+            top: { x: 0, y: 0 },
+            left: { x: 0, y: 0 },
+            front: { x: 0, y: 0 },
+            rear: { x: 0, y: 0 }
+        };
+
         // System Variables
         let currentMode = 'edit';
-        let currentTool = 'point'; // 'point', 'addpoint', 'line', 'curve', or 'panbg'
+        let currentTool = 'point'; // 'point', 'addpoint', 'line', 'curve', 'panbg', or 'panview'
         let isMouseRotationEnabled = true; // State for toggling mouse rotation in isometric mode
         
         // Track Viewport Hover State
@@ -371,6 +382,12 @@
         let panBgViewType = null;
         let panBgStartMousePos = { x: 0, y: 0 };
         let panBgStartOffset = { x: 0, y: 0 };
+
+        // Viewport Panning Drag State
+        let isPanningView = false;
+        let panViewType = null;
+        let panViewStartMousePos = { x: 0, y: 0 };
+        let panViewStartOffset = { x: 0, y: 0 };
 
         // Multi-Point Selection Set (Set of Vertex IDs)
         let selectedPointIds = new Set();
@@ -401,7 +418,6 @@
         let curvePreviewMousePos = null;
 
         // View Configurations and Axis Mapping
-        // Top view coordinate map updated to reflect 270 degree counter-clockwise rotation (90° + 180°)
         const views = {
             top:   { svg: document.getElementById('svg-top'),   map: (v) => ({ x: -v.z, y: v.x }), unmap: (x, y) => ({ x: y, z: -x }) },
             left:  { svg: document.getElementById('svg-left'),  map: (v) => ({ x: -v.z, y: v.y }), unmap: (x, y) => ({ z: -x, y: y }) },
@@ -434,8 +450,11 @@
         function applyBgPan(viewType) {
             const img = document.getElementById(`bg-${viewType}`);
             if (img) {
-                const offset = bgPanOffsets[viewType] || { x: 0, y: 0 };
-                img.style.transform = `translate(${offset.x}px, ${offset.y}px)`;
+                const bgOffset = bgPanOffsets[viewType] || { x: 0, y: 0 };
+                const vOffset = viewPanOffsets[viewType] || { x: 0, y: 0 };
+                const totalX = bgOffset.x + vOffset.x;
+                const totalY = bgOffset.y + vOffset.y;
+                img.style.transform = `translate(${totalX}px, ${totalY}px)`;
             }
         }
 
@@ -450,7 +469,8 @@
                 vertices,
                 edges,
                 curves,
-                bgPanOffsets
+                bgPanOffsets,
+                viewPanOffsets
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dataPayload));
         }
@@ -468,6 +488,9 @@
                     if (parsed.bgPanOffsets) {
                         bgPanOffsets = Object.assign(bgPanOffsets, parsed.bgPanOffsets);
                     }
+                    if (parsed.viewPanOffsets) {
+                        viewPanOffsets = Object.assign(viewPanOffsets, parsed.viewPanOffsets);
+                    }
                     applyAllBgPans();
                     return true;
                 }
@@ -484,7 +507,8 @@
                 vertices,
                 edges,
                 curves,
-                bgPanOffsets
+                bgPanOffsets,
+                viewPanOffsets
             }, null, 2);
         }
 
@@ -500,6 +524,9 @@
                 nextVertexId = parsed.nextVertexId || (vertices.reduce((max, v) => Math.max(max, v.id), -1) + 1);
                 if (parsed.bgPanOffsets) {
                     bgPanOffsets = Object.assign({ top: {x:0,y:0}, left: {x:0,y:0}, front: {x:0,y:0}, rear: {x:0,y:0} }, parsed.bgPanOffsets);
+                }
+                if (parsed.viewPanOffsets) {
+                    viewPanOffsets = Object.assign({ top: {x:0,y:0}, left: {x:0,y:0}, front: {x:0,y:0}, rear: {x:0,y:0} }, parsed.viewPanOffsets);
                 }
                 applyAllBgPans();
 
@@ -521,8 +548,9 @@
 
         function projectToView(v, viewType, width, height) {
             const scale = 2.2;
-            const cx = width / 2;
-            const cy = height / 2;
+            const pan = viewPanOffsets[viewType] || { x: 0, y: 0 };
+            const cx = width / 2 + pan.x;
+            const cy = height / 2 + pan.y;
             const projected = views[viewType].map(v);
             return {
                 x: cx + projected.x * scale,
@@ -532,8 +560,9 @@
 
         function unprojectFromView(screenX, screenY, viewType, width, height) {
             const scale = 2.2;
-            const cx = width / 2;
-            const cy = height / 2;
+            const pan = viewPanOffsets[viewType] || { x: 0, y: 0 };
+            const cx = width / 2 + pan.x;
+            const cy = height / 2 + pan.y;
             const planeX = (screenX - cx) / scale;
             const planeY = (screenY - cy) / scale;
             return views[viewType].unmap(planeX, planeY);
@@ -592,7 +621,6 @@
 
             // Backspace / Delete key point deletion in Point editing mode
             if ((e.key === 'Backspace' || e.key === 'Delete') && currentMode === 'edit' && currentTool === 'point') {
-                // Avoid deleting if focusing on text inputs (e.g. angle input)
                 if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
                 e.preventDefault();
@@ -604,10 +632,10 @@
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 if (currentMode !== 'edit' || selectedPointIds.size === 0 || !currentActiveHoverView) return;
 
-                e.preventDefault(); // Prevent default browser scrolling
+                e.preventDefault();
 
                 const viewType = currentActiveHoverView;
-                const scale = 2.2; // Match viewport projection scale
+                const scale = 2.2;
                 const deltaWorld = KEY_MOVE_STEP_PIXELS / scale;
 
                 let dx = 0, dy = 0;
@@ -616,7 +644,6 @@
                 if (e.key === 'ArrowUp') dy = -deltaWorld;
                 if (e.key === 'ArrowDown') dy = deltaWorld;
 
-                // Transform 2D screen deltas into view's corresponding 3D axis modifications
                 selectedPointIds.forEach(id => {
                     const v = vertices.find(pt => pt.id === id);
                     if (v) {
@@ -641,30 +668,63 @@
             }
         });
 
-        // Setup background panning listeners for a view panel
-        function setupPanBgPanel(viewType) {
+        // Setup background & view panning listeners for a view panel
+        function setupPanPanel(viewType) {
             const panel = document.getElementById(`panel-${viewType}`);
             if (!panel) return;
 
             panel.addEventListener('mousedown', (e) => {
-                if (currentMode === 'edit' && currentTool === 'panbg') {
-                    isPanningBg = true;
-                    panBgViewType = viewType;
-                    panBgStartMousePos = { x: e.clientX, y: e.clientY };
-                    panBgStartOffset = { ...bgPanOffsets[viewType] };
+                if (currentMode === 'edit') {
+                    if (currentTool === 'panbg') {
+                        isPanningBg = true;
+                        panBgViewType = viewType;
+                        panBgStartMousePos = { x: e.clientX, y: e.clientY };
+                        panBgStartOffset = { ...bgPanOffsets[viewType] };
+                    } else if (currentTool === 'panview') {
+                        isPanningView = true;
+                        panViewType = viewType;
+                        panViewStartMousePos = { x: e.clientX, y: e.clientY };
+                        panViewStartOffset = { ...viewPanOffsets[viewType] };
+                    }
                 }
             });
         }
 
         // --- RENDER & BUILD EDITING VIEWS ---
         function initViewDOM(viewType) {
-            setupPanBgPanel(viewType);
+            setupPanPanel(viewType);
 
             const svg = views[viewType].svg;
             svg.innerHTML = '';
 
+            const crosshairGroup = createSvgEl('g', { id: `${viewType}-crosshair` });
             const lineGroup = createSvgEl('g', { id: `${viewType}-lines` });
             const curveGroup = createSvgEl('g', { id: `${viewType}-curves` });
+
+            // Create Crosshair Elements (Origin Marker)
+            const originHLine = createSvgEl('line', {
+                'id': `${viewType}-crosshair-h`,
+                'stroke': 'rgba(255, 255, 255, 0.35)',
+                'stroke-width': '1',
+                'stroke-dasharray': '4 4'
+            });
+            const originVLine = createSvgEl('line', {
+                'id': `${viewType}-crosshair-v`,
+                'stroke': 'rgba(255, 255, 255, 0.35)',
+                'stroke-width': '1',
+                'stroke-dasharray': '4 4'
+            });
+            const originCenterDot = createSvgEl('circle', {
+                'id': `${viewType}-crosshair-dot`,
+                'r': '3.5',
+                'fill': 'none',
+                'stroke': '#00ffff',
+                'stroke-width': '1.5'
+            });
+
+            crosshairGroup.appendChild(originHLine);
+            crosshairGroup.appendChild(originVLine);
+            crosshairGroup.appendChild(originCenterDot);
             
             // Selection Box Element
             const selectionBox = createSvgEl('rect', {
@@ -708,6 +768,7 @@
 
             const pointGroup = createSvgEl('g', { id: `${viewType}-points` });
             
+            svg.appendChild(crosshairGroup);
             svg.appendChild(lineGroup);
             svg.appendChild(curveGroup);
             svg.appendChild(previewLine);
@@ -716,6 +777,9 @@
             svg.appendChild(selectionBox);
             svg.appendChild(pointGroup);
 
+            viewRenderCache[viewType].crosshairH = originHLine;
+            viewRenderCache[viewType].crosshairV = originVLine;
+            viewRenderCache[viewType].crosshairDot = originCenterDot;
             viewRenderCache[viewType].previewLine = previewLine;
             viewRenderCache[viewType].previewCurve = previewCurve;
             viewRenderCache[viewType].previewCurveGuide = previewCurveGuide;
@@ -737,7 +801,6 @@
                     boxSelectViewType = viewType;
                     boxSelectStartPos = { x: mouseX, y: mouseY, isCtrl: e.ctrlKey || e.metaKey };
 
-                    // If Control isn't held down, reset selection
                     if (!boxSelectStartPos.isCtrl) {
                         clearSelection();
                     }
@@ -781,7 +844,6 @@
                     let dy = currentPlaneCoords.y !== undefined ? (currentPlaneCoords.y - dragInitialMousePlane.y) : 0;
                     let dz = currentPlaneCoords.z !== undefined ? (currentPlaneCoords.z - dragInitialMousePlane.z) : 0;
 
-                    // If Shift Key is held down, constrain movement to the dominant screen axis
                     if (e.shiftKey) {
                         const absDx = Math.abs(dx);
                         const absDy = Math.abs(dy);
@@ -825,7 +887,6 @@
                     boxEl.setAttribute('height', height);
                     boxEl.style.display = 'block';
 
-                    // Update dynamic enclosed points selection
                     const newlyEnclosed = new Set();
                     vertices.forEach(v => {
                         const pt = projectToView(v, viewType, rect.width, rect.height);
@@ -925,7 +986,7 @@
                 handleGroup.appendChild(rect);
 
                 handleGroup.addEventListener('mouseenter', () => {
-                    if (!isDraggingPoints && !isBoxSelecting && currentTool !== 'addpoint' && currentTool !== 'panbg') {
+                    if (!isDraggingPoints && !isBoxSelecting && currentTool !== 'addpoint' && currentTool !== 'panbg' && currentTool !== 'panview') {
                         hoverPointId = v.id;
                         updateAllViews();
                     }
@@ -939,7 +1000,7 @@
                 });
 
                 handleGroup.addEventListener('click', (e) => {
-                    if (currentTool === 'panbg') return;
+                    if (currentTool === 'panbg' || currentTool === 'panview') return;
                     e.stopPropagation();
 
                     // Curve Creation Mode
@@ -1093,12 +1154,29 @@
                 };
                 applyBgPan(panBgViewType);
             }
+
+            if (isPanningView && panViewType) {
+                const dx = e.clientX - panViewStartMousePos.x;
+                const dy = e.clientY - panViewStartMousePos.y;
+                viewPanOffsets[panViewType] = {
+                    x: panViewStartOffset.x + dx,
+                    y: panViewStartOffset.y + dy
+                };
+                applyBgPan(panViewType);
+                updateAllViews();
+            }
         });
 
         window.addEventListener('mouseup', () => {
             if (isPanningBg) {
                 isPanningBg = false;
                 panBgViewType = null;
+                saveToLocalStorage();
+            }
+
+            if (isPanningView) {
+                isPanningView = false;
+                panViewType = null;
                 saveToLocalStorage();
             }
 
@@ -1122,6 +1200,29 @@
             const svg = views[viewType].svg;
             const rect = svg.getBoundingClientRect();
             if (rect.width === 0 || rect.height === 0) return;
+
+            // 0. Origin Crosshair (Marks 0,0 Coordinate)
+            const originWorld = { x: 0, y: 0, z: 0 };
+            const originPt = projectToView(originWorld, viewType, rect.width, rect.height);
+
+            const crosshairH = viewRenderCache[viewType].crosshairH;
+            const crosshairV = viewRenderCache[viewType].crosshairV;
+            const crosshairDot = viewRenderCache[viewType].crosshairDot;
+
+            if (crosshairH && crosshairV && crosshairDot) {
+                crosshairH.setAttribute('x1', '0');
+                crosshairH.setAttribute('y1', originPt.y);
+                crosshairH.setAttribute('x2', rect.width);
+                crosshairH.setAttribute('y2', originPt.y);
+
+                crosshairV.setAttribute('x1', originPt.x);
+                crosshairV.setAttribute('y1', '0');
+                crosshairV.setAttribute('x2', originPt.x);
+                crosshairV.setAttribute('y2', rect.height);
+
+                crosshairDot.setAttribute('cx', originPt.x);
+                crosshairDot.setAttribute('cy', originPt.y);
+            }
 
             // 1. Lines (Cyan)
             edges.forEach((edge, idx) => {
@@ -1415,7 +1516,6 @@
 
             isoAngleY += (isoTargetAngleY - isoAngleY) * 0.08;
 
-            // Sync Slider with Mouse Rotation Angle
             const currentDeg = Math.round((isoAngleY * 180) / Math.PI);
             inputIsoAngle.value = currentDeg;
             labelIsoAngle.textContent = `${currentDeg}°`;
@@ -1473,14 +1573,12 @@
 
         // --- SVG EXPORT ALL VIEWS FUNCTION ---
         function exportAllViewsAsSVG() {
-            // Guarantee up-to-date rendering of all views before export
             ['top', 'left', 'front', 'rear'].forEach(updateView);
 
             const isoRect = isoSvg.getBoundingClientRect();
             const width = isoRect.width || 800;
             const height = isoRect.height || 600;
 
-            // Enforce explicit render using the current angle input
             const inputDeg = parseInt(inputIsoAngle.value, 10);
             const exportIsoAngleRad = (inputDeg * Math.PI) / 180;
             renderIsoAtAngle(exportIsoAngleRad, width, height);
@@ -1518,7 +1616,7 @@
                     anchor.click();
                     document.body.removeChild(anchor);
                     URL.revokeObjectURL(url);
-                }, index * 150); // Stagger downloads slightly to prevent browser blocking
+                }, index * 150);
             });
         }
 
@@ -1531,6 +1629,7 @@
         const btnToolAddPoint = document.getElementById('btn-tool-addpoint');
         const btnToolLine = document.getElementById('btn-tool-line');
         const btnToolCurve = document.getElementById('btn-tool-curve');
+        const btnToolPanView = document.getElementById('btn-tool-panview');
         const btnToolPanBg = document.getElementById('btn-tool-panbg');
 
         btnEditMode.addEventListener('click', () => {
@@ -1554,7 +1653,7 @@
             resetLineChain();
             resetCurveChain();
             document.body.className = document.body.className.replace(/edit-mode-\w+/g, '') + ' ' + bodyClass;
-            [btnToolPoint, btnToolAddPoint, btnToolLine, btnToolCurve, btnToolPanBg].forEach(b => b.classList.remove('active'));
+            [btnToolPoint, btnToolAddPoint, btnToolLine, btnToolCurve, btnToolPanView, btnToolPanBg].forEach(b => b.classList.remove('active'));
             if (activeBtn) activeBtn.classList.add('active');
             updateAllViews();
         }
@@ -1563,6 +1662,7 @@
         btnToolAddPoint.addEventListener('click', () => setActiveTool('addpoint', 'edit-mode-addpoint', btnToolAddPoint));
         btnToolLine.addEventListener('click', () => setActiveTool('line', 'edit-mode-line', btnToolLine));
         btnToolCurve.addEventListener('click', () => setActiveTool('curve', 'edit-mode-curve', btnToolCurve));
+        btnToolPanView.addEventListener('click', () => setActiveTool('panview', 'edit-mode-panview', btnToolPanView));
         btnToolPanBg.addEventListener('click', () => setActiveTool('panbg', 'edit-mode-panbg', btnToolPanBg));
 
         // --- JSON EXPORT / IMPORT EVENT LISTENERS ---
@@ -1582,7 +1682,7 @@
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     importJSONData(event.target.result);
-                    e.target.value = ''; // Reset input
+                    e.target.value = '';
                 };
                 reader.readAsText(file);
             }
@@ -1608,7 +1708,7 @@
         window.addEventListener('resize', updateAllViews);
 
         // INITIALIZE
-        loadFromLocalStorage(); // Automatically load cached drawing and pan settings if present
+        loadFromLocalStorage();
         ['top', 'left', 'front', 'rear'].forEach(initViewDOM);
         initIsoDOM();
         updateAllViews();
