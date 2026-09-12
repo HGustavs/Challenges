@@ -370,8 +370,8 @@ let edges = [
 let curves = [];
 
 let shapes = [
-    { points: [12, 13, 15, 14], fillColor: 'rgba(0, 122, 204, 0.35)' },
-    { points: [16, 17, 13, 12], fillColor: 'rgba(0, 255, 204, 0.35)' }
+    { type: 'polygon', points: [12, 13, 15, 14], fillColor: 'rgba(0, 122, 204, 0.35)' },
+    { type: 'polygon', points: [16, 17, 13, 12], fillColor: 'rgba(0, 255, 204, 0.35)' }
 ];
 
 let bgPanOffsets = {
@@ -444,17 +444,26 @@ let isoTargetAngleY = 0;
 
 const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
 
-// Helper function to build dynamic SVG bezier curve paths
+// Function to build SVG paths with support for linear or continuous quadratic bezier segments
 function buildBezierPathString(points) {
     if (points.length < 2) return '';
     let path = `M ${points[0].x} ${points[0].y}`;
+    
     if (points.length === 2) {
         path += ` L ${points[1].x} ${points[1].y}`;
     } else {
-        for (let i = 1; i < points.length - 1; i += 2) {
-            const control = points[i];
-            const end = points[i + 1] || points[i];
-            path += ` Q ${control.x} ${control.y} ${end.x} ${end.y}`;
+        let i = 1;
+        while (i < points.length) {
+            if (i + 1 < points.length) {
+                const control = points[i];
+                const end = points[i + 1];
+                path += ` Q ${control.x} ${control.y} ${end.x} ${end.y}`;
+                i += 2;
+            } else {
+                const end = points[i];
+                path += ` L ${end.x} ${end.y}`;
+                i += 1;
+            }
         }
     }
     return path;
@@ -2002,7 +2011,6 @@ loadFromLocalStorage();
 ['top', 'left', 'front', 'rear'].forEach(initViewDOM);
 initIsoDOM();
 updateAllViews();
-    
     </script>
 
 </body>
