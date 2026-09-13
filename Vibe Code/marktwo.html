@@ -444,6 +444,7 @@ let isoTargetAngleY = 0;
 
 const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
 
+// Builds pure bezier path string for shape mode/preview without extra straight lines to control points
 function buildBezierPathString(points) {
     if (points.length < 2) return '';
     let path = `M ${points[0].x} ${points[0].y}`;
@@ -1042,7 +1043,7 @@ function buildDOMForView(viewType) {
     curveGroup.innerHTML = '';
     pointGroup.innerHTML = '';
 
-    // Render Shapes with stroke outline & interactive pointer events
+    // Render Shapes
     viewRenderCache[viewType].shapes = shapes.map((sh, idx) => {
         const shapeContainer = createSvgEl('g', { 'data-idx': idx });
         
@@ -1104,15 +1105,34 @@ function buildDOMForView(viewType) {
         return line;
     });
 
-    // Render Curves
+    // Render Curves with dashed guide lines to off-curve control points
     viewRenderCache[viewType].curves = curves.map((crv, idx) => {
+        const g = createSvgEl('g', { 'data-idx': idx });
+
+        const guide1 = createSvgEl('line', {
+            'stroke': 'rgba(255, 255, 0, 0.5)',
+            'stroke-width': '1',
+            'stroke-dasharray': '2 2',
+            'pointer-events': 'none'
+        });
+        const guide2 = createSvgEl('line', {
+            'stroke': 'rgba(255, 255, 0, 0.5)',
+            'stroke-width': '1',
+            'stroke-dasharray': '2 2',
+            'pointer-events': 'none'
+        });
         const path = createSvgEl('path', {
             'stroke': '#ffff00',
             'stroke-width': '2.5',
             'fill': 'none',
-            'data-idx': idx
+            'cursor': 'pointer'
         });
-        path.addEventListener('click', (e) => {
+
+        g.appendChild(guide1);
+        g.appendChild(guide2);
+        g.appendChild(path);
+
+        g.addEventListener('click', (e) => {
             if (currentTool === 'curve' && curveStartPointId === null) {
                 e.stopPropagation();
                 selectedCurveIndex = idx;
@@ -1122,8 +1142,9 @@ function buildDOMForView(viewType) {
                 updateAllViews();
             }
         });
-        curveGroup.appendChild(path);
-        return path;
+
+        curveGroup.appendChild(g);
+        return { group: g, path, guide1, guide2 };
     });
 
     // Render Points
@@ -1454,16 +1475,16 @@ function updateView(viewType) {
         }
     });
 
-    // 3. Quadratic Curves
+    // 3. Quadratic Curves and Control Point Guide Lines in Curve/Edit Mode
     curves.forEach((crv, idx) => {
-        const pathEl = viewRenderCache[viewType].curves[idx];
-        if (!pathEl) return;
+        const item = viewRenderCache[viewType].curves[idx];
+        if (!item) return;
 
         if (isShapesMode) {
-            pathEl.style.display = 'none';
+            item.group.style.display = 'none';
             return;
         }
-        pathEl.style.display = 'block';
+        item.group.style.display = 'block';
 
         const vStart = vertices.find(v => v.id === crv[0]);
         const vControl = vertices.find(v => v.id === crv[1]);
@@ -1474,14 +1495,25 @@ function updateView(viewType) {
         const pControl = projectToView(vControl, viewType, rect.width, rect.height);
         const pEnd = projectToView(vEnd, viewType, rect.width, rect.height);
 
-        pathEl.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
+        // Dashed lines from endpoints to off-curve control point
+        item.guide1.setAttribute('x1', pStart.x);
+        item.guide1.setAttribute('y1', pStart.y);
+        item.guide1.setAttribute('x2', pControl.x);
+        item.guide1.setAttribute('y2', pControl.y);
+
+        item.guide2.setAttribute('x1', pControl.x);
+        item.guide2.setAttribute('y1', pControl.y);
+        item.guide2.setAttribute('x2', pEnd.x);
+        item.guide2.setAttribute('y2', pEnd.y);
+
+        item.path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
 
         if (idx === selectedCurveIndex) {
-            pathEl.setAttribute('stroke', '#ffffff');
-            pathEl.setAttribute('stroke-width', '4');
+            item.path.setAttribute('stroke', '#ffffff');
+            item.path.setAttribute('stroke-width', '4');
         } else {
-            pathEl.setAttribute('stroke', '#ffff00');
-            pathEl.setAttribute('stroke-width', '2.5');
+            item.path.setAttribute('stroke', '#ffff00');
+            item.path.setAttribute('stroke-width', '2.5');
         }
     });
 
@@ -1692,13 +1724,30 @@ function initIsoDOM() {
     });
 
     viewRenderCache.iso.curves = curves.map(() => {
+        const g = createSvgEl('g');
+
+        const guide1 = createSvgEl('line', {
+            'stroke': 'rgba(255, 255, 0, 0.5)',
+            'stroke-width': '1',
+            'stroke-dasharray': '2 2'
+        });
+        const guide2 = createSvgEl('line', {
+            'stroke': 'rgba(255, 255, 0, 0.5)',
+            'stroke-width': '1',
+            'stroke-dasharray': '2 2'
+        });
         const path = createSvgEl('path', {
             'stroke': '#ffff00',
             'stroke-width': '2.5',
             'fill': 'none'
         });
-        curveGroup.appendChild(path);
-        return path;
+
+        g.appendChild(guide1);
+        g.appendChild(guide2);
+        g.appendChild(path);
+
+        curveGroup.appendChild(g);
+        return { group: g, path, guide1, guide2 };
     });
 }
 
@@ -1727,7 +1776,7 @@ function projectIso(point, angleY, width, height) {
 function renderIsoAtAngle(angleRad, width, height) {
     const projectedPoints = vertices.map(v => projectIso(v, angleRad, width, height));
 
-    // Render Shapes in 3D Animated Preview with Outlines
+    // Render Shapes in 3D Preview (Only filled and outlined curve path, no control lines)
     shapes.forEach((sh, idx) => {
         const pts = sh.points.map(vId => {
             const vIdx = vertices.findIndex(p => p.id === vId);
@@ -1787,7 +1836,7 @@ function renderIsoAtAngle(angleRad, width, height) {
         }
     });
 
-    // Render Curves
+    // Render Standalone Curves with dashed control point guides
     curves.forEach((crv, idx) => {
         const v1Idx = vertices.findIndex(v => v.id === crv[0]);
         const v2Idx = vertices.findIndex(v => v.id === crv[1]);
@@ -1798,16 +1847,26 @@ function renderIsoAtAngle(angleRad, width, height) {
         const pControl = projectedPoints[v2Idx];
         const pEnd = projectedPoints[v3Idx];
 
-        const path = viewRenderCache.iso.curves[idx];
-        if (path) {
-            path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
+        const item = viewRenderCache.iso.curves[idx];
+        if (item) {
+            item.guide1.setAttribute('x1', pStart.x);
+            item.guide1.setAttribute('y1', pStart.y);
+            item.guide1.setAttribute('x2', pControl.x);
+            item.guide1.setAttribute('y2', pControl.y);
+
+            item.guide2.setAttribute('x1', pControl.x);
+            item.guide2.setAttribute('y1', pControl.y);
+            item.guide2.setAttribute('x2', pEnd.x);
+            item.guide2.setAttribute('y2', pEnd.y);
+
+            item.path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
 
             if (idx === selectedCurveIndex) {
-                path.setAttribute('stroke', '#ffffff');
-                path.setAttribute('stroke-width', '4');
+                item.path.setAttribute('stroke', '#ffffff');
+                item.path.setAttribute('stroke-width', '4');
             } else {
-                path.setAttribute('stroke', '#ffff00');
-                path.setAttribute('stroke-width', '2.5');
+                item.path.setAttribute('stroke', '#ffff00');
+                item.path.setAttribute('stroke-width', '2.5');
             }
         }
     });
