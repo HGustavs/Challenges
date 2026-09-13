@@ -55,3 +55,51 @@
 * In the preview mode, curve shapes seem to be drawn twice, both as an outline and as a filled in shape with an outline. The control point lines work as intended in the editing modes, but no control point lines should be drawn in preview mode. In short in preview mode only one outline should be drawn for filled shapes, and no control points should be drawn in preview mode. 
 
 * Almost correct. In the preview the curve shapes are drawn both in the "iso-shapes" group and in the "iso-curves" group. In the preview mode, all curves that are part of a shape should be drawn exclusively in the "iso-shapes" group and not in the "iso-curves" group. Only curves that are not part of a shape should be drawn in the "iso-curves" group. 
+
+* When the preview rotation angle is updated the position of the other toolbar buttons jitter since the percentage text changes width from a smaller width at 0 degrees to a larger width at 180 degrees. Clamp the width of that box so that the surrounding buttons do not jitter. Also update the mouse movement to rotation angle conversion so that the angle changes twice as fast, so that the angle moves two full rotations in total when mouse moves from the left of the screen to the right of the screen. This ratio that should be changed from one rotation per screen width to two rotations per screen width should be stored as a constant so that the ratio between mouse movement and rotation percentage can easily be updated. 
+
+* Vilket svar är mest hjälpsamt? Ditt val hjälper Gemini att ge dig mer hjälpsamma svar. Det kan ta ett ögonblick att läsa in svaren.
+
+> Val A
+> 
+> To fix the button jitter and update the rotation mouse sensitivity:
+> 
+>     CSS Width Clamping: Set a fixed width and centered alignment on the degree text container (#label-iso-angle or its parent container) so width changes (e.g., 0° vs 180°) do not push neighboring toolbar buttons.
+>  Rotation Ratio Constant: Added MOUSE_ROTATION_SPEED_RATIO = 2.0 at the top of the script and updated the mouse movement calculation to allow two full rotations across the panel width.
+> 
+> 1. CSS Update
+> 
+> Add a fixed width and inline-block display to your #label-iso-angle element in your CSS:
+> CSS
+> 
+> #label-iso-angle {
+>     display: inline-block;
+>     min-width: 45px;
+>     text-align: center;
+> }
+> 
+> 2. JavaScript Updates
+
+> Val B
+> 
+> To fix the layout jitter and adjust the rotation sensitivity:
+>
+>     Clamp Label Width: Add CSS styling to clamp the width of #label-iso-angle (or its wrapper container) so it occupies a fixed width and prevents neighboring toolbar elements from shifting when switching between single-, double-, or triple-digit angles.
+> 
+>     Rotation Sensitivity Constant: Introduce MOUSE_ROTATION_SPEED_RATIO set to 2.0 (two full rotations per screen width) and update the mouse movement calculation in the mousemove handler.
+> 
+> CSS Update
+> 
+> Add fixed sizing, tabular numbers, and text alignment to your CSS stylesheet for #label-iso-angle:
+> CSS
+> 
+> #label-iso-angle {
+>     display: inline-block;
+>     min-width: 45px;          /* Reserve consistent space for -360° to 360° */
+>     text-align: right;
+>     font-variant-numeric: tabular-nums; /* Prevents character-width jitter */
+> }
+> 
+> JavaScript Update
+
+* Add marquee selection to line and curve modes so that a set of lines or curves can be selected. If anyl point of the line or curve is inside the selection box, the line segment or curve segment is added to the selection. In addition to this add a mirror button that is shown using the "flip" icon from google material design. In addition to this a drop down containing X, Y and Z as options should be created adjacent to the button. The button should create a mirrored copy of the selected vertices, curves or lines. The mirrored copy should copy the vertices of the selected objects and be mirrored around the Origo of the axis selected in the drop down. The mirrored copy should have the opposite edge winding of the original.

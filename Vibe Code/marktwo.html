@@ -37,6 +37,14 @@
             padding: 0 16px;
             z-index: 10;
         }
+
+        #label-iso-angle {
+            display: inline-block;
+            min-width: 45px;          /* Reserve consistent space for -360° to 360° */
+            text-align: right;
+            font-variant-numeric: tabular-nums; /* Prevents character-width jitter */
+        }
+
         .btn-group { display: flex; gap: 8px; align-items: center; }
         button, .file-input-label, select {
             background-color: #2d2d2d;
@@ -245,6 +253,18 @@
             </button>
         </div>
 
+        <!-- Mirror Controls -->
+        <div class="toolbar-group">
+            <select id="select-mirror-axis" class="toolbar-select">
+                <option value="X">X Axis</option>
+                <option value="Y">Y Axis</option>
+                <option value="Z">Z Axis</option>
+            </select>
+            <button id="btn-mirror" class="toolbar-btn" title="Mirror Selected">
+                <span class="material-icons">flip</span>
+            </button>
+        </div>
+
         <div class="btn-group" id="io-tools">
             <button id="btn-export-svg" class="btn-svg" title="Export SVGs" aria-label="Export SVGs">
                 <span class="material-symbols-outlined">export_notes</span>
@@ -322,6 +342,10 @@
 
     <script>
 const STORAGE_KEY = '3d_vector_editor_data';
+
+// --- MOUSE ROTATION SENSITIVITY CONSTANT ---
+// Controls full rotations per screen width (1.0 = 1 rotation, 2.0 = 2 rotations)
+const MOUSE_ROTATION_SPEED_RATIO = 2.0;
 
 // --- PIXEL STEP CONSTANT FOR ARROW KEY MOVEMENT ---
 const KEY_MOVE_STEP_PIXELS = 1;
@@ -444,6 +468,18 @@ let isoTargetAngleY = 0;
 
 const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
 
+// Add marquee state tracking for lines/curves
+let selectedEdgeIndices = new Set();
+let selectedCurveIndices = new Set();
+
+// Helper to calculate opposite polygon winding for mirrored shapes
+function reverseWinding(pointIds) {
+    if (pointIds.length <= 1) return [...pointIds];
+    return [pointIds[0], ...pointIds.slice(1).reverse()];
+}
+
+
+
 // Builds pure bezier path string for shape mode/preview without extra straight lines to control points
 function buildBezierPathString(points) {
     if (points.length < 2) return '';
@@ -492,8 +528,14 @@ function checkAndCreateLoopFromSequence(sequence, type = 'polygon') {
     return false;
 }
 
+// Global selection clearing helper
 function clearSelection() {
     selectedPointIds.clear();
+    selectedEdgeIndices.clear();
+    selectedCurveIndices.clear();
+    selectedEdgeIndex = null;
+    selectedCurveIndex = null;
+    selectedShapeIndex = null;
 }
 
 function togglePointSelection(id) {
@@ -907,7 +949,14 @@ function initViewDOM(viewType) {
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        if (currentTool === 'point') {
+
+        if (currentTool === 'point' || currentTool === 'line' || currentTool === 'curve') {
+            // Keep line/curve chain active if user is drawing, otherwise enable marquee
+            if ((currentTool === 'line' && lineStartPointId !== null) || 
+                (currentTool === 'curve' && curveStartPointId !== null)) {
+                return;
+            }
+
             isBoxSelecting = true;
             boxSelectViewType = viewType;
             boxSelectStartPos = { x: mouseX, y: mouseY, isCtrl: e.ctrlKey || e.metaKey };
@@ -915,11 +964,8 @@ function initViewDOM(viewType) {
             if (!boxSelectStartPos.isCtrl) {
                 clearSelection();
             }
-
-            selectedEdgeIndex = null;
-            selectedCurveIndex = null;
-            selectedShapeIndex = null;
             updateAllViews();
+
         } else if (currentTool === 'shape') {
             selectedShapeIndex = null;
             updateAllViews();
@@ -999,18 +1045,59 @@ function initViewDOM(viewType) {
             boxEl.setAttribute('height', height);
             boxEl.style.display = 'block';
 
-            const newlyEnclosed = new Set();
-            vertices.forEach(v => {
-                const pt = projectToView(v, viewType, rect.width, rect.height);
-                if (pt.x >= left && pt.x <= left + width && pt.y >= top && pt.y <= top + height) {
-                    newlyEnclosed.add(v.id);
-                }
-            });
+            if (currentTool === 'point') {
+                const newlyEnclosed = new Set();
+                vertices.forEach(v => {
+                    const pt = projectToView(v, viewType, rect.width, rect.height);
+                    if (pt.x >= left && pt.x <= left + width && pt.y >= top && pt.y <= top + height) {
+                        newlyEnclosed.add(v.id);
+                    }
+                });
+                if (!boxSelectStartPos.isCtrl) selectedPointIds = newlyEnclosed;
+                else newlyEnclosed.forEach(id => selectedPointIds.add(id));
 
-            if (!boxSelectStartPos.isCtrl) {
-                selectedPointIds = newlyEnclosed;
-            } else {
-                newlyEnclosed.forEach(id => selectedPointIds.add(id));
+            } else if (currentTool === 'line') {
+                const newlyEnclosedEdges = new Set();
+                edges.forEach((edge, idx) => {
+                    const v1 = vertices.find(v => v.id === edge[0]);
+                    const v2 = vertices.find(v => v.id === edge[1]);
+                    if (!v1 || !v2) return;
+
+                    const p1 = projectToView(v1, viewType, rect.width, rect.height);
+                    const p2 = projectToView(v2, viewType, rect.width, rect.height);
+
+                    const p1In = p1.x >= left && p1.x <= left + width && p1.y >= top && p1.y <= top + height;
+                    const p2In = p2.x >= left && p2.x <= left + width && p2.y >= top && p2.y <= top + height;
+
+                    if (p1In || p2In) {
+                        newlyEnclosedEdges.add(idx);
+                    }
+                });
+                if (!boxSelectStartPos.isCtrl) selectedEdgeIndices = newlyEnclosedEdges;
+                else newlyEnclosedEdges.forEach(idx => selectedEdgeIndices.add(idx));
+
+            } else if (currentTool === 'curve') {
+                const newlyEnclosedCurves = new Set();
+                curves.forEach((crv, idx) => {
+                    const v1 = vertices.find(v => v.id === crv[0]);
+                    const v2 = vertices.find(v => v.id === crv[1]);
+                    const v3 = vertices.find(v => v.id === crv[2]);
+                    if (!v1 || !v2 || !v3) return;
+
+                    const p1 = projectToView(v1, viewType, rect.width, rect.height);
+                    const p2 = projectToView(v2, viewType, rect.width, rect.height);
+                    const p3 = projectToView(v3, viewType, rect.width, rect.height);
+
+                    const p1In = p1.x >= left && p1.x <= left + width && p1.y >= top && p1.y <= top + height;
+                    const p2In = p2.x >= left && p2.x <= left + width && p2.y >= top && p2.y <= top + height;
+                    const p3In = p3.x >= left && p3.x <= left + width && p3.y >= top && p3.y <= top + height;
+
+                    if (p1In || p2In || p3In) {
+                        newlyEnclosedCurves.add(idx);
+                    }
+                });
+                if (!boxSelectStartPos.isCtrl) selectedCurveIndices = newlyEnclosedCurves;
+                else newlyEnclosedCurves.forEach(idx => selectedCurveIndices.add(idx));
             }
 
             updateAllViews();
@@ -1466,13 +1553,15 @@ function updateView(viewType) {
         lineEl.setAttribute('x2', p2.x);
         lineEl.setAttribute('y2', p2.y);
 
-        if (idx === selectedEdgeIndex) {
+        // Under line highlighting inside updateView(viewType):
+        if (idx === selectedEdgeIndex || selectedEdgeIndices.has(idx)) {
             lineEl.setAttribute('stroke', '#00ffff');
             lineEl.setAttribute('stroke-width', '4');
         } else {
             lineEl.setAttribute('stroke', '#00ffcc');
             lineEl.setAttribute('stroke-width', '2');
         }
+
     });
 
     // 3. Quadratic Curves and Control Point Guide Lines in Curve/Edit Mode
@@ -1508,13 +1597,15 @@ function updateView(viewType) {
 
         item.path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
 
-        if (idx === selectedCurveIndex) {
+        // Under curve highlighting inside updateView(viewType):
+        if (idx === selectedCurveIndex || selectedCurveIndices.has(idx)) {
             item.path.setAttribute('stroke', '#ffffff');
             item.path.setAttribute('stroke-width', '4');
         } else {
             item.path.setAttribute('stroke', '#ffff00');
             item.path.setAttribute('stroke-width', '2.5');
         }
+
     });
 
     // 4. Dynamic Shape Preview Fill Active While Constructing (Polygon or Curve)
@@ -1940,7 +2031,9 @@ previewPanel.addEventListener('mousemove', (e) => {
     if (currentMode === 'preview' && isMouseRotationEnabled) {
         const rect = previewPanel.getBoundingClientRect();
         const relativeX = (e.clientX - rect.left) / rect.width;
-        isoTargetAngleY = (relativeX - 0.5) * Math.PI * 2;
+        
+        // Maps mouse position to rotation angle using the configured ratio
+        isoTargetAngleY = (relativeX - 0.5) * (Math.PI * 2) * MOUSE_ROTATION_SPEED_RATIO;
     }
 });
 
@@ -2008,6 +2101,103 @@ function exportAllViewsAsSVG() {
     });
 }
 
+// --- MIRROR FEATURE LOGIC ---
+function mirrorSelectedElements() {
+    const axis = document.getElementById('select-mirror-axis').value.toLowerCase(); // 'x', 'y', or 'z'
+    const vertexMap = new Map();
+
+    // 1. Identify points to mirror directly or via selected edges/curves/shapes
+    const pointsToMirror = new Set(selectedPointIds);
+
+    selectedEdgeIndices.forEach(idx => {
+        if (edges[idx]) {
+            pointsToMirror.add(edges[idx][0]);
+            pointsToMirror.add(edges[idx][1]);
+        }
+    });
+    if (selectedEdgeIndex !== null && edges[selectedEdgeIndex]) {
+        pointsToMirror.add(edges[selectedEdgeIndex][0]);
+        pointsToMirror.add(edges[selectedEdgeIndex][1]);
+    }
+
+    selectedCurveIndices.forEach(idx => {
+        if (curves[idx]) {
+            pointsToMirror.add(curves[idx][0]);
+            pointsToMirror.add(curves[idx][1]);
+            pointsToMirror.add(curves[idx][2]);
+        }
+    });
+    if (selectedCurveIndex !== null && curves[selectedCurveIndex]) {
+        pointsToMirror.add(curves[selectedCurveIndex][0]);
+        pointsToMirror.add(curves[selectedCurveIndex][1]);
+        pointsToMirror.add(curves[selectedCurveIndex][2]);
+    }
+
+    if (selectedShapeIndex !== null && shapes[selectedShapeIndex]) {
+        shapes[selectedShapeIndex].points.forEach(ptId => pointsToMirror.add(ptId));
+    }
+
+    if (pointsToMirror.size === 0) return;
+
+    // 2. Duplicate and mirror vertices across Origin (0,0,0) on the chosen axis
+    pointsToMirror.forEach(id => {
+        const original = vertices.find(v => v.id === id);
+        if (original) {
+            const mirroredVertex = {
+                id: nextVertexId++,
+                x: axis === 'x' ? -original.x : original.x,
+                y: axis === 'y' ? -original.y : original.y,
+                z: axis === 'z' ? -original.z : original.z
+            };
+            vertices.push(mirroredVertex);
+            vertexMap.set(id, mirroredVertex.id);
+        }
+    });
+
+    // 3. Mirror Edges
+    const edgesToMirror = new Set(selectedEdgeIndices);
+    if (selectedEdgeIndex !== null) edgesToMirror.add(selectedEdgeIndex);
+
+    edgesToMirror.forEach(idx => {
+        const e = edges[idx];
+        if (e && vertexMap.has(e[0]) && vertexMap.has(e[1])) {
+            edges.push([vertexMap.get(e[0]), vertexMap.get(e[1])]);
+        }
+    });
+
+    // 4. Mirror Curves (inverting start & end control points for reversed winding)
+    const curvesToMirror = new Set(selectedCurveIndices);
+    if (selectedCurveIndex !== null) curvesToMirror.add(selectedCurveIndex);
+
+    curvesToMirror.forEach(idx => {
+        const c = curves[idx];
+        if (c && vertexMap.has(c[0]) && vertexMap.has(c[1]) && vertexMap.has(c[2])) {
+            // Reverses start (c[0]) and end (c[2]) points around control point (c[1])
+            curves.push([vertexMap.get(c[2]), vertexMap.get(c[1]), vertexMap.get(c[0])]);
+        }
+    });
+
+    // 5. Mirror Shapes with opposite edge winding
+    if (selectedShapeIndex !== null && shapes[selectedShapeIndex]) {
+        const sh = shapes[selectedShapeIndex];
+        const mirroredPoints = sh.points.map(ptId => vertexMap.get(ptId));
+        const reversedPoints = reverseWinding(mirroredPoints);
+
+        shapes.push({
+            type: sh.type,
+            points: reversedPoints,
+            fillColor: sh.fillColor,
+            strokeColor: sh.strokeColor
+        });
+    }
+
+    // Clear active selection and refresh scene
+    clearSelection();
+    saveToLocalStorage();
+    rebuildDOM();
+    updateAllViews();
+}
+
 document.getElementById('btn-export-svg').addEventListener('click', exportAllViewsAsSVG);
 
 const btnEditMode = document.getElementById('btn-mode-edit');
@@ -2019,6 +2209,8 @@ const btnToolCurve = document.getElementById('btn-tool-curve');
 const btnToolShape = document.getElementById('btn-tool-shape');
 const btnToolPanView = document.getElementById('btn-tool-panview');
 const btnToolPanBg = document.getElementById('btn-tool-panbg');
+
+document.getElementById('btn-mirror').addEventListener('click', mirrorSelectedElements);
 
 btnEditMode.addEventListener('click', () => {
     currentMode = 'edit';
