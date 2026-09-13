@@ -1705,9 +1705,18 @@ function initIsoDOM() {
         const strokeColor = sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc');
 
         if (sh.type === 'curve') {
-            shapeEl = createSvgEl('path', { 'stroke': strokeColor, 'stroke-width': '2.5' });
+            shapeEl = createSvgEl('path', { 
+                'stroke': strokeColor, 
+                'stroke-width': '2',
+                'stroke-linejoin': 'round',
+                'stroke-linecap': 'round'
+            });
         } else {
-            shapeEl = createSvgEl('polygon', { 'stroke': strokeColor, 'stroke-width': '2.5' });
+            shapeEl = createSvgEl('polygon', { 
+                'stroke': strokeColor, 
+                'stroke-width': '2',
+                'stroke-linejoin': 'round'
+            });
         }
         shapeGroup.appendChild(shapeEl);
         return shapeEl;
@@ -1726,19 +1735,22 @@ function initIsoDOM() {
     viewRenderCache.iso.curves = curves.map(() => {
         const g = createSvgEl('g');
 
+        // Guide lines initialized with display none so they are never drawn in preview mode
         const guide1 = createSvgEl('line', {
             'stroke': 'rgba(255, 255, 0, 0.5)',
             'stroke-width': '1',
-            'stroke-dasharray': '2 2'
+            'stroke-dasharray': '2 2',
+            'display': 'none'
         });
         const guide2 = createSvgEl('line', {
             'stroke': 'rgba(255, 255, 0, 0.5)',
             'stroke-width': '1',
-            'stroke-dasharray': '2 2'
+            'stroke-dasharray': '2 2',
+            'display': 'none'
         });
         const path = createSvgEl('path', {
             'stroke': '#ffff00',
-            'stroke-width': '2.5',
+            'stroke-width': '2',
             'fill': 'none'
         });
 
@@ -1776,7 +1788,7 @@ function projectIso(point, angleY, width, height) {
 function renderIsoAtAngle(angleRad, width, height) {
     const projectedPoints = vertices.map(v => projectIso(v, angleRad, width, height));
 
-    // Render Shapes in 3D Preview (Only filled and outlined curve path, no control lines)
+    // Render Shapes in Preview Mode
     shapes.forEach((sh, idx) => {
         const pts = sh.points.map(vId => {
             const vIdx = vertices.findIndex(p => p.id === vId);
@@ -1800,11 +1812,11 @@ function renderIsoAtAngle(angleRad, width, height) {
 
             if (idx === selectedShapeIndex) {
                 shapeEl.setAttribute('stroke', '#00ffff');
-                shapeEl.setAttribute('stroke-width', '4');
-                shapeEl.setAttribute('stroke-dasharray', '8 4');
+                shapeEl.setAttribute('stroke-width', '3');
+                shapeEl.setAttribute('stroke-dasharray', '6 3');
             } else {
                 shapeEl.setAttribute('stroke', defaultStroke);
-                shapeEl.setAttribute('stroke-width', '2.5');
+                shapeEl.setAttribute('stroke-width', '2');
                 shapeEl.setAttribute('stroke-dasharray', 'none');
             }
         }
@@ -1828,7 +1840,7 @@ function renderIsoAtAngle(angleRad, width, height) {
 
             if (idx === selectedEdgeIndex) {
                 line.setAttribute('stroke', '#00ffff');
-                line.setAttribute('stroke-width', '3.5');
+                line.setAttribute('stroke-width', '3');
             } else {
                 line.setAttribute('stroke', '#00ffcc');
                 line.setAttribute('stroke-width', '2');
@@ -1836,8 +1848,23 @@ function renderIsoAtAngle(angleRad, width, height) {
         }
     });
 
-    // Render Standalone Curves with dashed control point guides
+    // Render Standalone Curves only (curves not part of any shape)
     curves.forEach((crv, idx) => {
+        const item = viewRenderCache.iso.curves[idx];
+        if (!item) return;
+
+        // Check if this curve's control points/endpoints belong to any shape
+        const isPartOfShape = shapes.some(sh => 
+            crv.every(ptId => sh.points.includes(ptId))
+        );
+
+        if (isPartOfShape) {
+            item.group.style.display = 'none';
+            return;
+        }
+
+        item.group.style.display = 'block';
+
         const v1Idx = vertices.findIndex(v => v.id === crv[0]);
         const v2Idx = vertices.findIndex(v => v.id === crv[1]);
         const v3Idx = vertices.findIndex(v => v.id === crv[2]);
@@ -1847,27 +1874,17 @@ function renderIsoAtAngle(angleRad, width, height) {
         const pControl = projectedPoints[v2Idx];
         const pEnd = projectedPoints[v3Idx];
 
-        const item = viewRenderCache.iso.curves[idx];
-        if (item) {
-            item.guide1.setAttribute('x1', pStart.x);
-            item.guide1.setAttribute('y1', pStart.y);
-            item.guide1.setAttribute('x2', pControl.x);
-            item.guide1.setAttribute('y2', pControl.y);
+        item.guide1.style.display = 'none';
+        item.guide2.style.display = 'none';
 
-            item.guide2.setAttribute('x1', pControl.x);
-            item.guide2.setAttribute('y1', pControl.y);
-            item.guide2.setAttribute('x2', pEnd.x);
-            item.guide2.setAttribute('y2', pEnd.y);
+        item.path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
 
-            item.path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
-
-            if (idx === selectedCurveIndex) {
-                item.path.setAttribute('stroke', '#ffffff');
-                item.path.setAttribute('stroke-width', '4');
-            } else {
-                item.path.setAttribute('stroke', '#ffff00');
-                item.path.setAttribute('stroke-width', '2.5');
-            }
+        if (idx === selectedCurveIndex) {
+            item.path.setAttribute('stroke', '#ffffff');
+            item.path.setAttribute('stroke-width', '3');
+        } else {
+            item.path.setAttribute('stroke', '#ffff00');
+            item.path.setAttribute('stroke-width', '2');
         }
     });
 }
