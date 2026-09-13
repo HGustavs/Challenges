@@ -370,8 +370,8 @@ let edges = [
 let curves = [];
 
 let shapes = [
-    { type: 'polygon', points: [12, 13, 15, 14], fillColor: 'rgba(0, 122, 204, 0.35)' },
-    { type: 'polygon', points: [16, 17, 13, 12], fillColor: 'rgba(0, 255, 204, 0.35)' }
+    { type: 'polygon', points: [12, 13, 15, 14], fillColor: 'rgba(0, 122, 204, 0.35)', strokeColor: '#00ffcc' },
+    { type: 'polygon', points: [16, 17, 13, 12], fillColor: 'rgba(0, 255, 204, 0.35)', strokeColor: '#00ffcc' }
 ];
 
 let bgPanOffsets = {
@@ -444,7 +444,6 @@ let isoTargetAngleY = 0;
 
 const viewRenderCache = { top: {}, left: {}, front: {}, rear: {}, iso: {} };
 
-// Function to build SVG paths with support for linear or continuous quadratic bezier segments
 function buildBezierPathString(points) {
     if (points.length < 2) return '';
     let path = `M ${points[0].x} ${points[0].y}`;
@@ -481,7 +480,8 @@ function checkAndCreateLoopFromSequence(sequence, type = 'polygon') {
             shapes.push({
                 type: type,
                 points: uniquePoints,
-                fillColor: currentFillColor
+                fillColor: currentFillColor,
+                strokeColor: type === 'curve' ? '#ffff00' : '#00ffcc'
             });
             saveToLocalStorage();
             rebuildDOM();
@@ -543,7 +543,8 @@ function loadFromLocalStorage() {
             shapes = (parsed.shapes || []).map(sh => ({
                 type: sh.type || 'polygon',
                 points: sh.points,
-                fillColor: sh.fillColor
+                fillColor: sh.fillColor,
+                strokeColor: sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc')
             }));
             nextVertexId = parsed.nextVertexId || (vertices.reduce((max, v) => Math.max(max, v.id), 0) + 1);
             if (parsed.bgPanOffsets) {
@@ -586,7 +587,8 @@ function importJSONData(jsonString) {
         shapes = (parsed.shapes || []).map(sh => ({
             type: sh.type || 'polygon',
             points: sh.points,
-            fillColor: sh.fillColor
+            fillColor: sh.fillColor,
+            strokeColor: sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc')
         }));
         nextVertexId = parsed.nextVertexId || (vertices.reduce((max, v) => Math.max(max, v.id), -1) + 1);
         if (parsed.bgPanOffsets) {
@@ -825,19 +827,19 @@ function initViewDOM(viewType) {
         'pointer-events': 'none'
     });
 
-    // Preview Shape (Active Polygon Fill)
     const previewShape = createSvgEl('polygon', {
         'id': `${viewType}-preview-shape`,
-        'stroke': 'none',
+        'stroke': '#00ffcc',
+        'stroke-width': '2',
         'fill': currentFillColor,
         'display': 'none',
         'pointer-events': 'none'
     });
 
-    // Preview Shape (Active Curve Fill)
     const previewCurveFill = createSvgEl('path', {
         'id': `${viewType}-preview-curve-fill`,
-        'stroke': 'none',
+        'stroke': '#ffff00',
+        'stroke-width': '2.5',
         'fill': currentFillColor,
         'display': 'none',
         'pointer-events': 'none'
@@ -1040,23 +1042,27 @@ function buildDOMForView(viewType) {
     curveGroup.innerHTML = '';
     pointGroup.innerHTML = '';
 
-    // Render Shapes
+    // Render Shapes with stroke outline & interactive pointer events
     viewRenderCache[viewType].shapes = shapes.map((sh, idx) => {
         const shapeContainer = createSvgEl('g', { 'data-idx': idx });
         
         let shapeEl;
+        const strokeColor = sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc');
+        
         if (sh.type === 'curve') {
             shapeEl = createSvgEl('path', {
                 'fill': sh.fillColor || 'rgba(0, 122, 204, 0.35)',
-                'stroke': 'transparent',
-                'stroke-width': '10',
+                'stroke': strokeColor,
+                'stroke-width': '3.5',
+                'pointer-events': 'visiblePainted',
                 'cursor': 'pointer'
             });
         } else {
             shapeEl = createSvgEl('polygon', {
                 'fill': sh.fillColor || 'rgba(0, 122, 204, 0.35)',
-                'stroke': 'transparent',
-                'stroke-width': '10',
+                'stroke': strokeColor,
+                'stroke-width': '3.5',
+                'pointer-events': 'visiblePainted',
                 'cursor': 'pointer'
             });
         }
@@ -1152,7 +1158,6 @@ function buildDOMForView(viewType) {
             if (currentTool === 'panbg' || currentTool === 'panview' || currentTool === 'shape') return;
             e.stopPropagation();
 
-            // Automatic Shape Conversion: Curve Creation Mode
             if (currentTool === 'curve') {
                 if (curveStartPointId === null) {
                     curveStartPointId = v.id;
@@ -1194,7 +1199,6 @@ function buildDOMForView(viewType) {
                 return;
             }
 
-            // Automatic Shape Conversion: Line Creation Mode
             if (currentTool === 'line') {
                 if (lineStartPointId === null) {
                     lineStartPointId = v.id;
@@ -1233,7 +1237,6 @@ function buildDOMForView(viewType) {
                 return;
             }
 
-            // Point Tool Click Handling
             if (currentTool === 'point') {
                 if (e.ctrlKey || e.metaKey) {
                     togglePointSelection(v.id);
@@ -1376,7 +1379,7 @@ function updateView(viewType) {
         crosshairDot.setAttribute('cy', originPt.y);
     }
 
-    // 1. Shapes (Visible ONLY in Shape Mode)
+    // 1. Shapes (Visible ONLY in Shape Mode) with Outline and Click Target Support
     shapes.forEach((sh, idx) => {
         const shapeEl = viewRenderCache[viewType].shapes[idx];
         if (!shapeEl) return;
@@ -1404,12 +1407,15 @@ function updateView(viewType) {
 
         shapeEl.setAttribute('fill', sh.fillColor || 'rgba(0, 122, 204, 0.35)');
 
+        const defaultStroke = sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc');
+
         if (idx === selectedShapeIndex) {
             shapeEl.setAttribute('stroke', '#00ffff');
             shapeEl.setAttribute('stroke-width', '4.5');
             shapeEl.setAttribute('stroke-dasharray', '8 4');
         } else {
-            shapeEl.setAttribute('stroke', 'transparent');
+            shapeEl.setAttribute('stroke', defaultStroke);
+            shapeEl.setAttribute('stroke-width', '2.5');
             shapeEl.setAttribute('stroke-dasharray', 'none');
         }
     });
@@ -1664,10 +1670,12 @@ function initIsoDOM() {
 
     viewRenderCache.iso.shapes = shapes.map((sh) => {
         let shapeEl;
+        const strokeColor = sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc');
+
         if (sh.type === 'curve') {
-            shapeEl = createSvgEl('path', { 'stroke': 'none' });
+            shapeEl = createSvgEl('path', { 'stroke': strokeColor, 'stroke-width': '2.5' });
         } else {
-            shapeEl = createSvgEl('polygon', { 'stroke': 'none' });
+            shapeEl = createSvgEl('polygon', { 'stroke': strokeColor, 'stroke-width': '2.5' });
         }
         shapeGroup.appendChild(shapeEl);
         return shapeEl;
@@ -1719,7 +1727,7 @@ function projectIso(point, angleY, width, height) {
 function renderIsoAtAngle(angleRad, width, height) {
     const projectedPoints = vertices.map(v => projectIso(v, angleRad, width, height));
 
-    // Render Shapes (Always visible filled in 3D Preview mode)
+    // Render Shapes in 3D Animated Preview with Outlines
     shapes.forEach((sh, idx) => {
         const pts = sh.points.map(vId => {
             const vIdx = vertices.findIndex(p => p.id === vId);
@@ -1739,12 +1747,15 @@ function renderIsoAtAngle(angleRad, width, height) {
 
             shapeEl.setAttribute('fill', sh.fillColor || 'rgba(0, 122, 204, 0.35)');
 
+            const defaultStroke = sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc');
+
             if (idx === selectedShapeIndex) {
                 shapeEl.setAttribute('stroke', '#00ffff');
                 shapeEl.setAttribute('stroke-width', '4');
                 shapeEl.setAttribute('stroke-dasharray', '8 4');
             } else {
-                shapeEl.setAttribute('stroke', 'none');
+                shapeEl.setAttribute('stroke', defaultStroke);
+                shapeEl.setAttribute('stroke-width', '2.5');
                 shapeEl.setAttribute('stroke-dasharray', 'none');
             }
         }
@@ -1776,7 +1787,7 @@ function renderIsoAtAngle(angleRad, width, height) {
         }
     });
 
-    // Render Curves (Outline paths only in Preview mode)
+    // Render Curves
     curves.forEach((crv, idx) => {
         const v1Idx = vertices.findIndex(v => v.id === crv[0]);
         const v2Idx = vertices.findIndex(v => v.id === crv[1]);
