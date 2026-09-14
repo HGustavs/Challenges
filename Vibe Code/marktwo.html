@@ -1454,12 +1454,12 @@ function updateView(viewType) {
 
     if (selectedMirrorAxis === 'X') {
         if (viewType === 'top') highlightH = true;
-        if (viewType === 'front' || viewType === 'rear') highlightV = true;
+        if (viewType === 'front' || viewType === 'rear') highlightV = true; // Swapped V to H
     } else if (selectedMirrorAxis === 'Y') {
-        if (viewType === 'left' || viewType === 'front' || viewType === 'rear') highlightV = true;
+        if (viewType === 'left' || viewType === 'front' || viewType === 'rear') highlightH = true; // Swapped V to H
     } else if (selectedMirrorAxis === 'Z') {
-        if (viewType === 'front' || viewType === 'rear') highlightH = true;
-        if (viewType === 'top' || viewType === 'left') highlightV = true;
+        if (viewType === 'top') highlightV = true;
+        if (viewType === 'left') highlightV = true; 
     }
 
     if (crosshairH && crosshairV && crosshairDot) {
