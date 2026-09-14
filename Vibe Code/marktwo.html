@@ -38,39 +38,6 @@
             z-index: 10;
         }
 
-        /* Ensure the toolbar group aligns all items vertically in the center */
-        .toolbar-group {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* Ensure all toolbar buttons share identical dimensions, box-sizing, and alignment */
-        .toolbar-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;          /* Match your existing toolbar button width */
-            height: 36px;         /* Match your existing toolbar button height */
-            padding: 0;
-            box-sizing: border-box;
-            vertical-align: middle;
-        }
-
-        /* Center Material Symbols inside the button */
-        .toolbar-btn .material-symbols-outlined {
-            font-size: 20px;       /* Match icon size of other toolbar icons */
-            line-height: 1;
-        }
-
-        /* Vertically center the dropdown and align its height with the toolbar */
-        .toolbar-select {
-            height: 36px;         /* Match button height for vertical symmetry */
-            box-sizing: border-box;
-            vertical-align: middle;
-            margin: 0;
-        }
-
         #label-iso-angle {
             display: inline-block;
             min-width: 45px;          /* Reserve consistent space for -360° to 360° */
@@ -78,7 +45,7 @@
             font-variant-numeric: tabular-nums; /* Prevents character-width jitter */
         }
 
-        .btn-group { display: flex; gap: 8px; align-items: center; }
+        .btn-group, .toolbar-group { display: flex; gap: 8px; align-items: center; }
         button, .file-input-label, select {
             background-color: #2d2d2d;
             color: #ccc;
@@ -289,11 +256,12 @@
         <!-- Mirror Controls -->
         <div class="toolbar-group">
             <select id="select-mirror-axis" class="toolbar-select">
+                <option value=" "> </option>
                 <option value="X">X Axis</option>
                 <option value="Y">Y Axis</option>
                 <option value="Z">Z Axis</option>
             </select>
-            <button id="btn-mirror" class="toolbar-btn" title="Mirror Selected" alt="mirror selection">
+            <button id="btn-mirror" class="toolbar-btn" title="Mirror Selected">
                 <span class="material-symbols-outlined">flip</span>
             </button>
         </div>
@@ -510,8 +478,6 @@ function reverseWinding(pointIds) {
     if (pointIds.length <= 1) return [...pointIds];
     return [pointIds[0], ...pointIds.slice(1).reverse()];
 }
-
-
 
 // Builds pure bezier path string for shape mode/preview without extra straight lines to control points
 function buildBezierPathString(points) {
@@ -981,7 +947,6 @@ function initViewDOM(viewType) {
         const rect = svg.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-
 
         if (currentTool === 'point' || currentTool === 'line' || currentTool === 'curve') {
             // Keep line/curve chain active if user is drawing, otherwise enable marquee
@@ -1492,191 +1457,357 @@ window.addEventListener('mouseup', () => {
     }
 });
 
-// --- MIRROR AXIS CROSSHAIR STYLING HELPER ---
-function getMirrorAxisStyle(axisName, viewType) {
-    const selectedAxis = document.getElementById('select-mirror-axis')?.value;
-
-    // Map which axes appear in each 2D orthographic view
-    const isAxisInView = 
-        (viewType === 'top' && (axisName === 'X' || axisName === 'Y')) ||
-        (viewType === 'front' && (axisName === 'X' || axisName === 'Z')) ||
-        (viewType === 'side' && (axisName === 'Y' || axisName === 'Z'));
-
-    if (isAxisInView && axisName === selectedAxis) {
-        return {
-            stroke: '#ffff00',          // Yellow line
-            strokeWidth: '2.5',         // Slightly thicker
-            strokeDasharray: '6 4'      // Dashed style
-        };
-    }
-
-    return {
-        stroke: 'rgba(255, 255, 255, 0.25)',
-        strokeWidth: '1',
-        strokeDasharray: 'none'
-    };
-}
-
-// --- UPDATED CROSSHAIRS RENDERER ---
-function updateViewCrosshairs(viewType) {
-    const cache = viewRenderCache[viewType];
-    if (!cache || !cache.crosshairs) return;
-
-    // Determine horizontal and vertical axis mapping per orthographic view
-    let hAxis = 'X', vAxis = 'Y';
-    if (viewType === 'front') { hAxis = 'X'; vAxis = 'Z'; }
-    else if (viewType === 'side') { hAxis = 'Y'; vAxis = 'Z'; }
-
-    const hStyle = getMirrorAxisStyle(hAxis, viewType);
-    const vStyle = getMirrorAxisStyle(vAxis, viewType);
-
-    // Apply active/default styles to horizontal crosshair line
-    if (cache.crosshairs.horizontal) {
-        cache.crosshairs.horizontal.setAttribute('stroke', hStyle.stroke);
-        cache.crosshairs.horizontal.setAttribute('stroke-width', hStyle.strokeWidth);
-        cache.crosshairs.horizontal.setAttribute('stroke-dasharray', hStyle.strokeDasharray);
-    }
-
-    // Apply active/default styles to vertical crosshair line
-    if (cache.crosshairs.vertical) {
-        cache.crosshairs.vertical.setAttribute('stroke', vStyle.stroke);
-        cache.crosshairs.vertical.setAttribute('stroke-width', vStyle.strokeWidth);
-        cache.crosshairs.vertical.setAttribute('stroke-dasharray', vStyle.strokeDasharray);
-    }
-}
-
-// --- UPDATED UPDATEVIEW FUNCTION ---
 function updateView(viewType) {
-    if (viewType === 'iso') {
-        if (currentMode === 'preview') {
-            renderIsoAtAngle(isoAngleY, isoSvg.clientWidth || 300, isoSvg.clientHeight || 300);
-        }
-        return;
+    const svg = views[viewType].svg;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    // 0. Origin Crosshair & Highlight Active Mirror Axis
+    const originWorld = { x: 0, y: 0, z: 0 };
+    const originPt = projectToView(originWorld, viewType, rect.width, rect.height);
+
+    const crosshairH = viewRenderCache[viewType].crosshairH;
+    const crosshairV = viewRenderCache[viewType].crosshairV;
+    const crosshairDot = viewRenderCache[viewType].crosshairDot;
+
+    const selectedMirrorAxis = (document.getElementById('select-mirror-axis')?.value || '').trim().toUpperCase();
+
+    let highlightH = false;
+    let highlightV = false;
+
+    if (selectedMirrorAxis === 'X') {
+        if (viewType === 'front' || viewType === 'rear') highlightH = true;
+        if (viewType === 'top') highlightV = true;
+    } else if (selectedMirrorAxis === 'Y') {
+        if (viewType === 'left' || viewType === 'front' || viewType === 'rear') highlightV = true;
+    } else if (selectedMirrorAxis === 'Z') {
+        if (viewType === 'top' || viewType === 'left') highlightH = true;
     }
 
-    const cache = viewRenderCache[viewType];
-    if (!cache) return;
+    if (crosshairH && crosshairV && crosshairDot) {
+        crosshairH.setAttribute('x1', '0');
+        crosshairH.setAttribute('y1', originPt.y);
+        crosshairH.setAttribute('x2', rect.width);
+        crosshairH.setAttribute('y2', originPt.y);
 
-    const svg = cache.svg;
-    const width = svg.clientWidth || 300;
-    const height = svg.clientHeight || 300;
+        crosshairV.setAttribute('x1', originPt.x);
+        crosshairV.setAttribute('y1', '0');
+        crosshairV.setAttribute('x2', originPt.x);
+        crosshairV.setAttribute('y2', rect.height);
 
-    // 1. Update crosshair highlights based on active mirror axis
-    updateViewCrosshairs(viewType);
+        crosshairDot.setAttribute('cx', originPt.x);
+        crosshairDot.setAttribute('cy', originPt.y);
 
-    // 2. Project vertices to 2D view screen coordinates
-    const projectedPoints = vertices.map(v => projectToView(v, viewType, width, height));
-
-    // 3. Render Vertices (Points)
-    vertices.forEach((v, idx) => {
-        const pt = projectedPoints[idx];
-        const circle = cache.points[idx];
-        if (circle) {
-            circle.setAttribute('cx', pt.x);
-            circle.setAttribute('cy', pt.y);
-
-            if (selectedPointIds.has(v.id)) {
-                circle.setAttribute('fill', '#00ffff');
-                circle.setAttribute('r', '6');
-            } else {
-                circle.setAttribute('fill', '#ffffff');
-                circle.setAttribute('r', '4');
-            }
+        if (highlightH) {
+            crosshairH.setAttribute('stroke', '#ffcc00');
+            crosshairH.setAttribute('stroke-width', '2');
+            crosshairH.setAttribute('stroke-dasharray', '4 4');
+        } else {
+            crosshairH.setAttribute('stroke', 'rgba(255, 255, 255, 0.35)');
+            crosshairH.setAttribute('stroke-width', '1');
+            crosshairH.setAttribute('stroke-dasharray', '4 4');
         }
-    });
 
-    // 4. Render Lines (Edges)
-    edges.forEach((edge, idx) => {
-        const v1Idx = vertices.findIndex(v => v.id === edge[0]);
-        const v2Idx = vertices.findIndex(v => v.id === edge[1]);
-        if (v1Idx === -1 || v2Idx === -1) return;
-
-        const p1 = projectedPoints[v1Idx];
-        const p2 = projectedPoints[v2Idx];
-        const lineEl = cache.lines[idx];
-
-        if (lineEl) {
-            lineEl.setAttribute('x1', p1.x);
-            lineEl.setAttribute('y1', p1.y);
-            lineEl.setAttribute('x2', p2.x);
-            lineEl.setAttribute('y2', p2.y);
-
-            if (idx === selectedEdgeIndex || selectedEdgeIndices.has(idx)) {
-                lineEl.setAttribute('stroke', '#00ffff');
-                lineEl.setAttribute('stroke-width', '4');
-            } else {
-                lineEl.setAttribute('stroke', '#00ffcc');
-                lineEl.setAttribute('stroke-width', '2');
-            }
+        if (highlightV) {
+            crosshairV.setAttribute('stroke', '#ffcc00');
+            crosshairV.setAttribute('stroke-width', '2');
+            crosshairV.setAttribute('stroke-dasharray', '4 4');
+        } else {
+            crosshairV.setAttribute('stroke', 'rgba(255, 255, 255, 0.35)');
+            crosshairV.setAttribute('stroke-width', '1');
+            crosshairV.setAttribute('stroke-dasharray', '4 4');
         }
-    });
+    }
 
-    // 5. Render Curves
-    curves.forEach((crv, idx) => {
-        const v1Idx = vertices.findIndex(v => v.id === crv[0]);
-        const v2Idx = vertices.findIndex(v => v.id === crv[1]);
-        const v3Idx = vertices.findIndex(v => v.id === crv[2]);
-        if (v1Idx === -1 || v2Idx === -1 || v3Idx === -1) return;
-
-        const pStart = projectedPoints[v1Idx];
-        const pControl = projectedPoints[v2Idx];
-        const pEnd = projectedPoints[v3Idx];
-
-        const item = cache.curves[idx];
-        if (item) {
-            item.guide1.setAttribute('x1', pStart.x);
-            item.guide1.setAttribute('y1', pStart.y);
-            item.guide1.setAttribute('x2', pControl.x);
-            item.guide1.setAttribute('y2', pControl.y);
-
-            item.guide2.setAttribute('x1', pControl.x);
-            item.guide2.setAttribute('y1', pControl.y);
-            item.guide2.setAttribute('x2', pEnd.x);
-            item.guide2.setAttribute('y2', pEnd.y);
-
-            item.path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
-
-            if (idx === selectedCurveIndex || selectedCurveIndices.has(idx)) {
-                item.path.setAttribute('stroke', '#ffffff');
-                item.path.setAttribute('stroke-width', '4');
-            } else {
-                item.path.setAttribute('stroke', '#ffff00');
-                item.path.setAttribute('stroke-width', '2.5');
-            }
-        }
-    });
-
-    // 6. Render Polygon & Curved Shapes
+    // 1. Shapes (Visible ONLY in Shape Mode) with Outline and Click Target Support
     shapes.forEach((sh, idx) => {
+        const shapeEl = viewRenderCache[viewType].shapes[idx];
+        if (!shapeEl) return;
+
+        if (currentTool !== 'shape') {
+            shapeEl.style.display = 'none';
+            return;
+        }
+
+        shapeEl.style.display = 'block';
+
         const pts = sh.points.map(vId => {
-            const vIdx = vertices.findIndex(p => p.id === vId);
-            if (vIdx === -1) return { x: 0, y: 0 };
-            return projectedPoints[vIdx];
+            const v = vertices.find(p => p.id === vId);
+            if (!v) return { x: 0, y: 0 };
+            return projectToView(v, viewType, rect.width, rect.height);
         });
 
-        const shapeEl = cache.shapes[idx];
-        if (shapeEl) {
-            if (sh.type === 'curve') {
-                const pathStr = buildBezierPathString(pts) + ' Z';
-                shapeEl.setAttribute('d', pathStr);
-            } else {
-                const pointsSvg = pts.map(pt => `${pt.x},${pt.y}`).join(' ');
-                shapeEl.setAttribute('points', pointsSvg);
+        if (sh.type === 'curve') {
+            const pathStr = buildBezierPathString(pts) + ' Z';
+            shapeEl.setAttribute('d', pathStr);
+        } else {
+            const pointsSvg = pts.map(pt => `${pt.x},${pt.y}`).join(' ');
+            shapeEl.setAttribute('points', pointsSvg);
+        }
+
+        shapeEl.setAttribute('fill', sh.fillColor || 'rgba(0, 122, 204, 0.35)');
+
+        const defaultStroke = sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc');
+
+        if (idx === selectedShapeIndex) {
+            shapeEl.setAttribute('stroke', '#00ffff');
+            shapeEl.setAttribute('stroke-width', '4.5');
+            shapeEl.setAttribute('stroke-dasharray', '8 4');
+        } else {
+            shapeEl.setAttribute('stroke', defaultStroke);
+            shapeEl.setAttribute('stroke-width', '2.5');
+            shapeEl.setAttribute('stroke-dasharray', 'none');
+        }
+    });
+
+    const isShapesMode = (currentTool === 'shape');
+
+    // 2. Lines
+    edges.forEach((edge, idx) => {
+        const lineEl = viewRenderCache[viewType].lines[idx];
+        if (!lineEl) return;
+
+        if (isShapesMode) {
+            lineEl.style.display = 'none';
+            return;
+        }
+        lineEl.style.display = 'block';
+
+        const v1 = vertices.find(v => v.id === edge[0]);
+        const v2 = vertices.find(v => v.id === edge[1]);
+        if (!v1 || !v2) return;
+
+        const p1 = projectToView(v1, viewType, rect.width, rect.height);
+        const p2 = projectToView(v2, viewType, rect.width, rect.height);
+
+        lineEl.setAttribute('x1', p1.x);
+        lineEl.setAttribute('y1', p1.y);
+        lineEl.setAttribute('x2', p2.x);
+        lineEl.setAttribute('y2', p2.y);
+
+        // Under line highlighting inside updateView(viewType):
+        if (idx === selectedEdgeIndex || selectedEdgeIndices.has(idx)) {
+            lineEl.setAttribute('stroke', '#00ffff');
+            lineEl.setAttribute('stroke-width', '4');
+        } else {
+            lineEl.setAttribute('stroke', '#00ffcc');
+            lineEl.setAttribute('stroke-width', '2');
+        }
+
+    });
+
+    // 3. Quadratic Curves and Control Point Guide Lines in Curve/Edit Mode
+    curves.forEach((crv, idx) => {
+        const item = viewRenderCache[viewType].curves[idx];
+        if (!item) return;
+
+        if (isShapesMode) {
+            item.group.style.display = 'none';
+            return;
+        }
+        item.group.style.display = 'block';
+
+        const vStart = vertices.find(v => v.id === crv[0]);
+        const vControl = vertices.find(v => v.id === crv[1]);
+        const vEnd = vertices.find(v => v.id === crv[2]);
+        if (!vStart || !vControl || !vEnd) return;
+
+        const pStart = projectToView(vStart, viewType, rect.width, rect.height);
+        const pControl = projectToView(vControl, viewType, rect.width, rect.height);
+        const pEnd = projectToView(vEnd, viewType, rect.width, rect.height);
+
+        // Dashed lines from endpoints to off-curve control point
+        item.guide1.setAttribute('x1', pStart.x);
+        item.guide1.setAttribute('y1', pStart.y);
+        item.guide1.setAttribute('x2', pControl.x);
+        item.guide1.setAttribute('y2', pControl.y);
+
+        item.guide2.setAttribute('x1', pControl.x);
+        item.guide2.setAttribute('y1', pControl.y);
+        item.guide2.setAttribute('x2', pEnd.x);
+        item.guide2.setAttribute('y2', pEnd.y);
+
+        item.path.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${pEnd.x} ${pEnd.y}`);
+
+        // Under curve highlighting inside updateView(viewType):
+        if (idx === selectedCurveIndex || selectedCurveIndices.has(idx)) {
+            item.path.setAttribute('stroke', '#ffffff');
+            item.path.setAttribute('stroke-width', '4');
+        } else {
+            item.path.setAttribute('stroke', '#ffff00');
+            item.path.setAttribute('stroke-width', '2.5');
+        }
+
+    });
+
+    // 4. Dynamic Shape Preview Fill Active While Constructing (Polygon or Curve)
+    const previewShapeEl = viewRenderCache[viewType].previewShape;
+    const previewCurveFillEl = viewRenderCache[viewType].previewCurveFill;
+
+    if (!isShapesMode && currentTool === 'line' && lineSequence.length >= 2) {
+        const pts = lineSequence.map(vId => {
+            const v = vertices.find(p => p.id === vId);
+            if (!v) return { x: 0, y: 0 };
+            return projectToView(v, viewType, rect.width, rect.height);
+        });
+
+        if (linePreviewMousePos && linePreviewMousePos.viewType === viewType) {
+            pts.push({ x: linePreviewMousePos.x, y: linePreviewMousePos.y });
+        }
+
+        const ptsString = pts.map(p => `${p.x},${p.y}`).join(' ');
+        previewShapeEl.setAttribute('points', ptsString);
+        previewShapeEl.setAttribute('fill', currentFillColor);
+        previewShapeEl.style.display = 'block';
+        previewCurveFillEl.style.display = 'none';
+    } else if (!isShapesMode && currentTool === 'curve' && curveSequence.length >= 2) {
+        const pts = curveSequence.map(vId => {
+            const v = vertices.find(p => p.id === vId);
+            if (!v) return { x: 0, y: 0 };
+            return projectToView(v, viewType, rect.width, rect.height);
+        });
+
+        if (curvePreviewMousePos && curvePreviewMousePos.viewType === viewType) {
+            pts.push({ x: curvePreviewMousePos.x, y: curvePreviewMousePos.y });
+        }
+
+        const pathStr = buildBezierPathString(pts) + ' Z';
+        previewCurveFillEl.setAttribute('d', pathStr);
+        previewCurveFillEl.setAttribute('fill', currentFillColor);
+        previewCurveFillEl.style.display = 'block';
+        previewShapeEl.style.display = 'none';
+    } else {
+        previewShapeEl.style.display = 'none';
+        previewCurveFillEl.style.display = 'none';
+    }
+
+    // 5. Line Preview
+    const previewLineEl = viewRenderCache[viewType].previewLine;
+    if (currentTool === 'line' && lineStartPointId !== null) {
+        const startV = vertices.find(v => v.id === lineStartPointId);
+        if (startV) {
+            const pStart = projectToView(startV, viewType, rect.width, rect.height);
+            let targetX = pStart.x;
+            let targetY = pStart.y;
+
+            if (hoverPointId !== null && hoverPointId !== lineStartPointId) {
+                const hoverV = vertices.find(v => v.id === hoverPointId);
+                const pTarget = projectToView(hoverV, viewType, rect.width, rect.height);
+                targetX = pTarget.x;
+                targetY = pTarget.y;
+            } else if (linePreviewMousePos && linePreviewMousePos.viewType === viewType) {
+                targetX = linePreviewMousePos.x;
+                targetY = linePreviewMousePos.y;
             }
 
-            shapeEl.setAttribute('fill', sh.fillColor || 'rgba(0, 122, 204, 0.35)');
+            previewLineEl.setAttribute('x1', pStart.x);
+            previewLineEl.setAttribute('y1', pStart.y);
+            previewLineEl.setAttribute('x2', targetX);
+            previewLineEl.setAttribute('y2', targetY);
+            previewLineEl.style.display = 'block';
+        }
+    } else {
+        previewLineEl.style.display = 'none';
+    }
 
-            const defaultStroke = sh.strokeColor || (sh.type === 'curve' ? '#ffff00' : '#00ffcc');
+    // 6. Curve Preview
+    const previewCurveEl = viewRenderCache[viewType].previewCurve;
+    const previewCurveGuideEl = viewRenderCache[viewType].previewCurveGuide;
 
-            if (idx === selectedShapeIndex) {
-                shapeEl.setAttribute('stroke', '#00ffff');
-                shapeEl.setAttribute('stroke-width', '3');
-                shapeEl.setAttribute('stroke-dasharray', '6 3');
-            } else {
-                shapeEl.setAttribute('stroke', defaultStroke);
-                shapeEl.setAttribute('stroke-width', '1.5');
-                shapeEl.setAttribute('stroke-dasharray', 'none');
+    if (currentTool === 'curve' && curveStartPointId !== null) {
+        const startV = vertices.find(v => v.id === curveStartPointId);
+        
+        if (curveControlPointId === null) {
+            if (startV) {
+                const pStart = projectToView(startV, viewType, rect.width, rect.height);
+                let targetX = pStart.x;
+                let targetY = pStart.y;
+
+                if (hoverPointId !== null && hoverPointId !== curveStartPointId) {
+                    const hoverV = vertices.find(v => v.id === hoverPointId);
+                    const pTarget = projectToView(hoverV, viewType, rect.width, rect.height);
+                    targetX = pTarget.x;
+                    targetY = pTarget.y;
+                } else if (curvePreviewMousePos && curvePreviewMousePos.viewType === viewType) {
+                    targetX = curvePreviewMousePos.x;
+                    targetY = curvePreviewMousePos.y;
+                }
+
+                previewLineEl.setAttribute('x1', pStart.x);
+                previewLineEl.setAttribute('y1', pStart.y);
+                previewLineEl.setAttribute('x2', targetX);
+                previewLineEl.setAttribute('y2', targetY);
+                previewLineEl.style.display = 'block';
+                previewCurveEl.style.display = 'none';
+                previewCurveGuideEl.style.display = 'none';
             }
+        } else {
+            const controlV = vertices.find(v => v.id === curveControlPointId);
+            if (startV && controlV) {
+                const pStart = projectToView(startV, viewType, rect.width, rect.height);
+                const pControl = projectToView(controlV, viewType, rect.width, rect.height);
+                let targetX = pControl.x;
+                let targetY = pControl.y;
+
+                if (hoverPointId !== null && hoverPointId !== curveControlPointId) {
+                    const hoverV = vertices.find(v => v.id === hoverPointId);
+                    const pTarget = projectToView(hoverV, viewType, rect.width, rect.height);
+                    targetX = pTarget.x;
+                    targetY = pTarget.y;
+                } else if (curvePreviewMousePos && curvePreviewMousePos.viewType === viewType) {
+                    targetX = curvePreviewMousePos.x;
+                    targetY = curvePreviewMousePos.y;
+                }
+
+                previewLineEl.style.display = 'none';
+                
+                previewCurveGuideEl.setAttribute('x1', pStart.x);
+                previewCurveGuideEl.setAttribute('y1', pStart.y);
+                previewCurveGuideEl.setAttribute('x2', pControl.x);
+                previewCurveGuideEl.setAttribute('y2', pControl.y);
+                previewCurveGuideEl.style.display = 'block';
+
+                previewCurveEl.setAttribute('d', `M ${pStart.x} ${pStart.y} Q ${pControl.x} ${pControl.y} ${targetX} ${targetY}`);
+                previewCurveEl.style.display = 'block';
+            }
+        }
+    } else if (currentTool !== 'line') {
+        previewCurveEl.style.display = 'none';
+        previewCurveGuideEl.style.display = 'none';
+    }
+
+    // 7. Points
+    vertices.forEach((v, idx) => {
+        const item = viewRenderCache[viewType].points[idx];
+        if (!item) return;
+
+        if (isShapesMode) {
+            item.group.style.display = 'none';
+            return;
+        }
+        item.group.style.display = 'block';
+
+        const p = projectToView(v, viewType, rect.width, rect.height);
+        item.circle.setAttribute('cx', p.x);
+        item.circle.setAttribute('cy', p.y);
+        item.rect.setAttribute('x', p.x - 7);
+        item.rect.setAttribute('y', p.y - 7);
+
+        const isSelected = selectedPointIds.has(v.id);
+        const isCreationPoint = (v.id === lineStartPointId || v.id === curveStartPointId || v.id === curveControlPointId);
+
+        if (isSelected || isCreationPoint) {
+            item.circle.setAttribute('fill', '#ffff00');
+            item.circle.setAttribute('r', '5');
+            item.rect.style.display = 'block';
+        } else if (v.id === hoverPointId) {
+            item.circle.setAttribute('fill', '#00aaff');
+            item.circle.setAttribute('r', '7');
+            item.rect.style.display = 'none';
+        } else {
+            item.circle.setAttribute('fill', '#ff0055');
+            item.circle.setAttribute('r', '4');
+            item.rect.style.display = 'none';
         }
     });
 }
@@ -2004,7 +2135,9 @@ function exportAllViewsAsSVG() {
 
 // --- MIRROR FEATURE LOGIC ---
 function mirrorSelectedElements() {
-    const axis = document.getElementById('select-mirror-axis').value.toLowerCase(); // 'x', 'y', or 'z'
+    const rawAxis = document.getElementById('select-mirror-axis').value.trim();
+    if (!rawAxis) return; // Do nothing if default/space option is selected
+    const axis = rawAxis.toLowerCase(); // 'x', 'y', or 'z'
     const vertexMap = new Map();
 
     // 1. Identify points to mirror directly or via selected edges/curves/shapes
@@ -2112,6 +2245,7 @@ const btnToolPanView = document.getElementById('btn-tool-panview');
 const btnToolPanBg = document.getElementById('btn-tool-panbg');
 
 document.getElementById('btn-mirror').addEventListener('click', mirrorSelectedElements);
+document.getElementById('select-mirror-axis').addEventListener('change', updateAllViews);
 
 btnEditMode.addEventListener('click', () => {
     currentMode = 'edit';
@@ -2147,18 +2281,12 @@ btnToolShape.addEventListener('click', () => setActiveTool('shape', 'edit-mode-s
 btnToolPanView.addEventListener('click', () => setActiveTool('panview', 'edit-mode-panview', btnToolPanView));
 btnToolPanBg.addEventListener('click', () => setActiveTool('panbg', 'edit-mode-panbg', btnToolPanBg));
 
-// Add event listener to update views when the mirror axis selection changes
-document.getElementById('select-mirror-axis').addEventListener('change', () => {
-    updateAllViews();
-});
-
 document.getElementById('btn-export-json').addEventListener('click', () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(getExportJSON());
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
     downloadAnchor.setAttribute('download', 'model_data.json');
     document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
     downloadAnchor.remove();
 });
 
