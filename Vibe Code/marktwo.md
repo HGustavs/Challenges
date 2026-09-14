@@ -107,3 +107,5 @@
 * The mirror button should have the "flip" icon from material design and the alt tag should read "mirror selection". <span class="material-symbols-outlined">flip</span>. The dropdown and the mirror button are not on the same vertical axis level. The mirror button also seems to be smaller than the other toolbar buttons. The mirror button should have the same size and be on the same vertical level as the other toolbar buttons, and the dropdown should be centered vertically with the toolbar buttons. 
 
 * Add functionality for highlighting the crosshair axis that corresponds to the axis selected in the mirror dropdown. Add an option to the mirror dropdown that contains a space character only. When the slot with the space character is selected no axis should be highlighted. The highlighted mirror axis should be drawn with a dashed line and not a solid line. 
+
+* Currently the selection of shapes in the shape mode does not seem to work. When a shape is clicked it is not highlighted as a selected shape. Furthermore, when some action is taken, for example a deletion or fill color change indicating that the set of selected shapes has not been updated. 
